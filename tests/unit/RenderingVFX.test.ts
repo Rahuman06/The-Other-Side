@@ -21,7 +21,7 @@ describe('Phase 2 — Visual Effects & Animation Engine Unit Tests', () => {
       add: {
         graphics: vi.fn(() => mockGraphics),
       },
-    } as any;
+    } as unknown as Phaser.Scene;
   };
 
   it('initializes VisualEffectsManager and spawns ambient dust motes in both worlds', () => {

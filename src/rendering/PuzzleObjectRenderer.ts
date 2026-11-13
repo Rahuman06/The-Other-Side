@@ -81,8 +81,9 @@ export class PuzzleObjectRenderer {
   ): void {
     g.clear();
 
-    // 1. Exits (animated beacon overlay)
-    this.renderExit(g, GridPoint.from(session.player.position.equals(session.shadow.position) ? session.player.position : session.player.position), true, getScreenCoords);
+    // 1. Exits (animated beacon overlay on real and shadow exits)
+    this.renderExit(g, GridPoint.from(session.definition.realExit), true, getScreenCoords);
+    this.renderExit(g, GridPoint.from(session.definition.shadowExit), false, getScreenCoords);
 
     // 2. Checkpoints
     this.renderCheckpoints(g, session, getScreenCoords);
@@ -333,31 +334,18 @@ export class PuzzleObjectRenderer {
       if (dw.isDestroyed) continue;
       const isReal = dw.world === 'real';
       const coords = getScreenCoords(dw.position, isReal);
-      const s = this.cellSize * 0.88;
-      const fillCol = isReal ? 0x262626 : 0xd8d8d8;
+      const size = this.cellSize * 0.88;
+      const fillCol = isReal ? 0x222222 : 0xdddddd;
       const strokeCol = isReal ? PALETTE.real.walls : PALETTE.shadow.walls;
-      const crackCol = isReal ? 0x666666 : 0x888888;
 
       g.fillStyle(fillCol, 1);
-      g.fillRect(coords.x - s / 2, coords.y - s / 2, s, s);
-      g.lineStyle(2, strokeCol, 0.95);
-      g.strokeRect(coords.x - s / 2, coords.y - s / 2, s, s);
+      g.fillRect(coords.x - size / 2, coords.y - size / 2, size, size);
 
-      // Deep stress fracture fissure pattern indicating explosive vulnerability
-      g.lineStyle(2, crackCol, 0.9);
-      g.beginPath();
-      g.moveTo(coords.x - s * 0.4, coords.y - s * 0.45);
-      g.lineTo(coords.x - s * 0.1, coords.y - s * 0.1);
-      g.lineTo(coords.x + s * 0.2, coords.y - s * 0.25);
-      g.lineTo(coords.x + s * 0.45, coords.y - s * 0.1);
-      g.moveTo(coords.x - s * 0.1, coords.y - s * 0.1);
-      g.lineTo(coords.x - s * 0.2, coords.y + s * 0.3);
-      g.lineTo(coords.x + s * 0.1, coords.y + s * 0.45);
-      g.strokePath();
-
-      // Masonry mortar line
-      g.lineStyle(1, strokeCol, 0.4);
-      g.lineBetween(coords.x - s / 2, coords.y, coords.x + s / 2, coords.y);
+      // Restored clean 4-quadrant segmented texture pattern from approved baseline
+      g.lineStyle(1.5, strokeCol, 0.7);
+      g.strokeRect(coords.x - size / 2, coords.y - size / 2, size, size);
+      g.lineBetween(coords.x - size / 2, coords.y, coords.x + size / 2, coords.y);
+      g.lineBetween(coords.x, coords.y - size / 2, coords.x, coords.y + size / 2);
     }
   }
 

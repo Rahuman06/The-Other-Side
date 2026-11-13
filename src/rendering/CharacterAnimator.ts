@@ -145,13 +145,17 @@ export class CharacterAnimator {
     const neckY = headY + headRadius * 0.8;
     const pelvisY = s * 0.08;
     const strokeW = Math.max(2, Math.round(s * 0.07));
+    const capR = strokeW / 2;
 
     // Stride angle oscillation
     const stride = Math.sin(walkPhase * Math.PI * 2);
-    const legAngle1 = stride * 0.55;
-    const legAngle2 = -stride * 0.55;
-    const armAngle1 = -stride * 0.6;
-    const armAngle2 = stride * 0.6;
+    // Natural standing stance (legs & arms clearly visible with slight separation)
+    const baseLegAngle = 0.18;
+    const baseArmAngle = 0.22;
+    const legAngle1 = -baseLegAngle + stride * 0.45;
+    const legAngle2 = baseLegAngle - stride * 0.45;
+    const armAngle1 = -baseArmAngle - stride * 0.50;
+    const armAngle2 = baseArmAngle + stride * 0.50;
 
     const legLen = s * 0.26;
     const armLen = s * 0.22;
@@ -198,11 +202,20 @@ export class CharacterAnimator {
     g.lineTo(ax2, ay2);
     g.strokePath();
 
-    // 4. Head
+    // 4. Rounded endpoints for smooth minimalist finish
+    g.fillStyle(color, 1);
+    g.fillCircle(0, neckY, capR);
+    g.fillCircle(0, pelvisY, capR);
+    g.fillCircle(lx1, ly1, capR);
+    g.fillCircle(lx2, ly2, capR);
+    g.fillCircle(ax1, ay1, capR);
+    g.fillCircle(ax2, ay2, capR);
+
+    // 5. Head
     g.fillStyle(color, 1);
     g.fillCircle(0, headY, headRadius);
 
-    // 5. Eyes (Glance in facing direction)
+    // 6. Eyes (Glance in facing direction)
     const eyeOffsetX = facing === 'left' ? -headRadius * 0.35 : facing === 'right' ? headRadius * 0.35 : 0;
     const eyeOffsetY = facing === 'up' ? -headRadius * 0.25 : facing === 'down' ? headRadius * 0.25 : 0;
     const eyeR = Math.max(1.5, headRadius * 0.2);
