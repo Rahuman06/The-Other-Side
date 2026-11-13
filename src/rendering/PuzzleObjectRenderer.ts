@@ -630,6 +630,9 @@ export class PuzzleObjectRenderer {
       // Center bolt
       g.fillStyle(col, 1);
       g.fillCircle(coords.x, coords.y, r * 0.12);
+
+      // Continuous mechanical friction sparks
+      this.vfx.spawnSawSparks(coords.x, coords.y, isReal);
     }
   }
 

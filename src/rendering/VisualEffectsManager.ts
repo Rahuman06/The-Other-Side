@@ -184,6 +184,24 @@ export class VisualEffectsManager {
       this.ambientGraphics.fillStyle(color, alpha);
       this.ambientGraphics.fillCircle(m.x, m.y, m.size);
     }
+
+    // Subtle atmospheric fog drift bands
+    const { width, height } = this.scene.scale;
+    const halfWidth = width / 2;
+    const fogDrift = Math.sin(this.totalTime * 0.4) * 20;
+
+    // Real world subtle mist
+    this.ambientGraphics.fillStyle(0xdddddd, 0.04);
+    this.ambientGraphics.fillRect(20 + fogDrift, height - 120, halfWidth - 60, 40);
+
+    // Shadow world subtle lunar haze
+    this.ambientGraphics.fillStyle(0xffffff, 0.025);
+    this.ambientGraphics.fillRect(halfWidth + 20 - fogDrift, height - 120, halfWidth - 60, 40);
+
+    // Center divider energy shimmer pulse
+    const dividerPulse = (Math.sin(this.totalTime * 3) + 1) * 0.5;
+    this.ambientGraphics.lineStyle(1.5, 0x00e5ff, 0.12 + dividerPulse * 0.15);
+    this.ambientGraphics.lineBetween(halfWidth, 70, halfWidth, height - 30);
   }
 
   private updateParticles(dt: number): void {
@@ -272,6 +290,29 @@ export class VisualEffectsManager {
         gravity: 40,
       });
     }
+  }
+
+  /**
+   * Spawns subtle mechanical friction sparks for spinning saw blades
+   */
+  public spawnSawSparks(x: number, y: number, isReal: boolean): void {
+    if (this.isReducedMotion || Math.random() > 0.15) return;
+    const angle = Math.random() * Math.PI * 2;
+    const speed = 25 + Math.random() * 45;
+    const color = isReal ? 0x555555 : 0xcccccc;
+    this.particles.push({
+      x: x + Math.cos(angle) * 16,
+      y: y + Math.sin(angle) * 16,
+      vx: Math.cos(angle + Math.PI / 2) * speed,
+      vy: Math.sin(angle + Math.PI / 2) * speed,
+      size: 1.5,
+      alpha: 0.75,
+      maxLife: 0.12 + Math.random() * 0.1,
+      life: 0,
+      color,
+      shape: 'spark',
+      gravity: 30,
+    });
   }
 
   /**

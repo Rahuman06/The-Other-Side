@@ -211,9 +211,11 @@ export class CharacterAnimator {
     g.fillCircle(ax1, ay1, capR);
     g.fillCircle(ax2, ay2, capR);
 
-    // 5. Head
+    // 5. Head with subtle natural breathing bob
+    const headBob = this.isReducedMotion ? 0 : Math.sin(this.idleTime * 2.5) * (s * 0.015);
+    const headX = headBob;
     g.fillStyle(color, 1);
-    g.fillCircle(0, headY, headRadius);
+    g.fillCircle(headX, headY, headRadius);
 
     // 6. Eyes (Glance in facing direction)
     const eyeOffsetX = facing === 'left' ? -headRadius * 0.35 : facing === 'right' ? headRadius * 0.35 : 0;
@@ -221,7 +223,7 @@ export class CharacterAnimator {
     const eyeR = Math.max(1.5, headRadius * 0.2);
 
     g.fillStyle(eyeColor, 1);
-    g.fillCircle(eyeOffsetX, headY + eyeOffsetY, eyeR);
+    g.fillCircle(headX + eyeOffsetX, headY + eyeOffsetY, eyeR);
   }
 
   /**
@@ -466,6 +468,21 @@ export class CharacterAnimator {
       scaleY: 1,
       duration: 180,
       ease: 'Back.easeOut',
+    });
+  }
+
+  /**
+   * Character Arrival at Exit: Subtle celebratory elevation flourish
+   */
+  public playExitArrival(isReal: boolean): void {
+    if (this.isReducedMotion) return;
+    const container = isReal ? this.realContainer : this.shadowContainer;
+    this.scene.tweens.add({
+      targets: container,
+      y: container.y - 5,
+      duration: 120,
+      yoyo: true,
+      ease: 'Sine.easeInOut',
     });
   }
 

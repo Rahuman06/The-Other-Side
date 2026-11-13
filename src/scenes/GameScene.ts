@@ -404,9 +404,11 @@ export class GameScene extends Phaser.Scene {
     // 1b. Character Arrival energy response at exits
     if (result.playerAtExit && !this.previousPlayerAtExit) {
       this.vfxManager.spawnSparkBurst(realCoords.x, realCoords.y, 14, 0x00e5ff);
+      this.characterAnimator.playExitArrival(true);
     }
     if (result.shadowAtExit && !this.previousShadowAtExit) {
       this.vfxManager.spawnSparkBurst(shadowCoords.x, shadowCoords.y, 14, 0x00e5ff);
+      this.characterAnimator.playExitArrival(false);
     }
     this.previousPlayerAtExit = result.playerAtExit;
     this.previousShadowAtExit = result.shadowAtExit;
