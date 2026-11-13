@@ -28,8 +28,8 @@ describe('Phase 8 — Level 17: Two Become One (Master Campaign)', () => {
     expect(plateShadow.isPressed).toBe(false);
     expect(portalReal.targetPosition.x).toBe(4);
     expect(portalReal.targetPosition.y).toBe(4);
-    expect(portalShadow.targetPosition.x).toBe(6);
-    expect(portalShadow.targetPosition.y).toBe(1);
+    expect(portalShadow.targetPosition.x).toBe(3);
+    expect(portalShadow.targetPosition.y).toBe(4);
     expect(doorRealExit.isOpen).toBe(false);
     expect(doorShadowAccess.isOpen).toBe(false);
 

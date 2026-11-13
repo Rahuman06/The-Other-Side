@@ -14,6 +14,7 @@ import { MoveDirection } from '../engine/MovementEngine';
 
 export interface ExplosionResult {
   readonly detonated: boolean;
+  readonly detonatedBombIds: readonly string[];
   readonly lethal: boolean;
   readonly blastCoordinates: readonly { world: 'real' | 'shadow'; pos: GridPoint }[];
   readonly destroyedWallIds: readonly string[];
@@ -723,6 +724,7 @@ export class PuzzleManager {
     if (detonatedBombs.length === 0) {
       return {
         detonated: false,
+        detonatedBombIds: [],
         lethal: false,
         blastCoordinates: [],
         destroyedWallIds: [],
@@ -779,6 +781,7 @@ export class PuzzleManager {
 
     return {
       detonated: true,
+      detonatedBombIds: Array.from(processedBombIds),
       lethal,
       blastCoordinates,
       destroyedWallIds,

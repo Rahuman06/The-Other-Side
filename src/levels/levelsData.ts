@@ -1415,7 +1415,7 @@ export const ALL_LEVELS: readonly LevelDefinition[] = [
         world: 'shadow',
         position: { x: 6, y: 4 },
         targetWorld: 'shadow',
-        targetPosition: { x: 6, y: 1 },
+        targetPosition: { x: 3, y: 4 },
       },
     ],
     checkpoints: [
@@ -1474,7 +1474,7 @@ export const ALL_LEVELS: readonly LevelDefinition[] = [
     name: 'The Paradox',
     width: 8,
     height: 6,
-    difficulty: 'EXPERT',
+    difficulty: 'MASTER',
     hint: 'Actions in one world alter routes in the other. Time the bomb after opening the rift.',
     realStart: { x: 1, y: 1 },
     shadowStart: { x: 6, y: 1 },
@@ -1522,7 +1522,7 @@ export const ALL_LEVELS: readonly LevelDefinition[] = [
         world: 'real',
         position: { x: 1, y: 4 },
         targetWorld: 'real',
-        targetPosition: { x: 4, y: 4 },
+        targetPosition: { x: 1, y: 1 },
       },
       {
         id: 'p-18-shadow',
@@ -1547,17 +1547,20 @@ export const ALL_LEVELS: readonly LevelDefinition[] = [
       { id: 'dw-18-real', world: 'real', position: { x: 5, y: 4 } },
     ],
     solutionTrace: [
-      'right',
-      'left',
-      'down',
-      'down',
-      'down',
-      'down',
-      'down',
-      'up',
-      'right',
-      'right',
-      'down',
+      'right', // 1. Real to (2,1) [activates tl-18-real and removes wall (0,2)]; Shadow to (5,1)
+      'left',  // 2. Real to (1,1); Shadow to (6,1)
+      'down',  // 3. Real held at (1,2) by locked door; Shadow enters open vault door (6,2)
+      'down',  // 4. Shadow hits sw-18-shadow (6,3) [unlocks door-18-real-portal (1,2)!]; Real drops into (1,2)
+      'down',  // 5. Shadow enters p-18-shadow (6,4) -> teleports to (3,4)! Real to (1,3)
+      'up',    // 6. Shadow advances to (3,3) [arms bomb-18-shadow!]; Real calibrates to (1,2)
+      'down',  // 7. Bomb ticks (timer: 2); Real to (1,3); Shadow to (3,4)
+      'right', // 8. Bomb ticks (timer: 1); Real to (2,3); Shadow to (2,4)
+      'down',  // 9. BOMB EXPLODES! Destroys dw-18-real at (5,4) AND shifts p-18-real destination to (4,4)!
+      'down',  // 10. Real moves to portal p-18-real (1,4)
+      'up',    // 11. Stagger step calibration
+      'right', // 12. Real enters p-18-real at (1,4) [teleports to shifted dest (4,4)!]; Shadow to (2,4)
+      'right', // 13. Real advances through destroyed wall (5,4); Shadow to (1,4)
+      'down',  // 14. Real arrives at Real Exit (6,4); Shadow arrives at Shadow Exit (1,4) -> VICTORY!
     ],
     surpriseEvents: [
       {
@@ -1574,6 +1577,21 @@ export const ALL_LEVELS: readonly LevelDefinition[] = [
         animation: 'shockwave',
         sound: 'distortion',
         warningClue: 'Quantum displacement wave fracturing the dimensional anchor',
+      },
+      {
+        id: 'se-18-bomb-portal-shift',
+        name: 'Explosive Rift Realignment',
+        triggerType: 'BOMB_DETONATED',
+        triggerSourceId: 'bomb-18-shadow',
+        targetWorld: 'real',
+        targetType: 'PORTAL',
+        targetId: 'p-18-real',
+        secondaryTargetPosition: { x: 4, y: 4 },
+        activationDelay: 0,
+        action: 'SHIFT_PORTAL',
+        animation: 'shockwave',
+        sound: 'explosion',
+        warningClue: 'The cross-world blast ripples through the rift, shifting the real portal anchor to the exit chamber!',
       },
       {
         id: 'se-18-singularity-echo',

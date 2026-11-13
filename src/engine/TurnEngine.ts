@@ -146,6 +146,11 @@ export class TurnEngine {
     // Step 9a: Check for Bomb Ticking & Lethal Detonations
     if (this.puzzleManager) {
       const explosion = this.puzzleManager.tickBombs(result.playerNewPosition, result.shadowNewPosition);
+      if (explosion.detonated && this.surpriseManager) {
+        for (const bombId of explosion.detonatedBombIds) {
+          this.surpriseManager.notifyBombDetonated(bombId);
+        }
+      }
       if (explosion.lethal) {
         this.executeDeathSequence();
         return result;
