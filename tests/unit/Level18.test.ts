@@ -20,16 +20,20 @@ describe('Phase 8 — Level 18: The Paradox (Master Campaign)', () => {
     const portalShadow = pm.getPortal('p-18-shadow')!;
     const timeLockReal = pm.getTimeLock('tl-18-real')!;
     const doorShadowVault = pm.getDoor('door-18-shadow-vault')!;
-    const doorRealPortal = pm.getDoor('door-18-real-portal')!;
+    const doorRealMid = pm.getDoor('door-18-real-mid')!;
+    const doorShadowBomb = pm.getDoor('door-18-shadow-bomb')!;
+    const doorShadowExit = pm.getDoor('door-18-shadow-exit')!;
 
     // Initial state: p-18-real targets start loop (1, 1), doors locked
     expect(portalReal.targetPosition.x).toBe(1);
     expect(portalReal.targetPosition.y).toBe(1);
     expect(portalShadow.targetPosition.x).toBe(3);
-    expect(portalShadow.targetPosition.y).toBe(4);
+    expect(portalShadow.targetPosition.y).toBe(5);
     expect(timeLockReal.isActive).toBe(false);
     expect(doorShadowVault.isOpen).toBe(false);
-    expect(doorRealPortal.isOpen).toBe(false);
+    expect(doorRealMid.isOpen).toBe(false);
+    expect(doorShadowBomb.isOpen).toBe(false);
+    expect(doorShadowExit.isOpen).toBe(false);
 
     // Step 1: 'right' -> Real activates tl-18-real (2, 1) [opens vault door (6, 2)]
     session.turnEngine.handleInput('right');
@@ -47,19 +51,24 @@ describe('Phase 8 — Level 18: The Paradox (Master Campaign)', () => {
     expect(session.shadow.position.x).toBe(6);
     expect(session.shadow.position.y).toBe(2);
 
-    // Step 4: 'down' -> Shadow hits sw-18-shadow at (6, 3) [unlocks door-18-real-portal at (1, 2)]
+    // Step 4: 'down' -> Shadow hits sw-18-shadow-1 at (6, 3) [unlocks door-18-real-mid at (1, 2)]
     session.turnEngine.handleInput('down');
     session.turnEngine.endAnimation();
-    expect(doorRealPortal.isOpen).toBe(true);
+    expect(doorRealMid.isOpen).toBe(true);
 
-    // Step 5: 'down' -> Shadow enters portal p-18-shadow (6, 4) -> teleports to (3, 4)
+    // Step 5: 'down' -> Shadow enters portal p-18-shadow (6, 4) -> teleports to (3, 5); Real enters (1, 2)
     session.turnEngine.handleInput('down');
     session.turnEngine.endAnimation();
     expect(session.shadow.position.x).toBe(3);
-    expect(session.shadow.position.y).toBe(4);
+    expect(session.shadow.position.y).toBe(5);
 
-    // Replay remaining steps through explosion and simultaneous exit arrival
-    for (let i = 5; i < LEVEL_18_DEF.solutionTrace.length; i++) {
+    // Step 6: 'down' -> Real activates sw-18-real-2 at (1, 3) [unseals door-18-shadow-bomb at (3, 4)]
+    session.turnEngine.handleInput('down');
+    session.turnEngine.endAnimation();
+    expect(doorShadowBomb.isOpen).toBe(true);
+
+    // Replay remaining steps through explosion, saw evasion, switch activation, and simultaneous exit arrival
+    for (let i = 6; i < LEVEL_18_DEF.solutionTrace.length; i++) {
       const dir = LEVEL_18_DEF.solutionTrace[i];
       session.turnEngine.handleInput(dir);
       session.turnEngine.endAnimation();
@@ -69,7 +78,7 @@ describe('Phase 8 — Level 18: The Paradox (Master Campaign)', () => {
     expect(portalReal.targetPosition.x).toBe(4);
     expect(portalReal.targetPosition.y).toBe(4);
 
-    // Turn 14 completion
+    // Turn 22 completion
     expect(session.turnEngine.state).toBe('COMPLETED');
     expect(session.player.isAtExit()).toBe(true);
     expect(session.shadow.isAtExit()).toBe(true);
@@ -89,7 +98,7 @@ describe('Phase 8 — Level 18: The Paradox (Master Campaign)', () => {
       err: res.errorDetails,
     });
     expect(res.solutionFound).toBe(true);
-    expect(res.solutionSequence.length).toBe(14);
+    expect(res.solutionSequence.length).toBe(22);
 
     const session = LevelFactory.build(LEVEL_18_DEF);
     for (let i = 0; i < LEVEL_18_DEF.solutionTrace.length; i++) {

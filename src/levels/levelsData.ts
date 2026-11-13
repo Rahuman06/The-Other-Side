@@ -1475,7 +1475,7 @@ export const ALL_LEVELS: readonly LevelDefinition[] = [
     width: 8,
     height: 6,
     difficulty: 'MASTER',
-    hint: 'Actions in one world alter routes in the other. Time the bomb after opening the rift.',
+    hint: 'Actions in one world alter routes in the other. Time the bomb, dodge the saw blade, and synchronize across the rift.',
     realStart: { x: 1, y: 1 },
     shadowStart: { x: 6, y: 1 },
     realExit: { x: 6, y: 4 },
@@ -1489,6 +1489,9 @@ export const ALL_LEVELS: readonly LevelDefinition[] = [
       { x: 3, y: 5 },
       { x: 0, y: 2 },
       { x: 2, y: 2 },
+      { x: 0, y: 3 },
+      { x: 2, y: 3 },
+      { x: 5, y: 5 },
     ],
     shadowWalls: [
       { x: 4, y: 0 },
@@ -1499,22 +1502,28 @@ export const ALL_LEVELS: readonly LevelDefinition[] = [
       { x: 4, y: 5 },
       { x: 7, y: 2 },
       { x: 5, y: 2 },
+      { x: 5, y: 3 },
+      { x: 2, y: 5 },
     ],
     timeLocks: [
       {
         id: 'tl-18-real',
         world: 'real',
         position: { x: 2, y: 1 },
-        duration: 5,
+        duration: 3,
         linkedDoorId: 'door-18-shadow-vault',
       },
     ],
     doors: [
       { id: 'door-18-shadow-vault', world: 'shadow', position: { x: 6, y: 2 }, initialOpen: false },
-      { id: 'door-18-real-portal', world: 'real', position: { x: 1, y: 2 }, initialOpen: false },
+      { id: 'door-18-real-mid', world: 'real', position: { x: 1, y: 2 }, initialOpen: false },
+      { id: 'door-18-shadow-bomb', world: 'shadow', position: { x: 3, y: 4 }, initialOpen: false },
+      { id: 'door-18-shadow-exit', world: 'shadow', position: { x: 2, y: 4 }, initialOpen: false },
     ],
     switches: [
-      { id: 'sw-18-shadow', world: 'shadow', position: { x: 6, y: 3 }, linkedDoorId: 'door-18-real-portal' },
+      { id: 'sw-18-shadow-1', world: 'shadow', position: { x: 6, y: 3 }, linkedDoorId: 'door-18-real-mid' },
+      { id: 'sw-18-real-2', world: 'real', position: { x: 1, y: 3 }, linkedDoorId: 'door-18-shadow-bomb' },
+      { id: 'sw-18-real-exit', world: 'real', position: { x: 6, y: 2 }, linkedDoorId: 'door-18-shadow-exit' },
     ],
     portals: [
       {
@@ -1529,7 +1538,7 @@ export const ALL_LEVELS: readonly LevelDefinition[] = [
         world: 'shadow',
         position: { x: 6, y: 4 },
         targetWorld: 'shadow',
-        targetPosition: { x: 3, y: 4 },
+        targetPosition: { x: 3, y: 5 },
       },
     ],
     bombs: [
@@ -1546,38 +1555,45 @@ export const ALL_LEVELS: readonly LevelDefinition[] = [
     destructibleWalls: [
       { id: 'dw-18-real', world: 'real', position: { x: 5, y: 4 } },
     ],
+    movingHazards: [
+      {
+        id: 'saw-18-real',
+        world: 'real',
+        path: [
+          { x: 5, y: 3 },
+          { x: 6, y: 3 },
+        ],
+        initialIndex: 0,
+      },
+    ],
+    checkpoints: [
+      { id: 'cp-18', realPosition: { x: 1, y: 3 }, shadowPosition: { x: 3, y: 5 } },
+    ],
     solutionTrace: [
-      'right', // 1. Real to (2,1) [activates tl-18-real and removes wall (0,2)]; Shadow to (5,1)
+      'right', // 1. Real to (2,1) [starts tl-18-real, 3-turn window!]; Shadow to (5,1)
       'left',  // 2. Real to (1,1); Shadow to (6,1)
-      'down',  // 3. Real held at (1,2) by locked door; Shadow enters open vault door (6,2)
-      'down',  // 4. Shadow hits sw-18-shadow (6,3) [unlocks door-18-real-portal (1,2)!]; Real drops into (1,2)
-      'down',  // 5. Shadow enters p-18-shadow (6,4) -> teleports to (3,4)! Real to (1,3)
-      'up',    // 6. Shadow advances to (3,3) [arms bomb-18-shadow!]; Real calibrates to (1,2)
-      'down',  // 7. Bomb ticks (timer: 2); Real to (1,3); Shadow to (3,4)
-      'right', // 8. Bomb ticks (timer: 1); Real to (2,3); Shadow to (2,4)
-      'down',  // 9. BOMB EXPLODES! Destroys dw-18-real at (5,4) AND shifts p-18-real destination to (4,4)!
-      'down',  // 10. Real moves to portal p-18-real (1,4)
-      'up',    // 11. Stagger step calibration
-      'right', // 12. Real enters p-18-real at (1,4) [teleports to shifted dest (4,4)!]; Shadow to (2,4)
-      'right', // 13. Real advances through destroyed wall (5,4); Shadow to (1,4)
-      'down',  // 14. Real arrives at Real Exit (6,4); Shadow arrives at Shadow Exit (1,4) -> VICTORY!
+      'down',  // 3. Real held at (1,1); Shadow penetrates vault door (6,2)
+      'down',  // 4. Shadow activates sw-18-shadow-1 (6,3) [unseals door-18-real-mid (1,2)!]
+      'down',  // 5. Real to (1,2); Shadow enters portal p-18-shadow (6,4) -> teleports to (3,5)!
+      'down',  // 6. Real activates sw-18-real-2 (1,3) [unseals bomb chamber door-18-shadow-bomb (3,4)!]
+      'up',    // 7. Shadow steps through door into bomb chamber (3,4); Real to (1,2)
+      'up',    // 8. Shadow steps on bomb-18-shadow (3,3) [ARMS BOMB, timer: 3!]; Real retreats to (1,1)
+      'down',  // 9. Shadow retreats from blast to (3,4); Real to (1,2)
+      'down',  // 10. Shadow shelters at (3,5); Real to (1,3) [activates cp-18 checkpoint!]
+      'up',    // 11. BOMB DETONATES! Pulverizes dw-18-real (5,4), collapses (1,1), shifts p-18-real to (4,4)!
+      'down',  // 12. Real approaches portal at (1,3); Shadow holds shelter (3,5)
+      'down',  // 13. Real enters portal p-18-real (1,4) -> TELEPORTS TO EXIT VESTIBULE (4,4)!
+      'up',    // 14. Real to (4,3); Shadow to (3,4)
+      'up',    // 15. Real to (4,2); Shadow to (3,3)
+      'right', // 16. Real to (5,2); Shadow to (2,3)
+      'right', // 17. Real steps on sw-18-real-exit (6,2) [UNLOCKS SHADOW EXIT DOOR (2,4)!]; Shadow to (1,3)
+      'right', // 18. Real traverses northern perimeter (7,2) avoiding saw line; Shadow to (0,3)
+      'down',  // 19. Real descends column 7 to (7,3); Shadow to (0,4)
+      'down',  // 20. Real descends to (7,4); Shadow to (0,5)
+      'left',  // 21. Real moves to (6,4); Shadow moves to (1,5)
+      'up',    // 22. Real at Real Exit (6,4); Shadow reaches Shadow Exit (1,4) -> SIMULTANEOUS VICTORY!
     ],
     surpriseEvents: [
-      {
-        id: 'se-18-quantum-tremor',
-        name: 'Quantum Displacement Tremor',
-        triggerType: 'STEP_ON',
-        triggerWorld: 'real',
-        triggerPosition: { x: 2, y: 1 },
-        targetWorld: 'real',
-        targetType: 'WALL',
-        targetPosition: { x: 0, y: 2 },
-        activationDelay: 0,
-        action: 'REMOVE_WALL',
-        animation: 'shockwave',
-        sound: 'distortion',
-        warningClue: 'Quantum displacement wave fracturing the dimensional anchor',
-      },
       {
         id: 'se-18-bomb-portal-shift',
         name: 'Explosive Rift Realignment',
@@ -1594,18 +1610,18 @@ export const ALL_LEVELS: readonly LevelDefinition[] = [
         warningClue: 'The cross-world blast ripples through the rift, shifting the real portal anchor to the exit chamber!',
       },
       {
-        id: 'se-18-singularity-echo',
-        name: 'Singularity Echo Collapse',
+        id: 'se-18-bomb-collapse-old',
+        name: 'Singularity Route Collapse',
         triggerType: 'BOMB_DETONATED',
         triggerSourceId: 'bomb-18-shadow',
-        targetWorld: 'shadow',
+        targetWorld: 'real',
         targetType: 'COLLAPSE_FLOOR',
-        targetPosition: { x: 4, y: 0 },
+        targetPosition: { x: 1, y: 1 },
         activationDelay: 0,
         action: 'COLLAPSE_TILE',
         animation: 'crumble',
-        sound: 'explosion',
-        warningClue: 'Bomb shockwave reverberating into the void ceiling',
+        sound: 'crumble',
+        warningClue: 'The shockwave shatters the northern origin chamber into a bottomless abyss!',
       },
     ],
   },

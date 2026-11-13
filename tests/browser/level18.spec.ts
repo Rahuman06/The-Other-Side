@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 
-test.describe('Phase 8 — Level 18: The Paradox (Master Campaign)', () => {
-  test('executes Level 18 time-lock vault, cross-world bomb detonation, portal shift surprise, and simultaneous exit arrival', async ({ page }) => {
+test.describe('Phase 8 — Level 18: The Paradox (Master Campaign - Hard Mode)', () => {
+  test('executes Level 18 22-step puzzle: time-lock vault, dual switches, bomb evacuation, portal shift surprise, saw evasion, and simultaneous exit arrival', async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 720 });
     const consoleErrors: string[] = [];
     page.on('console', (msg) => {
@@ -45,62 +45,94 @@ test.describe('Phase 8 — Level 18: The Paradox (Master Campaign)', () => {
     // Capture initial state
     await page.screenshot({ path: 'screenshots/phase8-level18-initial.png' });
 
-    // Step 1: Move right -> Real activates tl-18-real (2, 1), opening vault door (6, 2)
+    // Step 1: Right -> Real to (2, 1) starts tl-18-real
     await page.keyboard.press('ArrowRight');
-    await page.waitForTimeout(400);
+    await page.waitForTimeout(300);
 
-    // Step 2: Move left -> Real returns to (1, 1)
+    // Step 2: Left -> Real to (1, 1)
     await page.keyboard.press('ArrowLeft');
-    await page.waitForTimeout(400);
+    await page.waitForTimeout(300);
 
-    // Step 3: Move down -> Shadow enters vault door (6, 2)
+    // Step 3: Down -> Shadow enters open vault door (6, 2)
     await page.keyboard.press('ArrowDown');
-    await page.waitForTimeout(400);
+    await page.waitForTimeout(300);
 
-    // Step 4: Move down -> Shadow hits switch sw-18-shadow (6, 3), unlocking real portal door (1, 2)
+    // Step 4: Down -> Shadow activates sw-18-shadow-1 (6, 3), unsealing door-18-real-mid (1, 2)
     await page.keyboard.press('ArrowDown');
-    await page.waitForTimeout(400);
+    await page.waitForTimeout(300);
 
-    // Step 5: Move down -> Shadow enters portal p-18-shadow (6, 4) -> teleports to (3, 4)
+    // Step 5: Down -> Real to (1, 2); Shadow enters portal p-18-shadow (6, 4) -> teleports to (3, 5)
     await page.keyboard.press('ArrowDown');
-    await page.waitForTimeout(400);
+    await page.waitForTimeout(300);
 
-    // Step 6: Move up -> Shadow steps onto bomb-18-shadow (3, 3), igniting fuse!
+    // Step 6: Down -> Real activates sw-18-real-2 (1, 3), unsealing door-18-shadow-bomb (3, 4)
+    await page.keyboard.press('ArrowDown');
+    await page.waitForTimeout(300);
+
+    // Step 7: Up -> Shadow enters bomb chamber (3, 4)
     await page.keyboard.press('ArrowUp');
-    await page.waitForTimeout(400);
+    await page.waitForTimeout(300);
 
-    // Step 7: Move down -> Shadow retreats to (3, 4) away from blast radius
+    // Step 8: Up -> Shadow steps on bomb-18-shadow (3, 3) [ignites 3-turn fuse!]
+    await page.keyboard.press('ArrowUp');
+    await page.waitForTimeout(300);
+
+    // Step 9: Down -> Shadow retreats from blast to (3, 4)
     await page.keyboard.press('ArrowDown');
-    await page.waitForTimeout(400);
+    await page.waitForTimeout(300);
 
-    // Step 8: Move right
-    await page.keyboard.press('ArrowRight');
-    await page.waitForTimeout(400);
-
-    // Step 9: Move down -> Bomb detonates! Destroys dw-18-real (5, 4) and triggers se-18-bomb-portal-shift!
+    // Step 10: Down -> Shadow reaches shelter at (3, 5); Real at (1, 3) hits checkpoint cp-18
     await page.keyboard.press('ArrowDown');
-    await page.waitForTimeout(600);
+    await page.waitForTimeout(300);
+
+    // Step 11: Up -> BOMB DETONATES! Pulverizes dw-18-real (5, 4), collapses (1, 1), shifts p-18-real to (4, 4)!
+    await page.keyboard.press('ArrowUp');
+    await page.waitForTimeout(500);
     await page.screenshot({ path: 'screenshots/phase8-level18-bomb-explode.png' });
 
-    // Step 10: Move down
+    // Step 12: Down -> Real approaches portal entry at (1, 3)
     await page.keyboard.press('ArrowDown');
-    await page.waitForTimeout(400);
+    await page.waitForTimeout(300);
 
-    // Step 11: Move up
-    await page.keyboard.press('ArrowUp');
-    await page.waitForTimeout(400);
-
-    // Step 12: Move right -> Real enters p-18-real (1, 4), which now teleports to (4, 4)!
-    await page.keyboard.press('ArrowRight');
-    await page.waitForTimeout(600);
+    // Step 13: Down -> Real enters portal p-18-real (1, 4) -> TELEPORTS TO (4, 4)!
+    await page.keyboard.press('ArrowDown');
+    await page.waitForTimeout(500);
     await page.screenshot({ path: 'screenshots/phase8-level18-portal-shift.png' });
 
-    // Step 13: Move right -> Real to (5, 4), Shadow to (2, 4)
-    await page.keyboard.press('ArrowRight');
-    await page.waitForTimeout(400);
+    // Step 14: Up -> Real to (4, 3); Shadow to (3, 4)
+    await page.keyboard.press('ArrowUp');
+    await page.waitForTimeout(300);
 
-    // Step 14: Move down -> Simultaneous dual exit arrival at (6, 4) and (1, 4)!
+    // Step 15: Up -> Real to (4, 2); Shadow to (3, 3)
+    await page.keyboard.press('ArrowUp');
+    await page.waitForTimeout(300);
+
+    // Step 16: Right -> Real to (5, 2); Shadow to (2, 3)
+    await page.keyboard.press('ArrowRight');
+    await page.waitForTimeout(300);
+
+    // Step 17: Right -> Real activates sw-18-real-exit (6, 2) [unlocks door-18-shadow-exit (2, 4)!]; Shadow to (1, 3)
+    await page.keyboard.press('ArrowRight');
+    await page.waitForTimeout(300);
+
+    // Step 18: Right -> Real traverses (7, 2) avoiding saw-18-real patrol line; Shadow to (0, 3)
+    await page.keyboard.press('ArrowRight');
+    await page.waitForTimeout(300);
+
+    // Step 19: Down -> Real descends to (7, 3); Shadow to (0, 4)
     await page.keyboard.press('ArrowDown');
+    await page.waitForTimeout(300);
+
+    // Step 20: Down -> Real descends to (7, 4); Shadow to (0, 5)
+    await page.keyboard.press('ArrowDown');
+    await page.waitForTimeout(300);
+
+    // Step 21: Left -> Real to (6, 4); Shadow to (1, 5)
+    await page.keyboard.press('ArrowLeft');
+    await page.waitForTimeout(300);
+
+    // Step 22: Up -> Simultaneous dual exit arrival!
+    await page.keyboard.press('ArrowUp');
     await page.waitForTimeout(700);
 
     // Capture completion screenshot
