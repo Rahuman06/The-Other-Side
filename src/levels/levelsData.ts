@@ -1229,7 +1229,7 @@ export const ALL_LEVELS: readonly LevelDefinition[] = [
       { id: 'door-16-shadow', world: 'shadow', position: { x: 4, y: 2 }, initialOpen: false },
     ],
     switches: [
-      { id: 'sw-16-real', world: 'real', position: { x: 2, y: 3 }, linkedDoorId: 'magnet-16-shadow' },
+      { id: 'sw-16-real', world: 'real', position: { x: 2, y: 3 }, linkedDoorId: 'door-16-shadow' },
       { id: 'sw-16-shadow', world: 'shadow', position: { x: 5, y: 3 }, linkedDoorId: 'mirror-16-real' },
     ],
     pressurePlates: [
@@ -1246,7 +1246,6 @@ export const ALL_LEVELS: readonly LevelDefinition[] = [
         direction: 'left',
         polarity: 'ATTRACT',
         initialActive: false,
-        linkedSwitchId: 'sw-16-real',
       },
     ],
     laserEmitters: [
@@ -1256,7 +1255,7 @@ export const ALL_LEVELS: readonly LevelDefinition[] = [
       { id: 'mirror-16-real', world: 'real', position: { x: 2, y: 1 }, orientation: '/', rotatable: true, linkedSwitchId: 'sw-16-shadow' },
     ],
     laserReceivers: [
-      { id: 'rx-16-real', world: 'real', position: { x: 3, y: 1 }, linkedDoorId: 'door-16-shadow' },
+      { id: 'rx-16-real', world: 'real', position: { x: 3, y: 1 }, linkedDoorId: 'magnet-16-shadow' },
     ],
     timeLocks: [
       { id: 'tl-16-real', world: 'real', position: { x: 1, y: 3 }, duration: 6, targetHazardIds: ['saw-16-shadow'] },
@@ -1288,8 +1287,8 @@ export const ALL_LEVELS: readonly LevelDefinition[] = [
     ],
     solutionTrace: [
       'down',  // 1. Real steps on tl-16-real (1,3); Shadow held by wall (6,3). Freezes saw-16-shadow!
-      'right', // 2. Real to (2,3) [hits sw-16-real -> activates magnet-16-shadow]; Shadow to (5,2). Magnet pulls block-16-shadow onto plate-16-shadow (6,1) -> unlocks door-16-real!
-      'down',  // 3. Real holds at wall; Shadow steps on sw-16-shadow (5,3) -> rotates mirror-16-real to '\' -> laser hits rx-16-real -> unlocks door-16-shadow!
+      'right', // 2. Real to (2,3) [hits sw-16-real -> unlocks door-16-shadow]; Shadow to (5,2).
+      'down',  // 3. Real holds at wall; Shadow steps on sw-16-shadow (5,3) -> rotates mirror-16-real to '\' -> laser hits rx-16-real -> activates magnet-16-shadow in opposite world! Magnet pulls block-16-shadow onto plate-16-shadow (6,1) -> unlocks door-16-real!
       'up',    // 4. Real to (2,2); Shadow to (5,2).
       'right', // 5. Real enters open door-16-real (3,2); Shadow enters open door-16-shadow (4,2).
       'right', // 6. Real crosses into (4,2); Shadow crosses into (3,2).
@@ -1300,19 +1299,18 @@ export const ALL_LEVELS: readonly LevelDefinition[] = [
     ],
     surpriseEvents: [
       {
-        id: 'se-16-illusion-rift',
-        name: 'Mirrored Dimension Rift',
-        triggerType: 'STEP_ON',
-        triggerWorld: 'real',
-        triggerPosition: { x: 1, y: 3 },
+        id: 'se-16-optical-deception',
+        name: 'The Wrong Reflection',
+        triggerType: 'SWITCH_TOGGLE',
+        triggerSourceId: 'sw-16-shadow',
         targetWorld: 'shadow',
         targetType: 'WALL',
         targetPosition: { x: 7, y: 0 },
         activationDelay: 0,
         action: 'REMOVE_WALL',
-        animation: 'flicker',
+        animation: 'spark',
         sound: 'distortion',
-        warningClue: 'Mirrored dimensions warp, revealing the unstitched void',
+        warningClue: 'A subtle magnetic pulse ripples across the rift; the optical receiver hums with magnetic force.',
       },
       {
         id: 'se-16-mirror-trap',
@@ -1327,7 +1325,7 @@ export const ALL_LEVELS: readonly LevelDefinition[] = [
         action: 'COLLAPSE_TILE',
         animation: 'crumble',
         sound: 'crumble',
-        warningClue: 'The reflection shatters where you stood moments ago',
+        warningClue: 'The reflection shatters where you stood moments ago.',
       },
     ],
   },

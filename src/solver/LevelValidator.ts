@@ -132,6 +132,7 @@ export class LevelValidator {
     const objectIds = new Set<string>();
     const doorIds = new Set<string>();
     const bombIds = new Set<string>();
+    const magnetIds = new Set<string>();
 
     for (const d of level.doors ?? []) {
       if (objectIds.has(d.id)) {
@@ -264,6 +265,23 @@ export class LevelValidator {
       }
     }
 
+
+    for (const mf of level.magneticFields ?? []) {
+      if (objectIds.has(mf.id)) {
+        errors.push(`Duplicate puzzle object ID: "${mf.id}"`);
+      }
+      objectIds.add(mf.id);
+      magnetIds.add(mf.id);
+
+      const pt = GridPoint.from(mf.position);
+      if (!pt.isInBounds(level.width, level.height)) {
+        errors.push(`Magnetic field "${mf.id}" at (${pt.x}, ${pt.y}) is out of bounds`);
+      }
+      if (mf.polarity !== 'ATTRACT' && mf.polarity !== 'REPEL') {
+        errors.push(`Magnetic field "${mf.id}" has invalid polarity: "${mf.polarity}"`);
+      }
+    }
+
     for (const lr of level.laserReceivers ?? []) {
       if (objectIds.has(lr.id)) {
         errors.push(`Duplicate puzzle object ID: "${lr.id}"`);
@@ -274,8 +292,8 @@ export class LevelValidator {
       if (!pt.isInBounds(level.width, level.height)) {
         errors.push(`Laser receiver "${lr.id}" at (${pt.x}, ${pt.y}) is out of bounds`);
       }
-      if (!doorIds.has(lr.linkedDoorId)) {
-        errors.push(`Laser receiver "${lr.id}" targets nonexistent door "${lr.linkedDoorId}"`);
+      if (!doorIds.has(lr.linkedDoorId) && !magnetIds.has(lr.linkedDoorId)) {
+        errors.push(`Laser receiver "${lr.id}" targets nonexistent door or magnet "${lr.linkedDoorId}"`);
       }
     }
 
@@ -311,22 +329,6 @@ export class LevelValidator {
       }
     }
 
-    const magnetIds = new Set<string>();
-    for (const mf of level.magneticFields ?? []) {
-      if (objectIds.has(mf.id)) {
-        errors.push(`Duplicate puzzle object ID: "${mf.id}"`);
-      }
-      objectIds.add(mf.id);
-      magnetIds.add(mf.id);
-
-      const pt = GridPoint.from(mf.position);
-      if (!pt.isInBounds(level.width, level.height)) {
-        errors.push(`Magnetic field "${mf.id}" at (${pt.x}, ${pt.y}) is out of bounds`);
-      }
-      if (mf.polarity !== 'ATTRACT' && mf.polarity !== 'REPEL') {
-        errors.push(`Magnetic field "${mf.id}" has invalid polarity: "${mf.polarity}"`);
-      }
-    }
 
     const switchCounts = new Map<string, number>();
     for (const sw of level.switches ?? []) {

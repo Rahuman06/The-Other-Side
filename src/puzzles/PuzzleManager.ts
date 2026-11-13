@@ -677,6 +677,13 @@ export class PuzzleManager {
         }
       }
 
+      for (const rx of this.laserReceivers.values()) {
+        const mf = this.magneticFields.get(rx.linkedDoorId);
+        if (mf) {
+          mf.setActive(rx.isPowered);
+        }
+      }
+
       this.recalculateAllDoors();
     }
 
