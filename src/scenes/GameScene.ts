@@ -14,6 +14,9 @@ import { InputController } from '../systems/InputController';
 import { StorageManager } from '../storage/StorageManager';
 import { SoundEffects } from '../audio/SoundEffects';
 import { pokiBridge } from '../poki/PokiIntegration';
+import { CharacterAnimator } from '../rendering/CharacterAnimator';
+import { VisualEffectsManager } from '../rendering/VisualEffectsManager';
+import { PuzzleObjectRenderer } from '../rendering/PuzzleObjectRenderer';
 
 export class GameScene extends Phaser.Scene {
   private levelId: number = 1;
@@ -38,11 +41,16 @@ export class GameScene extends Phaser.Scene {
   private shadowOriginX: number = 0;
   private shadowOriginY: number = 0;
 
-  // Visual sprites and graphics
-  private realSprite!: Phaser.GameObjects.Sprite;
-  private shadowSprite!: Phaser.GameObjects.Sprite;
+  // Visual Animation & Effects Systems
+  private characterAnimator!: CharacterAnimator;
+  private vfxManager!: VisualEffectsManager;
+  private puzzleRenderer!: PuzzleObjectRenderer;
   private dynamicPuzzleGraphics!: Phaser.GameObjects.Graphics;
   private bombLabels: Map<string, Phaser.GameObjects.Text> = new Map();
+
+  // State tracking
+  private lastAttemptedDirection: MoveDirection = 'right';
+  private knownDetonatedBombs: Set<string> = new Set();
 
   constructor() {
     super('GameScene');
@@ -52,6 +60,7 @@ export class GameScene extends Phaser.Scene {
     this.levelId = data?.levelId ?? 1;
     this.levelDef = ALL_LEVELS.find((l) => l.id === this.levelId) ?? ALL_LEVELS[0];
     this.movesCount = 0;
+    this.knownDetonatedBombs.clear();
 
     this.storage = new StorageManager();
     const progress = this.storage.getProgress();
@@ -63,6 +72,7 @@ export class GameScene extends Phaser.Scene {
 
     const { width, height } = this.scale;
     const halfWidth = width / 2;
+    const isReduced = this.storage.getProgress().reducedMotion;
 
     // 1. World Backgrounds
     const bg = this.add.graphics();
@@ -82,17 +92,21 @@ export class GameScene extends Phaser.Scene {
     // 3. Layout Grid
     this.calculateGridLayout(width, height);
 
-    // 4. Render Static Grids (Floors, Walls, Exits, Hazards)
+    // 4. Initialize Visual Effects & Procedural Animators
+    this.vfxManager = new VisualEffectsManager(this, isReduced);
+    this.puzzleRenderer = new PuzzleObjectRenderer(this.vfxManager, this.cellSize);
+    this.characterAnimator = new CharacterAnimator(this, this.cellSize, isReduced);
+
+    // 5. Render Static Grids (Floors, Walls, Exits, Static Hazards)
     this.renderStaticGrids();
 
-    // 5. Dynamic Puzzle Graphics (Doors, Switches, Plates, Checkpoints)
-    this.dynamicPuzzleGraphics = this.add.graphics();
-    this.renderDynamicPuzzleElements();
+    // 6. Dynamic Puzzle Graphics Layer
+    this.dynamicPuzzleGraphics = this.add.graphics().setDepth(15);
 
-    // 6. Characters
+    // 7. Initialize Characters Procedural Stickmen
     this.createCharacters();
 
-    // 7. Header
+    // 8. Header
     this.header = new Header(
       this,
       width,
@@ -109,17 +123,17 @@ export class GameScene extends Phaser.Scene {
       }
     );
 
-    // 8. Controls Guide
+    // 9. Controls Guide
     new ControlsGuide(this, width, height);
 
-    // 9. Touch Controls
+    // 10. Touch Controls
     this.touchControls = new TouchControls(this, width, height, {
       onDirection: (dir: MoveDirection) => this.handleDirectionInput(dir),
       onPause: () => this.togglePause(),
       onRestart: () => this.restartLevel(),
     });
 
-    // 10. Modals
+    // 11. Modals
     this.pauseModal = new PauseModal(this, width, height, {
       onResume: () => this.togglePause(),
       onRestart: () => {
@@ -144,12 +158,29 @@ export class GameScene extends Phaser.Scene {
       },
     });
 
-    // 11. Hardware Keyboard Controller
+    // 12. Hardware Keyboard Controller
     this.setupInput();
 
-    // 12. Lifecycle Cleanup Handlers to prevent memory leaks or duplicate listeners
+    // 13. Lifecycle Cleanup Handlers
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, this.shutdown, this);
     this.events.once(Phaser.Scenes.Events.DESTROY, this.shutdown, this);
+  }
+
+  public update(time: number, delta: number): void {
+    if (this.vfxManager) {
+      this.vfxManager.update(time, delta);
+    }
+    if (this.characterAnimator) {
+      this.characterAnimator.update(time, delta);
+    }
+    if (this.puzzleRenderer && this.dynamicPuzzleGraphics && this.session) {
+      this.puzzleRenderer.renderDynamicElements(
+        this.dynamicPuzzleGraphics,
+        this.session,
+        (pos, isReal) => this.getScreenCoordinates(pos, isReal),
+        this.bombLabels
+      );
+    }
   }
 
   private initializeSession(): void {
@@ -161,7 +192,10 @@ export class GameScene extends Phaser.Scene {
       onRespawn: () => this.onRespawn(),
       onCheckpointActivated: () => {
         this.soundEffects.play('checkpoint');
-        this.renderDynamicPuzzleElements();
+        const rCoords = this.getScreenCoordinates(this.session.player.position, true);
+        const sCoords = this.getScreenCoordinates(this.session.shadow.position, false);
+        this.vfxManager.spawnSparkBurst(rCoords.x, rCoords.y, 10, 0x00e5ff);
+        this.vfxManager.spawnSparkBurst(sCoords.x, sCoords.y, 10, 0x00e5ff);
       },
       onCancelAnimation: () => this.tweens.killAll(),
       onRestart: () => this.onRespawn(),
@@ -201,7 +235,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   private renderStaticGrids(): void {
-    const g = this.add.graphics();
+    const g = this.add.graphics().setDepth(2);
     const cols = this.levelDef.width;
     const rows = this.levelDef.height;
 
@@ -218,6 +252,9 @@ export class GameScene extends Phaser.Scene {
         if (rWalls.has(key)) {
           g.fillStyle(PALETTE.real.walls, 1);
           g.fillRect(x, y, this.cellSize, this.cellSize);
+          // Architectural masonry inner bevel
+          g.lineStyle(1, 0x333333, 0.4);
+          g.strokeRect(x + 1, y + 1, this.cellSize - 2, this.cellSize - 2);
         } else {
           g.fillStyle(PALETTE.real.floor, 1);
           g.fillRect(x + 1, y + 1, this.cellSize - 2, this.cellSize - 2);
@@ -235,6 +272,8 @@ export class GameScene extends Phaser.Scene {
         if (sWalls.has(key)) {
           g.fillStyle(PALETTE.shadow.walls, 1);
           g.fillRect(x, y, this.cellSize, this.cellSize);
+          g.lineStyle(1, 0xdddddd, 0.4);
+          g.strokeRect(x + 1, y + 1, this.cellSize - 2, this.cellSize - 2);
         } else {
           g.fillStyle(PALETTE.shadow.floor, 1);
           g.fillRect(x + 1, y + 1, this.cellSize - 2, this.cellSize - 2);
@@ -242,430 +281,21 @@ export class GameScene extends Phaser.Scene {
       }
     }
 
-    // 3. Exits
-    this.renderExit(g, GridPoint.from(this.levelDef.realExit), true);
-    this.renderExit(g, GridPoint.from(this.levelDef.shadowExit), false);
+    // 3. Exits (Rendered with architectural gateway styling)
+    this.puzzleRenderer.renderExit(g, GridPoint.from(this.levelDef.realExit), true, (p, isR) => this.getScreenCoordinates(p, isR));
+    this.puzzleRenderer.renderExit(g, GridPoint.from(this.levelDef.shadowExit), false, (p, isR) => this.getScreenCoordinates(p, isR));
 
-    // 4. Hazards
+    // 4. Static Hazards
     for (const hz of this.levelDef.hazards ?? []) {
       const isReal = hz.world === 'real';
       const coords = this.getScreenCoordinates(GridPoint.from(hz.position), isReal);
       const color = isReal ? 0x171717 : 0xffffff;
 
-      g.lineStyle(2, color, 0.85);
-      const sz = this.cellSize * 0.45;
-      // Cross / Hazard Marker
+      g.lineStyle(2.5, color, 0.9);
+      const sz = this.cellSize * 0.42;
       g.lineBetween(coords.x - sz, coords.y - sz, coords.x + sz, coords.y + sz);
       g.lineBetween(coords.x - sz, coords.y + sz, coords.x + sz, coords.y - sz);
-    }
-  }
-
-  private renderExit(g: Phaser.GameObjects.Graphics, pos: GridPoint, isReal: boolean): void {
-    const coords = this.getScreenCoordinates(pos, isReal);
-    const color = isReal ? PALETTE.real.character : PALETTE.shadow.character;
-
-    g.lineStyle(2, color, 0.9);
-    const s = this.cellSize * 0.65;
-    g.strokeRect(coords.x - s / 2, coords.y - s / 2, s, s);
-
-    const innerS = this.cellSize * 0.35;
-    g.lineStyle(1.5, color, 0.5);
-    g.strokeRect(coords.x - innerS / 2, coords.y - innerS / 2, innerS, innerS);
-  }
-
-  private renderDynamicPuzzleElements(): void {
-    const g = this.dynamicPuzzleGraphics;
-    g.clear();
-
-    // 1. Checkpoints
-    for (const cp of this.session.checkpoints) {
-      const rCoords = this.getScreenCoordinates(cp.realPosition, true);
-      const sCoords = this.getScreenCoordinates(cp.shadowPosition, false);
-
-      const rActive = cp.isRealVisited || cp.isActivated;
-      const sActive = cp.isShadowVisited || cp.isActivated;
-
-      // Real checkpoint circle
-      g.lineStyle(2, PALETTE.real.walls, 0.8);
-      g.strokeCircle(rCoords.x, rCoords.y, this.cellSize * 0.3);
-      if (rActive) {
-        g.fillStyle(PALETTE.real.character, 1);
-        g.fillCircle(rCoords.x, rCoords.y, this.cellSize * 0.18);
-      }
-
-      // Shadow checkpoint circle
-      g.lineStyle(2, PALETTE.shadow.walls, 0.8);
-      g.strokeCircle(sCoords.x, sCoords.y, this.cellSize * 0.3);
-      if (sActive) {
-        g.fillStyle(PALETTE.shadow.character, 1);
-        g.fillCircle(sCoords.x, sCoords.y, this.cellSize * 0.18);
-      }
-    }
-
-    // 2. Pressure Plates
-    for (const plate of this.session.puzzleManager.getAllPressurePlates()) {
-      const isReal = plate.world === 'real';
-      const coords = this.getScreenCoordinates(plate.position, isReal);
-      const size = this.cellSize * 0.5;
-
-      const strokeCol = isReal ? PALETTE.real.walls : PALETTE.shadow.walls;
-      const fillCol = isReal ? 0xcccccc : 0x444444;
-
-      g.lineStyle(1.5, strokeCol, 0.9);
-      g.strokeRoundedRect(coords.x - size / 2, coords.y - size / 2, size, size, 4);
-
-      if (plate.isPressed) {
-        g.fillStyle(fillCol, 1);
-        g.fillRoundedRect(coords.x - size / 2 + 3, coords.y - size / 2 + 3, size - 6, size - 6, 2);
-      }
-    }
-
-    // 3. Switches
-    for (const sw of this.session.puzzleManager.getAllSwitches()) {
-      const isReal = sw.world === 'real';
-      const coords = this.getScreenCoordinates(sw.position, isReal);
-      const r = this.cellSize * 0.22;
-
-      const strokeCol = isReal ? PALETTE.real.walls : PALETTE.shadow.walls;
-      const activeCol = isReal ? PALETTE.real.character : PALETTE.shadow.character;
-
-      g.lineStyle(2, strokeCol, 0.9);
-      g.strokeCircle(coords.x, coords.y, r);
-
-      if (sw.isActive) {
-        g.fillStyle(activeCol, 1);
-        g.fillCircle(coords.x, coords.y, r * 0.6);
-      }
-    }
-
-    // 4. Doors
-    for (const door of this.session.puzzleManager.getAllDoors()) {
-      const isReal = door.world === 'real';
-      const coords = this.getScreenCoordinates(door.position, isReal);
-      const size = this.cellSize * 0.8;
-
-      const strokeCol = isReal ? PALETTE.real.walls : PALETTE.shadow.walls;
-      const fillCol = isReal ? 0x222222 : 0xdddddd;
-
-      if (!door.isOpen) {
-        // Closed door: solid gate bar
-        g.fillStyle(fillCol, 0.95);
-        g.fillRoundedRect(coords.x - size / 2, coords.y - size / 2, size, size, 4);
-        g.lineStyle(2, strokeCol, 1);
-        g.strokeRoundedRect(coords.x - size / 2, coords.y - size / 2, size, size, 4);
-      } else {
-        // Open door: dashed/retracted outline
-        g.lineStyle(1.5, strokeCol, 0.35);
-        g.strokeRoundedRect(coords.x - size / 2, coords.y - size / 2, size, size, 4);
-      }
-    }
-
-    // 5. Destructible Walls
-    for (const dw of this.session.puzzleManager.getAllDestructibleWalls()) {
-      if (!dw.isDestroyed) {
-        const isReal = dw.world === 'real';
-        const coords = this.getScreenCoordinates(dw.position, isReal);
-        const size = this.cellSize * 0.88;
-        const fillCol = isReal ? 0x222222 : 0xdddddd;
-        const strokeCol = isReal ? PALETTE.real.walls : PALETTE.shadow.walls;
-
-        g.fillStyle(fillCol, 1);
-        g.fillRect(coords.x - size / 2, coords.y - size / 2, size, size);
-
-        // Cracked / segmented texture pattern
-        g.lineStyle(1.5, strokeCol, 0.7);
-        g.strokeRect(coords.x - size / 2, coords.y - size / 2, size, size);
-        g.lineBetween(coords.x - size / 2, coords.y, coords.x + size / 2, coords.y);
-        g.lineBetween(coords.x, coords.y - size / 2, coords.x, coords.y + size / 2);
-      }
-    }
-
-    // 6. Bombs
-    for (const b of this.session.puzzleManager.getAllBombs()) {
-      const isReal = b.world === 'real';
-      const coords = this.getScreenCoordinates(b.position, isReal);
-      const r = this.cellSize * 0.32;
-
-      if (!b.isDetonated) {
-        // Blast radius danger zone visualization if bomb is active
-        if (b.isActive) {
-          const blastCoords = b.getBlastCoordinates();
-          for (const blastPt of blastCoords) {
-            const blastScreen = this.getScreenCoordinates(blastPt, isReal);
-            const halfCell = this.cellSize * 0.44;
-            g.lineStyle(1.5, isReal ? 0x000000 : 0xffffff, 0.35);
-            g.strokeRect(blastScreen.x - halfCell, blastScreen.y - halfCell, halfCell * 2, halfCell * 2);
-          }
-        }
-
-        // Bomb body
-        const bombColor = isReal ? 0x111111 : 0xffffff;
-        const innerColor = isReal ? 0xffffff : 0x111111;
-        g.fillStyle(bombColor, 1);
-        g.fillCircle(coords.x, coords.y, r);
-        g.lineStyle(2, innerColor, 0.9);
-        g.strokeCircle(coords.x, coords.y, r);
-
-        // Countdown text label
-        let label = this.bombLabels.get(b.id);
-        if (!label) {
-          label = this.add.text(coords.x, coords.y, '', {
-            fontFamily: 'system-ui, monospace',
-            fontSize: '15px',
-            fontStyle: 'bold',
-            color: isReal ? '#FFFFFF' : '#000000',
-          }).setOrigin(0.5).setDepth(15);
-          this.bombLabels.set(b.id, label);
-        }
-        label.setPosition(coords.x, coords.y);
-        label.setText(b.isActive ? String(b.countdown) : String(b.initialTimer));
-        label.setVisible(true);
-      } else {
-        const label = this.bombLabels.get(b.id);
-        if (label) {
-          label.setVisible(false);
-        }
-      }
-    }
-
-    // 7. Portals
-    for (const p of this.session.puzzleManager.getAllPortals()) {
-      if (p.isActive) {
-        const isReal = p.world === 'real';
-        const coords = this.getScreenCoordinates(p.position, isReal);
-        const r = this.cellSize * 0.3;
-        const col = isReal ? PALETTE.real.character : PALETTE.shadow.character;
-
-        if (p.isCorrupted) {
-          g.lineStyle(2.5, col, 0.95);
-          g.strokeCircle(coords.x, coords.y, r);
-          g.lineStyle(1.5, col, 0.7);
-          g.strokeRect(coords.x - r * 0.4, coords.y - r * 0.4, r * 0.8, r * 0.8);
-          g.fillStyle(col, 0.8);
-          g.fillCircle(coords.x, coords.y, r * 0.2);
-        } else {
-          g.lineStyle(2, col, 0.85);
-          g.strokeCircle(coords.x, coords.y, r);
-          g.lineStyle(1.5, col, 0.5);
-          g.strokeCircle(coords.x, coords.y, r * 0.6);
-        }
-      }
-    }
-
-    // 8. Collapsing Floors
-    for (const cf of this.session.puzzleManager.getAllCollapsingFloors()) {
-      const isReal = cf.world === 'real';
-      const coords = this.getScreenCoordinates(cf.position, isReal);
-      const s = this.cellSize * 0.45;
-      const col = isReal ? PALETTE.real.character : PALETTE.shadow.character;
-
-      if (cf.floorState === 'COLLAPSED') {
-        // Pit / Void
-        g.fillStyle(isReal ? 0x222222 : 0xdddddd, 0.85);
-        g.fillRect(coords.x - s, coords.y - s, s * 2, s * 2);
-        g.lineStyle(1.5, col, 0.5);
-        g.strokeRect(coords.x - s, coords.y - s, s * 2, s * 2);
-      } else if (cf.floorState === 'CRACKED') {
-        // Warning fractured pattern
-        g.lineStyle(1.5, col, 0.7);
-        g.beginPath();
-        g.moveTo(coords.x - s * 0.8, coords.y - s * 0.6);
-        g.lineTo(coords.x, coords.y);
-        g.lineTo(coords.x + s * 0.7, coords.y - s * 0.7);
-        g.moveTo(coords.x, coords.y);
-        g.lineTo(coords.x - s * 0.5, coords.y + s * 0.7);
-        g.moveTo(coords.x, coords.y);
-        g.lineTo(coords.x + s * 0.8, coords.y + s * 0.5);
-        g.strokePath();
-      } else {
-        // Intact subtle corner markers
-        g.lineStyle(1, col, 0.25);
-        g.strokeRect(coords.x - s * 0.7, coords.y - s * 0.7, s * 1.4, s * 1.4);
-      }
-    }
-
-    // 9. Moving Saw Blades
-    for (const saw of this.session.puzzleManager.getAllMovingHazards()) {
-      const isReal = saw.world === 'real';
-      const coords = this.getScreenCoordinates(saw.position, isReal);
-      const r = this.cellSize * 0.32;
-      const col = isReal ? PALETTE.real.character : PALETTE.shadow.character;
-
-      // Saw outer disk
-      g.lineStyle(2, col, 0.9);
-      g.strokeCircle(coords.x, coords.y, r);
-
-      // Radial saw blade teeth
-      const teeth = 6;
-      for (let i = 0; i < teeth; i++) {
-        const angle = (i * Math.PI * 2) / teeth;
-        const x1 = coords.x + Math.cos(angle) * (r * 0.7);
-        const y1 = coords.y + Math.sin(angle) * (r * 0.7);
-        const x2 = coords.x + Math.cos(angle) * (r * 1.15);
-        const y2 = coords.y + Math.sin(angle) * (r * 1.15);
-        g.lineStyle(1.5, col, 0.75);
-        g.beginPath();
-        g.moveTo(x1, y1);
-        g.lineTo(x2, y2);
-        g.strokePath();
-      }
-
-      // Center bolt
-      g.fillStyle(col, 0.9);
-      g.fillCircle(coords.x, coords.y, r * 0.25);
-    }
-
-    // 10. Laser Receivers
-    for (const rx of this.session.puzzleManager.getAllLaserReceivers()) {
-      const isReal = rx.world === 'real';
-      const coords = this.getScreenCoordinates(rx.position, isReal);
-      const s = this.cellSize * 0.35;
-      const col = isReal ? PALETTE.real.character : PALETTE.shadow.character;
-
-      g.lineStyle(2, col, 0.85);
-      g.strokeRect(coords.x - s, coords.y - s, s * 2, s * 2);
-
-      if (rx.isPowered) {
-        // Glowing energized core
-        g.fillStyle(0x00ffff, 0.9);
-        g.fillCircle(coords.x, coords.y, s * 0.7);
-        g.lineStyle(3, 0x00ffff, 0.5);
-        g.strokeCircle(coords.x, coords.y, s * 1.1);
-      } else {
-        g.fillStyle(col, 0.3);
-        g.fillCircle(coords.x, coords.y, s * 0.4);
-      }
-    }
-
-    // 11. Laser Mirrors
-    for (const lm of this.session.puzzleManager.getAllLaserMirrors()) {
-      const isReal = lm.world === 'real';
-      const coords = this.getScreenCoordinates(lm.position, isReal);
-      const s = this.cellSize * 0.35;
-      const col = isReal ? PALETTE.real.character : PALETTE.shadow.character;
-
-      // Base mount circle
-      g.lineStyle(1.5, col, 0.4);
-      g.strokeCircle(coords.x, coords.y, s * 0.8);
-
-      // Angled reflector glass plate
-      g.lineStyle(3, 0x00e5ff, 0.95);
-      g.beginPath();
-      if (lm.orientation === '/') {
-        g.moveTo(coords.x - s, coords.y + s);
-        g.lineTo(coords.x + s, coords.y - s);
-      } else {
-        // '\'
-        g.moveTo(coords.x - s, coords.y - s);
-        g.lineTo(coords.x + s, coords.y + s);
-      }
-      g.strokePath();
-
-      // Mirror center pivot
-      g.fillStyle(col, 1);
-      g.fillCircle(coords.x, coords.y, s * 0.2);
-    }
-
-    // 12. Laser Emitters
-    for (const emitter of this.session.puzzleManager.getAllLaserEmitters()) {
-      const isReal = emitter.world === 'real';
-      const coords = this.getScreenCoordinates(emitter.position, isReal);
-      const r = this.cellSize * 0.3;
-      const col = isReal ? PALETTE.real.character : PALETTE.shadow.character;
-
-      g.fillStyle(col, 1);
-      g.fillCircle(coords.x, coords.y, r);
-
-      // Emitter nozzle pointing in direction
-      const nozzleLen = this.cellSize * 0.38;
-      let nx = coords.x;
-      let ny = coords.y;
-      switch (emitter.direction) {
-        case 'up': ny -= nozzleLen; break;
-        case 'down': ny += nozzleLen; break;
-        case 'left': nx -= nozzleLen; break;
-        case 'right': nx += nozzleLen; break;
-      }
-      g.lineStyle(3, 0x00ffff, emitter.isActive ? 1 : 0.2);
-      g.lineBetween(coords.x, coords.y, nx, ny);
-    }
-
-    // 13. Active Laser Beams
-    const laserSim = this.session.puzzleManager.simulateLasers(
-      this.session.player.position,
-      this.session.shadow.position
-    );
-
-    for (const seg of laserSim.beamSegments) {
-      const isReal = seg.world === 'real';
-      const fromCoords = this.getScreenCoordinates(seg.from, isReal);
-      const toCoords = this.getScreenCoordinates(seg.to, isReal);
-
-      // Outer glow
-      g.lineStyle(4, 0x00e5ff, 0.35);
-      g.lineBetween(fromCoords.x, fromCoords.y, toCoords.x, toCoords.y);
-
-      // Core energetic beam
-      g.lineStyle(2, 0xffffff, 0.95);
-      g.lineBetween(fromCoords.x, fromCoords.y, toCoords.x, toCoords.y);
-    }
-
-    // 14. Time Locks
-    for (const tl of this.session.puzzleManager.getAllTimeLocks()) {
-      const isReal = tl.world === 'real';
-      const coords = this.getScreenCoordinates(tl.position, isReal);
-      const s = this.cellSize * 0.38;
-      const col = isReal ? PALETTE.real.character : PALETTE.shadow.character;
-
-      // Outer chronometer frame
-      g.lineStyle(2, col, 0.9);
-      g.strokeCircle(coords.x, coords.y, s);
-
-      // Hourglass / clock tick marks
-      g.lineStyle(1.5, tl.isActive ? 0x00e5ff : col, tl.isActive ? 1 : 0.4);
-      g.beginPath();
-      g.moveTo(coords.x, coords.y - s * 0.7);
-      g.lineTo(coords.x, coords.y);
-      g.lineTo(coords.x + s * 0.5, coords.y);
-      g.strokePath();
-
-      if (tl.isActive) {
-        g.fillStyle(0x00e5ff, 0.25);
-        g.fillCircle(coords.x, coords.y, s);
-      }
-    }
-
-    // 15. Movable Blocks
-    for (const mb of this.session.puzzleManager.getAllMovableBlocks()) {
-      const isReal = mb.world === 'real';
-      const coords = this.getScreenCoordinates(mb.position, isReal);
-      const s = this.cellSize * 0.4;
-      const fillCol = isReal ? 0x333333 : 0xcccccc;
-      const strokeCol = isReal ? 0xffffff : 0x000000;
-
-      g.fillStyle(fillCol, 0.95);
-      g.fillRoundedRect(coords.x - s, coords.y - s, s * 2, s * 2, 4);
-      g.lineStyle(2, strokeCol, 0.9);
-      g.strokeRoundedRect(coords.x - s, coords.y - s, s * 2, s * 2, 4);
-
-      // Core magnetic polarity emblem
-      g.lineStyle(2, isReal ? 0x00ffff : 0xff3366, 1);
-      g.strokeRect(coords.x - s * 0.4, coords.y - s * 0.4, s * 0.8, s * 0.8);
-    }
-
-    // 16. Magnetic Fields
-    for (const mf of this.session.puzzleManager.getAllMagneticFields()) {
-      if (!mf.isActive) continue;
-      const isReal = mf.world === 'real';
-      const coords = this.getScreenCoordinates(mf.position, isReal);
-      const s = this.cellSize * 0.35;
-      const col = mf.polarity === 'ATTRACT' ? 0x00e5ff : 0xff9900;
-
-      // Magnetic emitter dish
-      g.lineStyle(2, col, 0.9);
-      g.strokeCircle(coords.x, coords.y, s);
-      g.fillStyle(col, 0.3);
-      g.fillCircle(coords.x, coords.y, s * 0.6);
+      g.strokeRect(coords.x - sz * 0.8, coords.y - sz * 0.8, sz * 1.6, sz * 1.6);
     }
   }
 
@@ -673,13 +303,8 @@ export class GameScene extends Phaser.Scene {
     const realCoords = this.getScreenCoordinates(this.session.player.position, true);
     const shadowCoords = this.getScreenCoordinates(this.session.shadow.position, false);
 
-    this.realSprite = this.add.sprite(realCoords.x, realCoords.y, 'char_real');
-    this.realSprite.setDisplaySize(this.cellSize * 0.75, this.cellSize * 0.75);
-    this.realSprite.setDepth(10);
-
-    this.shadowSprite = this.add.sprite(shadowCoords.x, shadowCoords.y, 'char_shadow');
-    this.shadowSprite.setDisplaySize(this.cellSize * 0.75, this.cellSize * 0.75);
-    this.shadowSprite.setDepth(10);
+    this.characterAnimator.setPosition(true, realCoords.x, realCoords.y);
+    this.characterAnimator.setPosition(false, shadowCoords.x, shadowCoords.y);
   }
 
   private setupInput(): void {
@@ -699,7 +324,6 @@ export class GameScene extends Phaser.Scene {
     let pointerDown = false;
 
     this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
-      // Ignore clicks outside active play area (e.g. Header bar or bottom controls)
       if (pointer.y < 70 || pointer.y > this.scale.height - 40) return;
       pointerStartX = pointer.x;
       pointerStartY = pointer.y;
@@ -715,14 +339,12 @@ export class GameScene extends Phaser.Scene {
       const dragThreshold = 25;
 
       if (Math.abs(dx) > dragThreshold || Math.abs(dy) > dragThreshold) {
-        // Drag / swipe gesture
         if (Math.abs(dx) > Math.abs(dy)) {
           this.handleDirectionInput(dx > 0 ? 'right' : 'left');
         } else {
           this.handleDirectionInput(dy > 0 ? 'down' : 'up');
         }
       } else {
-        // Direct click relative to clicked character
         const isRealWorld = pointer.x < this.scale.width / 2;
         const targetEntity = isRealWorld ? this.session.player : this.session.shadow;
         const screenPos = this.getScreenCoordinates(targetEntity.position, isRealWorld);
@@ -736,7 +358,6 @@ export class GameScene extends Phaser.Scene {
             if (isRealWorld) {
               this.handleDirectionInput(clickRight ? 'right' : 'left');
             } else {
-              // Clicking right of shadow asks shadow to move right, which is 'left' input
               this.handleDirectionInput(clickRight ? 'left' : 'right');
             }
           } else {
@@ -749,6 +370,7 @@ export class GameScene extends Phaser.Scene {
 
   private handleDirectionInput(direction: MoveDirection): void {
     if (this.session.turnEngine.state !== 'PLAYING') return;
+    this.lastAttemptedDirection = direction;
     this.session.turnEngine.handleInput(direction);
   }
 
@@ -765,45 +387,69 @@ export class GameScene extends Phaser.Scene {
     // Audio step
     this.soundEffects.play('step');
 
+    // 1. Detect any newly detonated bombs and trigger explosion shockwaves
+    for (const b of this.session.puzzleManager.getAllBombs()) {
+      if (b.isDetonated && !this.knownDetonatedBombs.has(b.id)) {
+        this.knownDetonatedBombs.add(b.id);
+        const bCoords = this.getScreenCoordinates(b.position, b.world === 'real');
+        this.vfxManager.triggerExplosion(bCoords.x, bCoords.y, b.world === 'real', this.cellSize * (b.radius + 0.6));
+        if (!isReduced) {
+          this.cameras.main.shake(120, 0.008);
+        }
+      }
+    }
+
+    // 2. Animate Characters
     let completedTweens = 0;
-    const onTweenComplete = () => {
+    const onAnimationDone = () => {
       completedTweens++;
       if (completedTweens === 2) {
-        // Step 10: Animation complete -> release turn engine lock
         this.session.turnEngine.endAnimation();
-        this.renderDynamicPuzzleElements();
       }
     };
 
+    // Check if player teleported via portal (> 1 tile delta)
+    const pDist = Math.abs(result.playerNewPosition.x - result.playerOldPosition.x) +
+      Math.abs(result.playerNewPosition.y - result.playerOldPosition.y);
+    const sDist = Math.abs(result.shadowNewPosition.x - result.shadowOldPosition.x) +
+      Math.abs(result.shadowNewPosition.y - result.shadowOldPosition.y);
+
     if (result.playerMoved) {
-      this.tweens.add({
-        targets: this.realSprite,
-        x: realCoords.x,
-        y: realCoords.y,
-        duration,
-        ease: ANIMATION.EASE,
-        onComplete: onTweenComplete,
-      });
+      if (pDist > 1) {
+        // Portal warp
+        const oldCoords = this.getScreenCoordinates(result.playerOldPosition, true);
+        this.characterAnimator.animatePortalWarp(true, oldCoords.x, oldCoords.y, realCoords.x, realCoords.y, onAnimationDone);
+      } else {
+        const pDir: MoveDirection = result.playerNewPosition.x > result.playerOldPosition.x ? 'right'
+          : result.playerNewPosition.x < result.playerOldPosition.x ? 'left'
+          : result.playerNewPosition.y > result.playerOldPosition.y ? 'down' : 'up';
+        this.characterAnimator.animateMove(true, realCoords.x, realCoords.y, pDir, duration, onAnimationDone);
+      }
     } else {
-      onTweenComplete();
+      onAnimationDone();
     }
 
     if (result.shadowMoved) {
-      this.tweens.add({
-        targets: this.shadowSprite,
-        x: shadowCoords.x,
-        y: shadowCoords.y,
-        duration,
-        ease: ANIMATION.EASE,
-        onComplete: onTweenComplete,
-      });
+      if (sDist > 1) {
+        // Portal warp
+        const oldCoords = this.getScreenCoordinates(result.shadowOldPosition, false);
+        this.characterAnimator.animatePortalWarp(false, oldCoords.x, oldCoords.y, shadowCoords.x, shadowCoords.y, onAnimationDone);
+      } else {
+        const sDir: MoveDirection = result.shadowNewPosition.x > result.shadowOldPosition.x ? 'right'
+          : result.shadowNewPosition.x < result.shadowOldPosition.x ? 'left'
+          : result.shadowNewPosition.y > result.shadowOldPosition.y ? 'down' : 'up';
+        this.characterAnimator.animateMove(false, shadowCoords.x, shadowCoords.y, sDir, duration, onAnimationDone);
+      }
     } else {
-      onTweenComplete();
+      onAnimationDone();
     }
   }
 
   private onMoveBlocked(): void {
     this.soundEffects.play('bump');
+    this.characterAnimator.triggerBump(true, this.lastAttemptedDirection);
+    this.characterAnimator.triggerBump(false, this.lastAttemptedDirection);
+
     if (!this.storage.getProgress().reducedMotion) {
       this.cameras.main.shake(40, 0.002);
     }
@@ -811,23 +457,32 @@ export class GameScene extends Phaser.Scene {
 
   private onDeath(): void {
     this.soundEffects.play('death');
+    const rCoords = this.getScreenCoordinates(this.session.player.position, true);
+    const sCoords = this.getScreenCoordinates(this.session.shadow.position, false);
+    this.characterAnimator.triggerDeathDisintegration(rCoords, sCoords);
+
     if (!this.storage.getProgress().reducedMotion) {
       this.cameras.main.shake(80, 0.005);
     }
   }
 
   private onRespawn(): void {
+    this.knownDetonatedBombs.clear();
     const realCoords = this.getScreenCoordinates(this.session.player.position, true);
     const shadowCoords = this.getScreenCoordinates(this.session.shadow.position, false);
 
-    this.realSprite.setPosition(realCoords.x, realCoords.y);
-    this.shadowSprite.setPosition(shadowCoords.x, shadowCoords.y);
-    this.renderDynamicPuzzleElements();
+    this.characterAnimator.triggerRespawn(realCoords, shadowCoords);
   }
 
   private onLevelComplete(): void {
     this.soundEffects.play('win');
     pokiBridge.gameplayStop();
+
+    // Spawn victory celebration radiant beacons
+    const rCoords = this.getScreenCoordinates(this.session.player.position, true);
+    const sCoords = this.getScreenCoordinates(this.session.shadow.position, false);
+    this.vfxManager.spawnSparkBurst(rCoords.x, rCoords.y, 25, 0x00e5ff);
+    this.vfxManager.spawnSparkBurst(sCoords.x, sCoords.y, 25, 0x00e5ff);
 
     // Record progress
     const updated = this.storage.recordLevelCompletion(this.levelId, this.movesCount);
@@ -850,7 +505,6 @@ export class GameScene extends Phaser.Scene {
   private goToNextLevel(): void {
     this.winModal.hide();
     if (this.levelId >= ALL_LEVELS.length) {
-      // Completed all 20 levels! Transition to cinematic Ending Experience
       pokiBridge.gameplayStop();
       this.scene.start('EndingScene', {
         storage: this.storage,
@@ -898,6 +552,8 @@ export class GameScene extends Phaser.Scene {
       label.destroy();
     }
     this.bombLabels.clear();
+    this.vfxManager?.destroy();
+    this.characterAnimator?.destroy();
     this.tweens.killAll();
   }
 }
