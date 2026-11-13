@@ -1,6 +1,10 @@
 # REGRESSION PROTECTION & QUALITY SAFEGUARDS PLAN — THE OTHER SIDE
-**Document Version**: 1.0.0  
-**Scope**: Inviolable Gameplay Rules, State Integrity Safeguards, and Automated Quality Gates  
+
+**Project:** THE OTHER SIDE  
+**Date:** November 13, 2026  
+**Document Version:** 1.1.0  
+**Baseline Git HEAD:** `2d74a08`  
+**Status:** ACTIVE & ENFORCED  
 
 ---
 
@@ -32,7 +36,7 @@ The following core rules are permanent and mathematically locked against regress
 - **Allowed Modifications**: Visual rendering upgrades (e.g. rotating saw teeth, particle feedback) and audio synthesis cues only.
 
 ### 2.2 Target Redesign Levels (Levels 11 to 20)
-- **Status**: **ELIGIBLE FOR COGNITIVE ENRICHMENT**.
+- **Status**: **ELIGIBLE FOR COGNITIVE ENRICHMENT IN PHASE 5**.
 - **Constraint**: Every modified level must satisfy:
   1. Validated schema via `LevelValidator.validateSchema()`.
   2. Complete state-space search by `LevelSolver.solve()`.
@@ -44,47 +48,43 @@ The following core rules are permanent and mathematically locked against regress
 ## 3. Implementation Safeguards & Failure Modes
 
 | Potential Failure Mode | Technical Cause | Safeguard Architecture |
-|---|---|---|
-| **State Mutation During Render** | A visual rendering function inadvertently modifies a grid coordinate or entity boolean. | Visual classes (`VisualEffectsManager`, `CharacterAnimator`) receive read-only snapshots or primitive coordinates. Never invoke `puzzleManager` mutators from `render()` or `update()`. |
+| :--- | :--- | :--- |
+| **State Mutation During Render** | A visual rendering function inadvertently modifies a grid coordinate or entity boolean. | Visual classes (`VisualEffectsManager`, `CharacterAnimator`, `PuzzleObjectRenderer`) receive read-only snapshots or primitive coordinates. Never invoke `puzzleManager` mutators from `render()` or `update()`. |
 | **Undo State Desynchronization** | Undo restores character positions but leaves a switch, door, or moving saw in a future state. | `UndoEngine` uses `CheckpointSnapshotData`, which atomically captures and restores every entity (doors, switches, plates, saws, bombs, mirrors, blocks, magnets, time locks) simultaneously. |
 | **Audio Oscillator Leak** | Web Audio oscillators created on input commit are not stopped or garbage collected. | All transient SFX nodes specify explicit `stop(currentTime + duration)`. Continuous audio (BGM/ambient) uses persistent, managed nodes cleaned up in `scene.events.on('shutdown')`. |
 | **Stuck Touch Input** | Mobile touch pointerdown triggers movement, but pointerup is missed outside canvas bounds. | `TouchControls` listens to global window `pointerup` and `pointercancel` events, resetting virtual joystick state immediately. |
 | **Animation Race Condition** | Player presses directional inputs rapidly during a 120ms animation tween. | `TurnEngine` enforces strict state gating: further inputs are ignored until `endAnimation()` commits or `cancelAnimation()` halts pending tweens. |
-| **Memory Leak in Undo Stack** | Player executes thousands of moves, filling memory with snapshot objects. | `UndoEngine` caps history depth at a rolling maximum of 50 snapshots (`FIFO` eviction). |
+| **Misplaced Render Overlay** | A mechanism overlay (like `renderExit`) is passed character coordinates. | Strict coordinate boundary validation: exit overlays must only be passed `session.definition.realExit` and `session.definition.shadowExit`. |
 
 ---
 
 ## 4. Automated Verification Gates
 
-Before any phase is declared complete, the code must pass all 5 verification gates:
+Before any phase or commit is accepted, the project must pass all 5 verification gates:
 
 ```
-[ Phase Code Complete ]
-          |
-          v
-[ Gate 1: Vitest Unit Tests ] ---------> Must pass 100% of unit tests (31+ files)
-          |
-          v
-[ Gate 2: Level Solver Validation ] ---> Must solve and replay all 20 levels
-          |
-          v
-[ Gate 3: TypeScript Typecheck ] ------> Zero compiler errors (tsc --noEmit)
-          |
-          v
-[ Gate 4: ESLint Code Quality ] -------> Zero errors and zero warnings
-          |
-          v
-[ Gate 5: Vite Production Build ] ------> Clean compilation in dist/
-          |
-          v
-[ Phase Approved & Committed ]
+[GATE 1: TYPE SAFETY]
+  Command: npm run typecheck
+  Target:  0 TypeScript errors (tsc --noEmit)
+  Status:  PASSED
+
+[GATE 2: LINT & CODE QUALITY]
+  Command: npm run lint
+  Target:  0 ESLint warnings, 0 errors
+  Status:  PASSED
+
+[GATE 3: UNIT & INTEGRATION SUITE]
+  Command: npm test
+  Target:  100% pass across all 32 test files (223 tests)
+  Status:  PASSED (223 / 223 passed in 4.3s)
+
+[GATE 4: AUTOMATED LEVEL SOLVER & REPLAY]
+  Command: npm run validate:levels
+  Target:  20 / 20 levels BFS-solved and replay-verified
+  Status:  PASSED (20 / 20 passed)
+
+[GATE 5: PRODUCTION BUILD INTEGRITY]
+  Command: npm run build
+  Target:  Clean bundle generation (dist/ assets under budget)
+  Status:  PASSED (149.47 kB app / 1.48 MB Phaser)
 ```
-
----
-
-## 5. Backup & Recovery Protocol
-
-1. **Git Checkpoints**: Every phase will be committed as an atomic Git commit with detailed change logs.
-2. **Instant Rollback**: If an unexpected regression occurs in a locked level or core engine, revert immediately to baseline commit `5a45ee8` using:
-   `git reset --hard 5a45ee8`
-3. **Continuous Replay Verification**: The automated solver (`npm run validate:levels`) is executed after every single file edit to guarantee that no solution trace has been broken.
