@@ -1,6 +1,7 @@
 import { LevelDefinition, CollapsingFloorState, MirrorOrientation } from '../types/level';
 import { SurpriseEventSnapshot } from '../types/surprise';
 import { MoveDirection } from '../engine/MovementEngine';
+import { PortalDestination } from '../puzzles/Portal';
 import { LevelFactory, BuiltLevelSession } from '../levels/LevelFactory';
 import { TurnGameState } from '../engine/TurnEngine';
 import { GridPoint } from '../grid/GridPosition';
@@ -36,7 +37,14 @@ interface SolverStateSnapshot {
   readonly plateStates: Record<string, boolean>;
   readonly bombStates: Record<string, { active: boolean; timer: number; detonated: boolean }>;
   readonly destructibleWallStates: Record<string, boolean>;
-  readonly portalStates: Record<string, { active: boolean; destIndex: number }>;
+  readonly portalStates: Record<
+    string,
+    {
+      active: boolean;
+      destIndex: number;
+      destinations: readonly PortalDestination[];
+    }
+  >;
   readonly movingHazardStates: Record<string, number>;
   readonly collapsingFloorStates: Record<string, { state: string; occupied: boolean }>;
   readonly emitterStates?: Record<string, boolean>;
@@ -86,7 +94,10 @@ export class LevelSolver {
       .join(';');
     const portals = session.puzzleManager
       .getAllPortals()
-      .map((por) => `${por.id}:${por.isActive ? 1 : 0}:${por.destinationIndex}`)
+      .map(
+        (por) =>
+          `${por.id}:${por.isActive ? 1 : 0}:${por.destinationIndex}:${por.targetWorld}:${por.targetPosition.x},${por.targetPosition.y}`
+      )
       .join(';');
     const saws = session.puzzleManager
       .getAllMovingHazards()
@@ -149,9 +160,20 @@ export class LevelSolver {
     for (const dw of session.puzzleManager.getAllDestructibleWalls()) {
       destructibleWallStates[dw.id] = dw.isDestroyed;
     }
-    const portalStates: Record<string, { active: boolean; destIndex: number }> = {};
+    const portalStates: Record<
+      string,
+      {
+        active: boolean;
+        destIndex: number;
+        destinations: readonly PortalDestination[];
+      }
+    > = {};
     for (const por of session.puzzleManager.getAllPortals()) {
-      portalStates[por.id] = { active: por.isActive, destIndex: por.destinationIndex };
+      portalStates[por.id] = {
+        active: por.isActive,
+        destIndex: por.destinationIndex,
+        destinations: por.destinations,
+      };
     }
     const movingHazardStates: Record<string, number> = {};
     for (const saw of session.puzzleManager.getAllMovingHazards()) {
@@ -235,6 +257,7 @@ export class LevelSolver {
       const por = session.puzzleManager.getPortal(id);
       if (por) {
         por.setActive(state.active);
+        (por as { destinations: readonly PortalDestination[] }).destinations = state.destinations;
         por.setDestinationIndex(state.destIndex);
       }
     }

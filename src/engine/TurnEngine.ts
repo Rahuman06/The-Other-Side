@@ -194,6 +194,13 @@ export class TurnEngine {
         result.playerNewPosition,
         result.shadowNewPosition
       );
+      if (this.surpriseManager) {
+        for (const plate of this.puzzleManager.getAllPressurePlates()) {
+          if (plate.isPressed) {
+            this.surpriseManager.notifyPlatePress(plate.id, true);
+          }
+        }
+      }
     }
 
     // Step 9g: Evaluate Surprise Events

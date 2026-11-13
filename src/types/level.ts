@@ -11,7 +11,7 @@ export type ChapterName =
   | 'THE REFLECTION'
   | 'THE TRUTH';
 
-export type Difficulty = 'EASY' | 'MEDIUM' | 'HARD' | 'EXPERT';
+export type Difficulty = 'EASY' | 'MEDIUM' | 'HARD' | 'EXPERT' | 'MASTER';
 
 export type ExitBehavior = 'LOCK_ON_ARRIVAL' | 'SIMULTANEOUS';
 

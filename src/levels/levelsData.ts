@@ -1339,8 +1339,8 @@ export const ALL_LEVELS: readonly LevelDefinition[] = [
     name: 'Two Become One',
     width: 8,
     height: 6,
-    difficulty: 'EXPERT',
-    hint: 'Coordinate pressure plates, portals, and switches to converge as one.',
+    difficulty: 'MASTER',
+    hint: 'Both operate as one logical system: synchronize pressure plates, evade moving hazards, and discover the cross-world portal realignment.',
     realStart: { x: 1, y: 1 },
     shadowStart: { x: 6, y: 1 },
     realExit: { x: 6, y: 4 },
@@ -1397,10 +1397,10 @@ export const ALL_LEVELS: readonly LevelDefinition[] = [
     ],
     pressurePlates: [
       { id: 'pp-17-real', world: 'real', position: { x: 2, y: 2 }, linkedDoorId: 'door-17-shadow-access' },
+      { id: 'pp-17-shadow', world: 'shadow', position: { x: 5, y: 2 }, linkedDoorId: 'door-17-real-exit' },
     ],
     switches: [
       { id: 'sw-17-real', world: 'real', position: { x: 0, y: 4 }, linkedDoorId: 'door-17-shadow-exit' },
-      { id: 'sw-17-shadow', world: 'shadow', position: { x: 7, y: 4 }, linkedDoorId: 'door-17-real-exit' },
     ],
     portals: [
       {
@@ -1415,39 +1415,41 @@ export const ALL_LEVELS: readonly LevelDefinition[] = [
         world: 'shadow',
         position: { x: 6, y: 4 },
         targetWorld: 'shadow',
-        targetPosition: { x: 3, y: 4 },
+        targetPosition: { x: 6, y: 1 },
       },
     ],
     checkpoints: [
       { id: 'cp-17', realPosition: { x: 1, y: 1 }, shadowPosition: { x: 6, y: 1 } },
     ],
     solutionTrace: [
-      'right',
-      'down',
-      'left',
-      'down',
-      'left',
-      'left',
-      'down',
-      'right',
-      'right',
-      'right',
+      'right', // 1. Real to (2,1), Shadow to (5,1)
+      'down',  // 2. Real to pp-17-real (2,2) [shifts p-17-shadow dest to (3,4)!]; Shadow to pp-17-shadow (5,2) [unlocks door-17-real-exit!]
+      'left',  // 3. Real to (1,2), Shadow enters open door-17-shadow-access (6,2)
+      'down',  // 4. Real to (1,3), Shadow steps on tl-17-shadow (6,3) [freezes door-17-timed-real open]
+      'right', // 5. Real to (2,3), Shadow to (5,3)
+      'left',  // 6. Real hits sw-17-real at (0,4) [unlocks door-17-shadow-exit (2,4)]; Shadow held by wall (7,3)
+      'down',  // 7. Real enters p-17-real at (1,4) [teleports to (4,4)!]; Shadow enters p-17-shadow at (6,4) [teleports to shifted dest (3,4)!]
+      'up',    // 8. Stagger calibration step avoiding saw line
+      'right', // 9. Real to (5,4); Shadow to (2,4)
+      'right', // 10. Real to (6,4); Shadow to (1,4)
+      'down',  // 11. Real reaches Real Exit (6,4); Shadow reaches Shadow Exit (1,4) -> VICTORY!
     ],
     surpriseEvents: [
       {
-        id: 'se-17-harmonic-shift',
-        name: 'Harmonic Wall Shift',
+        id: 'se-17-portal-shift',
+        name: 'Harmonic Portal Realignment',
         triggerType: 'STEP_ON',
         triggerWorld: 'real',
         triggerPosition: { x: 2, y: 2 },
-        targetWorld: 'real',
-        targetType: 'WALL',
-        targetPosition: { x: 3, y: 0 },
+        targetWorld: 'shadow',
+        targetType: 'PORTAL',
+        targetId: 'p-17-shadow',
+        secondaryTargetPosition: { x: 3, y: 4 },
         activationDelay: 0,
-        action: 'REMOVE_WALL',
-        animation: 'spark',
+        action: 'SHIFT_PORTAL',
+        animation: 'shockwave',
         sound: 'wall_open',
-        warningClue: 'Resonant harmonic hum echoing from the central partition',
+        warningClue: 'A dimensional resonance shimmers across the rift; the shadow portal anchor realigns.',
       },
       {
         id: 'se-17-portal-instability',
