@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { StorageManager } from '../storage/StorageManager';
 import { SoundEffects } from '../audio/SoundEffects';
+import { AudioManager } from '../audio/AudioManager';
 import { pokiBridge } from '../poki/PokiIntegration';
 import { GAME_WIDTH, GAME_HEIGHT } from '../core/constants';
 import { ALL_LEVELS } from '../levels/levelsData';
@@ -16,11 +17,14 @@ export class EndingScene extends Phaser.Scene {
 
   public init(data?: { storage?: StorageManager; soundEffects?: SoundEffects }): void {
     this.storage = data?.storage ?? new StorageManager();
-    this.soundEffects = data?.soundEffects ?? new SoundEffects(this.storage.getProgress().muted);
+    const audio = AudioManager.getInstance();
+    audio.init(this.storage);
+    this.soundEffects = data?.soundEffects ?? audio.sfx;
   }
 
   public create(): void {
     pokiBridge.gameplayStop();
+    AudioManager.getInstance().setGameplayState('ending');
     const w = this.scale.width || GAME_WIDTH;
     const h = this.scale.height || GAME_HEIGHT;
     const halfW = w / 2;

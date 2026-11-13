@@ -1,6 +1,9 @@
 export interface GameSettings {
   muted: boolean;
   reducedMotion: boolean;
+  masterVolume: number;
+  musicVolume: number;
+  sfxVolume: number;
 }
 
 export interface GameProgress {
@@ -15,6 +18,9 @@ export interface GameProgress {
   settings: GameSettings;
   muted: boolean; // Flat accessor for backward compatibility
   reducedMotion: boolean; // Flat accessor for backward compatibility
+  masterVolume: number; // Flat accessor for backward compatibility
+  musicVolume: number; // Flat accessor for backward compatibility
+  sfxVolume: number; // Flat accessor for backward compatibility
 }
 
 export const CURRENT_SAVE_VERSION = 1;
@@ -104,6 +110,9 @@ export class StorageManager {
     const settings: GameSettings = {
       muted: false,
       reducedMotion: !!isSystemReducedMotion,
+      masterVolume: 1.0,
+      musicVolume: 0.75,
+      sfxVolume: 0.85,
     };
 
     return {
@@ -118,6 +127,9 @@ export class StorageManager {
       settings,
       muted: settings.muted,
       reducedMotion: settings.reducedMotion,
+      masterVolume: settings.masterVolume,
+      musicVolume: settings.musicVolume,
+      sfxVolume: settings.sfxVolume,
     };
   }
 
@@ -199,18 +211,45 @@ export class StorageManager {
     // 7. Settings
     let muted = defaults.settings.muted;
     let reducedMotion = defaults.settings.reducedMotion;
+    let masterVolume = defaults.settings.masterVolume;
+    let musicVolume = defaults.settings.musicVolume;
+    let sfxVolume = defaults.settings.sfxVolume;
 
     if (obj.settings && typeof obj.settings === 'object') {
       const s = obj.settings as Record<string, unknown>;
       if (typeof s.muted === 'boolean') muted = s.muted;
       if (typeof s.reducedMotion === 'boolean') reducedMotion = s.reducedMotion;
+      if (typeof s.masterVolume === 'number' && !isNaN(s.masterVolume)) {
+        masterVolume = Math.max(0, Math.min(1, s.masterVolume));
+      }
+      if (typeof s.musicVolume === 'number' && !isNaN(s.musicVolume)) {
+        musicVolume = Math.max(0, Math.min(1, s.musicVolume));
+      }
+      if (typeof s.sfxVolume === 'number' && !isNaN(s.sfxVolume)) {
+        sfxVolume = Math.max(0, Math.min(1, s.sfxVolume));
+      }
     } else {
       // Legacy flat properties
       if (typeof obj.muted === 'boolean') muted = obj.muted;
       if (typeof obj.reducedMotion === 'boolean') reducedMotion = obj.reducedMotion;
+      if (typeof obj.masterVolume === 'number' && !isNaN(obj.masterVolume)) {
+        masterVolume = Math.max(0, Math.min(1, obj.masterVolume));
+      }
+      if (typeof obj.musicVolume === 'number' && !isNaN(obj.musicVolume)) {
+        musicVolume = Math.max(0, Math.min(1, obj.musicVolume));
+      }
+      if (typeof obj.sfxVolume === 'number' && !isNaN(obj.sfxVolume)) {
+        sfxVolume = Math.max(0, Math.min(1, obj.sfxVolume));
+      }
     }
 
-    const settings: GameSettings = { muted, reducedMotion };
+    const settings: GameSettings = {
+      muted,
+      reducedMotion,
+      masterVolume,
+      musicVolume,
+      sfxVolume,
+    };
 
     return {
       saveVersion: Math.max(CURRENT_SAVE_VERSION, version),
@@ -224,6 +263,9 @@ export class StorageManager {
       settings,
       muted: settings.muted,
       reducedMotion: settings.reducedMotion,
+      masterVolume: settings.masterVolume,
+      musicVolume: settings.musicVolume,
+      sfxVolume: settings.sfxVolume,
     };
   }
 
@@ -248,6 +290,9 @@ export class StorageManager {
     const mergedSettings: GameSettings = {
       muted: partial.settings?.muted ?? partial.muted ?? current.settings.muted,
       reducedMotion: partial.settings?.reducedMotion ?? partial.reducedMotion ?? current.settings.reducedMotion,
+      masterVolume: partial.settings?.masterVolume ?? partial.masterVolume ?? current.settings.masterVolume,
+      musicVolume: partial.settings?.musicVolume ?? partial.musicVolume ?? current.settings.musicVolume,
+      sfxVolume: partial.settings?.sfxVolume ?? partial.sfxVolume ?? current.settings.sfxVolume,
     };
 
     const newUnlockedLevel = partial.unlockedLevel !== undefined
@@ -283,6 +328,9 @@ export class StorageManager {
       settings: mergedSettings,
       muted: mergedSettings.muted,
       reducedMotion: mergedSettings.reducedMotion,
+      masterVolume: mergedSettings.masterVolume,
+      musicVolume: mergedSettings.musicVolume,
+      sfxVolume: mergedSettings.sfxVolume,
     };
 
     const payload = JSON.stringify(updated);
@@ -338,6 +386,21 @@ export class StorageManager {
 
   public setMuted(muted: boolean): void {
     this.saveProgress({ muted });
+  }
+
+  public setMasterVolume(masterVolume: number): void {
+    const clamped = Math.max(0, Math.min(1, masterVolume));
+    this.saveProgress({ masterVolume: clamped });
+  }
+
+  public setMusicVolume(musicVolume: number): void {
+    const clamped = Math.max(0, Math.min(1, musicVolume));
+    this.saveProgress({ musicVolume: clamped });
+  }
+
+  public setSfxVolume(sfxVolume: number): void {
+    const clamped = Math.max(0, Math.min(1, sfxVolume));
+    this.saveProgress({ sfxVolume: clamped });
   }
 
   public setReducedMotion(reducedMotion: boolean): void {

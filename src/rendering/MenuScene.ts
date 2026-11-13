@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { LevelManager } from '../levels/LevelManager';
 import { StorageManager } from '../storage/StorageManager';
 import { SoundEffects } from '../audio/SoundEffects';
+import { AudioManager } from '../audio/AudioManager';
 import { pokiBridge } from '../poki/PokiIntegration';
 import { ALL_LEVELS } from '../levels/levelsData';
 import { PALETTE } from '../core/constants';
@@ -24,7 +25,9 @@ export class MenuScene extends Phaser.Scene {
 
   public init(data?: { levelManager?: LevelManager; soundEffects?: SoundEffects; openLevelSelect?: boolean }): void {
     this.storage = new StorageManager();
-    this.soundEffects = data?.soundEffects ?? new SoundEffects(this.storage.getProgress().muted);
+    const audio = AudioManager.getInstance();
+    audio.init(this.storage);
+    this.soundEffects = data?.soundEffects ?? audio.sfx;
     this.levelManager = data?.levelManager ?? new LevelManager(ALL_LEVELS, this.storage);
 
     if (typeof window !== 'undefined') {
@@ -37,6 +40,7 @@ export class MenuScene extends Phaser.Scene {
 
   public create(data?: { openLevelSelect?: boolean }): void {
     pokiBridge.gameplayStop();
+    AudioManager.getInstance().playMenuMusic();
 
     const { width, height } = this.scale;
     const halfW = width / 2;
@@ -392,8 +396,8 @@ export class MenuScene extends Phaser.Scene {
     this.settingsModal.setDepth(150);
     this.settingsModal.setVisible(false);
 
-    const modalW = 420;
-    const modalH = 320;
+    const modalW = 460;
+    const modalH = 430;
 
     // Backdrop
     const backdrop = this.add.graphics();
@@ -411,7 +415,7 @@ export class MenuScene extends Phaser.Scene {
 
     // Title
     const title = this.add
-      .text(0, -115, 'SETTINGS', {
+      .text(0, -180, 'SETTINGS', {
         fontFamily: 'system-ui, -apple-system, sans-serif',
         fontSize: '22px',
         fontStyle: 'bold',
@@ -421,10 +425,12 @@ export class MenuScene extends Phaser.Scene {
       .setOrigin(0.5);
     this.settingsModal.add(title);
 
+    const audio = AudioManager.getInstance();
+
     // 1. Audio Mute Toggle
     let isMuted = this.storage.getProgress().muted;
     const soundText = this.add
-      .text(0, -55, `SOUND: ${isMuted ? 'MUTED' : 'ENABLED'}`, {
+      .text(0, -135, `AUDIO: ${isMuted ? 'MUTED' : 'ENABLED'}`, {
         fontFamily: 'system-ui, -apple-system, sans-serif',
         fontSize: '14px',
         fontStyle: 'bold',
@@ -437,25 +443,147 @@ export class MenuScene extends Phaser.Scene {
     this.createMenuButton(
       this.settingsModal,
       0,
-      -25,
+      -105,
       260,
-      34,
-      'TOGGLE SOUND',
+      30,
+      'TOGGLE MUTE',
       () => {
         isMuted = !isMuted;
-        this.storage.setMuted(isMuted);
-        this.soundEffects.setMuted(isMuted);
-        soundText.setText(`SOUND: ${isMuted ? 'MUTED' : 'ENABLED'}`);
+        audio.setMuted(isMuted);
+        soundText.setText(`AUDIO: ${isMuted ? 'MUTED' : 'ENABLED'}`);
       },
       false
     );
 
-    // 2. Reduced Motion Toggle
+    // 2. Master Volume
+    let masterVal = Math.round(audio.getMasterVolume() * 100);
+    const masterText = this.add
+      .text(0, -65, `MASTER VOLUME: ${masterVal}%`, {
+        fontFamily: 'system-ui, -apple-system, sans-serif',
+        fontSize: '13px',
+        color: '#CCCCCC',
+        letterSpacing: 1,
+      })
+      .setOrigin(0.5);
+    this.settingsModal.add(masterText);
+
+    this.createMenuButton(
+      this.settingsModal,
+      -80,
+      -35,
+      70,
+      26,
+      '- 10%',
+      () => {
+        masterVal = Math.max(0, masterVal - 10);
+        audio.setMasterVolume(masterVal / 100);
+        masterText.setText(`MASTER VOLUME: ${masterVal}%`);
+      },
+      false
+    );
+
+    this.createMenuButton(
+      this.settingsModal,
+      80,
+      -35,
+      70,
+      26,
+      '+ 10%',
+      () => {
+        masterVal = Math.min(100, masterVal + 10);
+        audio.setMasterVolume(masterVal / 100);
+        masterText.setText(`MASTER VOLUME: ${masterVal}%`);
+      },
+      false
+    );
+
+    // 3. Music Volume & SFX Volume Rows
+    let musicVal = Math.round(audio.getMusicVolume() * 100);
+    const musicText = this.add
+      .text(-100, 5, `MUSIC: ${musicVal}%`, {
+        fontFamily: 'system-ui, -apple-system, sans-serif',
+        fontSize: '12px',
+        color: '#AAAAAA',
+      })
+      .setOrigin(0.5);
+    this.settingsModal.add(musicText);
+
+    this.createMenuButton(
+      this.settingsModal,
+      -145,
+      30,
+      50,
+      24,
+      '-',
+      () => {
+        musicVal = Math.max(0, musicVal - 10);
+        audio.setMusicVolume(musicVal / 100);
+        musicText.setText(`MUSIC: ${musicVal}%`);
+      },
+      false
+    );
+
+    this.createMenuButton(
+      this.settingsModal,
+      -55,
+      30,
+      50,
+      24,
+      '+',
+      () => {
+        musicVal = Math.min(100, musicVal + 10);
+        audio.setMusicVolume(musicVal / 100);
+        musicText.setText(`MUSIC: ${musicVal}%`);
+      },
+      false
+    );
+
+    let sfxVal = Math.round(audio.getSfxVolume() * 100);
+    const sfxText = this.add
+      .text(100, 5, `SFX: ${sfxVal}%`, {
+        fontFamily: 'system-ui, -apple-system, sans-serif',
+        fontSize: '12px',
+        color: '#AAAAAA',
+      })
+      .setOrigin(0.5);
+    this.settingsModal.add(sfxText);
+
+    this.createMenuButton(
+      this.settingsModal,
+      55,
+      30,
+      50,
+      24,
+      '-',
+      () => {
+        sfxVal = Math.max(0, sfxVal - 10);
+        audio.setSfxVolume(sfxVal / 100);
+        sfxText.setText(`SFX: ${sfxVal}%`);
+      },
+      false
+    );
+
+    this.createMenuButton(
+      this.settingsModal,
+      145,
+      30,
+      50,
+      24,
+      '+',
+      () => {
+        sfxVal = Math.min(100, sfxVal + 10);
+        audio.setSfxVolume(sfxVal / 100);
+        sfxText.setText(`SFX: ${sfxVal}%`);
+      },
+      false
+    );
+
+    // 4. Reduced Motion Toggle
     let isReduced = this.storage.getProgress().reducedMotion;
     const motionText = this.add
-      .text(0, 25, `MOTION: ${isReduced ? 'REDUCED' : 'NORMAL'}`, {
+      .text(0, 75, `MOTION: ${isReduced ? 'REDUCED' : 'NORMAL'}`, {
         fontFamily: 'system-ui, -apple-system, sans-serif',
-        fontSize: '14px',
+        fontSize: '13px',
         fontStyle: 'bold',
         color: '#FFFFFF',
         letterSpacing: 1.5,
@@ -466,9 +594,9 @@ export class MenuScene extends Phaser.Scene {
     this.createMenuButton(
       this.settingsModal,
       0,
-      55,
+      105,
       260,
-      34,
+      30,
       'TOGGLE REDUCED MOTION',
       () => {
         isReduced = !isReduced;
@@ -478,13 +606,13 @@ export class MenuScene extends Phaser.Scene {
       false
     );
 
-    // 3. Reset Game Progress Button
+    // 5. Reset Game Progress Button
     this.createMenuButton(
       this.settingsModal,
       0,
-      105,
+      150,
       260,
-      34,
+      30,
       'RESET PROGRESS',
       () => {
         this.confirmResetModal.setVisible(true);
@@ -632,6 +760,7 @@ export class MenuScene extends Phaser.Scene {
   }
 
   private startLevel(levelId: number): void {
+    AudioManager.getInstance().stopAllMusic();
     this.scene.start('GameScene', { levelId });
   }
 }

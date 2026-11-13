@@ -13,6 +13,8 @@ import { MoveDirection, MovementTransactionResult } from '../engine/MovementEngi
 import { InputController } from '../systems/InputController';
 import { StorageManager } from '../storage/StorageManager';
 import { SoundEffects } from '../audio/SoundEffects';
+import { AudioManager } from '../audio/AudioManager';
+import { ChapterName } from '../audio/AtmosphericMusic';
 import { pokiBridge } from '../poki/PokiIntegration';
 import { CharacterAnimator } from '../rendering/CharacterAnimator';
 import { VisualEffectsManager } from '../rendering/VisualEffectsManager';
@@ -55,6 +57,14 @@ export class GameScene extends Phaser.Scene {
   private previousPlayerAtExit: boolean = false;
   private previousShadowAtExit: boolean = false;
 
+  // Previous puzzle mechanism states for audio event synthesis
+  private prevSwitchStates: Map<string, boolean> = new Map();
+  private prevPlateStates: Map<string, boolean> = new Map();
+  private prevDoorStates: Map<string, boolean> = new Map();
+  private prevFloorStates: Map<string, string> = new Map();
+  private prevLaserEmitterStates: Map<string, boolean> = new Map();
+  private prevMirrorOrientations: Map<string, string> = new Map();
+
   constructor() {
     super('GameScene');
   }
@@ -68,12 +78,16 @@ export class GameScene extends Phaser.Scene {
     this.previousShadowAtExit = false;
 
     this.storage = new StorageManager();
-    const progress = this.storage.getProgress();
-    this.soundEffects = new SoundEffects(progress.muted);
+    const audio = AudioManager.getInstance();
+    audio.init(this.storage);
+    this.soundEffects = audio.sfx;
   }
 
   public create(): void {
     pokiBridge.gameplayStart();
+
+    const chapter = this.getChapterName(this.levelId);
+    AudioManager.getInstance().playGameMusic(chapter);
 
     const { width, height } = this.scale;
     const halfWidth = width / 2;
@@ -93,6 +107,7 @@ export class GameScene extends Phaser.Scene {
 
     // 2. Initialize Game Engine Session
     this.initializeSession();
+    this.initializePuzzleAudioBaseline();
 
     // 3. Layout Grid
     this.calculateGridLayout(width, height);
@@ -386,14 +401,19 @@ export class GameScene extends Phaser.Scene {
     const realCoords = this.getScreenCoordinates(result.playerNewPosition, true);
     const shadowCoords = this.getScreenCoordinates(result.shadowNewPosition, false);
 
-    // Audio step
-    this.soundEffects.play('step');
+    // Audio step differentiated by world
+    if (result.playerMoved) {
+      this.soundEffects.playStep(true);
+    } else if (result.shadowMoved) {
+      this.soundEffects.playStep(false);
+    }
 
     // 1. Detect any newly detonated bombs and trigger explosion shockwaves
     for (const b of this.session.puzzleManager.getAllBombs()) {
       if (b.isDetonated && !this.knownDetonatedBombs.has(b.id)) {
         this.knownDetonatedBombs.add(b.id);
         const bCoords = this.getScreenCoordinates(b.position, b.world === 'real');
+        this.soundEffects.playBombExplosion();
         this.vfxManager.triggerExplosion(bCoords.x, bCoords.y, b.world === 'real', this.cellSize * (b.radius + 0.6));
         if (!isReduced) {
           this.cameras.main.shake(120, 0.008);
@@ -404,14 +424,19 @@ export class GameScene extends Phaser.Scene {
     // 1b. Character Arrival energy response at exits
     if (result.playerAtExit && !this.previousPlayerAtExit) {
       this.vfxManager.spawnSparkBurst(realCoords.x, realCoords.y, 14, 0x00e5ff);
+      this.soundEffects.playExitArrival();
       this.characterAnimator.playExitArrival(true);
     }
     if (result.shadowAtExit && !this.previousShadowAtExit) {
       this.vfxManager.spawnSparkBurst(shadowCoords.x, shadowCoords.y, 14, 0x00e5ff);
+      this.soundEffects.playExitArrival();
       this.characterAnimator.playExitArrival(false);
     }
     this.previousPlayerAtExit = result.playerAtExit;
     this.previousShadowAtExit = result.shadowAtExit;
+
+    // 1c. Track all mechanical puzzle state transitions and modulate dynamic thriller soundtrack
+    this.updatePuzzleAudioEvents(result);
 
     // 2. Animate Characters
     let completedTweens = 0;
@@ -427,6 +452,10 @@ export class GameScene extends Phaser.Scene {
       Math.abs(result.playerNewPosition.y - result.playerOldPosition.y);
     const sDist = Math.abs(result.shadowNewPosition.x - result.shadowOldPosition.x) +
       Math.abs(result.shadowNewPosition.y - result.shadowOldPosition.y);
+
+    if (pDist > 1 || sDist > 1) {
+      this.soundEffects.playPortalTravel();
+    }
 
     if (result.playerMoved) {
       if (pDist > 1) {
@@ -470,7 +499,8 @@ export class GameScene extends Phaser.Scene {
   }
 
   private onDeath(): void {
-    this.soundEffects.play('death');
+    this.soundEffects.playDeath();
+    AudioManager.getInstance().setGameplayState('death');
     const rCoords = this.getScreenCoordinates(this.session.player.position, true);
     const sCoords = this.getScreenCoordinates(this.session.shadow.position, false);
     this.characterAnimator.triggerDeathDisintegration(rCoords, sCoords);
@@ -484,6 +514,10 @@ export class GameScene extends Phaser.Scene {
     this.knownDetonatedBombs.clear();
     this.previousPlayerAtExit = false;
     this.previousShadowAtExit = false;
+    this.soundEffects.playRespawn();
+    AudioManager.getInstance().setGameplayState('respawn');
+    this.initializePuzzleAudioBaseline();
+
     const realCoords = this.getScreenCoordinates(this.session.player.position, true);
     const shadowCoords = this.getScreenCoordinates(this.session.shadow.position, false);
 
@@ -491,7 +525,8 @@ export class GameScene extends Phaser.Scene {
   }
 
   private onLevelComplete(): void {
-    this.soundEffects.play('win');
+    this.soundEffects.playWin();
+    AudioManager.getInstance().setGameplayState('level_complete');
     pokiBridge.gameplayStop();
 
     // Spawn victory celebration radiant beacons
@@ -515,6 +550,136 @@ export class GameScene extends Phaser.Scene {
       });
     } else {
       this.winModal.show(this.movesCount, best, isFinalLevel);
+    }
+  }
+
+  private getChapterName(levelId: number): ChapterName {
+    if (levelId <= 4) return 'THE BEGINNING';
+    if (levelId <= 8) return 'THE CONNECTION';
+    if (levelId <= 12) return 'THE SEPARATION';
+    if (levelId <= 16) return 'THE REFLECTION';
+    return 'THE TRUTH';
+  }
+
+  private initializePuzzleAudioBaseline(): void {
+    if (!this.session?.puzzleManager) return;
+    const pm = this.session.puzzleManager;
+
+    this.prevSwitchStates.clear();
+    for (const sw of pm.getAllSwitches()) this.prevSwitchStates.set(sw.id, sw.isActive);
+
+    this.prevPlateStates.clear();
+    for (const pp of pm.getAllPressurePlates()) this.prevPlateStates.set(pp.id, pp.isPressed);
+
+    this.prevDoorStates.clear();
+    for (const d of pm.getAllDoors()) this.prevDoorStates.set(d.id, d.isOpen);
+
+    this.prevFloorStates.clear();
+    for (const cf of pm.getAllCollapsingFloors()) this.prevFloorStates.set(cf.id, cf.floorState);
+
+    this.prevLaserEmitterStates.clear();
+    for (const le of pm.getAllLaserEmitters()) this.prevLaserEmitterStates.set(le.id, le.isActive);
+
+    this.prevMirrorOrientations.clear();
+    for (const m of pm.getAllLaserMirrors()) this.prevMirrorOrientations.set(m.id, m.orientation);
+  }
+
+  private updatePuzzleAudioEvents(result: MovementTransactionResult): void {
+    if (!this.session?.puzzleManager) return;
+    const pm = this.session.puzzleManager;
+
+    // 1. Switches
+    for (const sw of pm.getAllSwitches()) {
+      const prev = this.prevSwitchStates.get(sw.id);
+      if (prev !== undefined && prev !== sw.isActive) {
+        this.soundEffects.playSwitch();
+      }
+      this.prevSwitchStates.set(sw.id, sw.isActive);
+    }
+
+    // 2. Pressure Plates
+    for (const pp of pm.getAllPressurePlates()) {
+      const prev = this.prevPlateStates.get(pp.id);
+      if (prev !== undefined && prev !== pp.isPressed) {
+        this.soundEffects.playPressurePlate(pp.isPressed);
+      }
+      this.prevPlateStates.set(pp.id, pp.isPressed);
+    }
+
+    // 3. Doors
+    for (const d of pm.getAllDoors()) {
+      const prev = this.prevDoorStates.get(d.id);
+      if (prev !== undefined && prev !== d.isOpen) {
+        this.soundEffects.playDoor(d.isOpen);
+        if (!d.isOpen) {
+          this.soundEffects.playMechanicalWarning();
+        }
+      }
+      this.prevDoorStates.set(d.id, d.isOpen);
+    }
+
+    // 4. Collapsing Floors
+    for (const cf of pm.getAllCollapsingFloors()) {
+      const prev = this.prevFloorStates.get(cf.id);
+      if (prev !== undefined && prev !== cf.floorState) {
+        const stageNum = cf.floorState === 'CRACKED' ? 1 : cf.floorState === 'COLLAPSED' ? 2 : 0;
+        this.soundEffects.playCollapsingFloor(stageNum);
+      }
+      this.prevFloorStates.set(cf.id, cf.floorState);
+    }
+
+    // 5. Lasers
+    for (const le of pm.getAllLaserEmitters()) {
+      const prev = this.prevLaserEmitterStates.get(le.id);
+      if (prev !== undefined && prev !== le.isActive) {
+        this.soundEffects.playLaser('active');
+      }
+      this.prevLaserEmitterStates.set(le.id, le.isActive);
+    }
+
+    // 6. Laser Mirrors
+    for (const m of pm.getAllLaserMirrors()) {
+      const prev = this.prevMirrorOrientations.get(m.id);
+      if (prev !== undefined && prev !== m.orientation) {
+        this.soundEffects.playMirror();
+      }
+      this.prevMirrorOrientations.set(m.id, m.orientation);
+    }
+
+    // 7. Bombs
+    let hasCriticalBomb = false;
+    for (const b of pm.getAllBombs()) {
+      if (b.isActive && !b.isDetonated) {
+        this.soundEffects.playBombTick(b.countdown);
+        if (b.countdown <= 1) {
+          hasCriticalBomb = true;
+        }
+      }
+    }
+
+    // 8. Hazard Proximity & Dynamic Soundtrack Tension
+    const pPos = result.playerNewPosition;
+    const sPos = result.shadowNewPosition;
+    let isNearHazard = false;
+
+    for (const mh of pm.getAllMovingHazards()) {
+      const dist = mh.world === 'real'
+        ? Math.abs(mh.position.x - pPos.x) + Math.abs(mh.position.y - pPos.y)
+        : Math.abs(mh.position.x - sPos.x) + Math.abs(mh.position.y - sPos.y);
+      if (dist <= 1) {
+        isNearHazard = true;
+        this.soundEffects.playSaw('whir');
+        break;
+      }
+    }
+
+    if (hasCriticalBomb) {
+      AudioManager.getInstance().setGameplayState('bomb_countdown');
+      this.soundEffects.playMechanicalWarning();
+    } else if (isNearHazard) {
+      AudioManager.getInstance().setGameplayState('hazard_proximity');
+    } else {
+      AudioManager.getInstance().setGameplayState('normal');
     }
   }
 
@@ -561,6 +726,7 @@ export class GameScene extends Phaser.Scene {
 
   public shutdown(): void {
     pokiBridge.gameplayStop();
+    AudioManager.getInstance().stopAllMusic();
     if (this.inputController) {
       this.inputController.detach();
     }
