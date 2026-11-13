@@ -43,23 +43,54 @@ test.describe('Phase 6 — Unexpected Traps and Psychological Puzzle Gameplay', 
     await page.waitForTimeout(800);
 
     // Verify we are on Level 11
-    // Step 1: Move right onto collapsing floor at (2,2)
+    // Step 1: Move right onto fragile entry floor at (2,2)
     await page.keyboard.press('ArrowRight');
     await page.waitForTimeout(500);
 
-    // Step 2: Move right onto checkpoint at (3,2) -> triggers se-11-nowayback!
+    // Step 2: Move right onto checkpoint at (3,2) -> entry floors collapse behind, cross-collapse arms!
     await page.keyboard.press('ArrowRight');
-    await page.waitForTimeout(400);
+    await page.waitForTimeout(500);
+    await page.screenshot({ path: 'screenshots/phase7-level11-checkpoint-trap.png' });
 
-    // Capture screenshot of surprise event activation (particles, warning clue, crumbling tile)
-    await page.screenshot({ path: 'screenshots/phase6-surprise-trap.png' });
+    // Step 3: Move up onto fragile bridge at (3,1) -> cross-collapse executes!
+    await page.keyboard.press('ArrowUp');
+    await page.waitForTimeout(500);
+    await page.screenshot({ path: 'screenshots/phase7-level11-cross-collapse.png' });
 
-    // Step 3: Move right onto collapsing floor at (4,2) -> delayed collapse of (1,2) completes!
+    // Step 4: Move right across bridge to (4,1)
     await page.keyboard.press('ArrowRight');
     await page.waitForTimeout(500);
 
-    // Capture screenshot of collapsed void seal
-    await page.screenshot({ path: 'screenshots/phase6-surprise-collapse.png' });
+    // Step 5: Move down to (4,2)
+    await page.keyboard.press('ArrowDown');
+    await page.waitForTimeout(500);
+
+    // Step 6: Move down to (4,3)
+    await page.keyboard.press('ArrowDown');
+    await page.waitForTimeout(500);
+
+    // Step 7: Stagger step left to (3,3) to synchronize saw timing
+    await page.keyboard.press('ArrowLeft');
+    await page.waitForTimeout(500);
+
+    // Step 8: Move right to (4,3)
+    await page.keyboard.press('ArrowRight');
+    await page.waitForTimeout(500);
+
+    // Step 9: Move right past saw corridor into (5,3)
+    await page.keyboard.press('ArrowRight');
+    await page.waitForTimeout(500);
+
+    // Step 10: Move right to (6,3)
+    await page.keyboard.press('ArrowRight');
+    await page.waitForTimeout(500);
+
+    // Step 11: Move up into EXIT doors at (6,2) & (1,2) -> VICTORY!
+    await page.keyboard.press('ArrowUp');
+    await page.waitForTimeout(600);
+
+    // Capture screenshot of level completion
+    await page.screenshot({ path: 'screenshots/phase7-level11-complete.png' });
 
     // Verify zero fatal JS errors
     const fatalErrors = consoleErrors.filter(

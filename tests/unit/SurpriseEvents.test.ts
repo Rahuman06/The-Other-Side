@@ -317,7 +317,7 @@ describe('SurpriseEventManager Engine & Unit Tests', () => {
 
     const session = LevelFactory.build(level11Def!);
     expect(session.surpriseManager).toBeDefined();
-    expect(session.surpriseManager.getEvents().length).toBe(1);
+    expect(session.surpriseManager.getEvents().length).toBe(2);
 
     // Replay solution moves
     for (let i = 0; i < level11Def!.solutionTrace!.length; i++) {

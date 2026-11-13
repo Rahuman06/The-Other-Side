@@ -635,48 +635,40 @@ export const ALL_LEVELS: readonly LevelDefinition[] = [
     width: 8,
     height: 5,
     difficulty: 'EXPERT',
-    hint: 'Collapsing tiles crumble into impassable voids once stepped off. Anchor at the checkpoint before crossing the saw corridor.',
+    hint: 'Fragile floors crumble into the void once stepped off. Stepping onto the upper bridge triggers a delayed collapse across the rift.',
     realStart: { x: 1, y: 2 },
     shadowStart: { x: 6, y: 2 },
     realExit: { x: 6, y: 2 },
     shadowExit: { x: 1, y: 2 },
     realWalls: [
-      { x: 0, y: 0 },
-      { x: 0, y: 1 },
-      { x: 0, y: 2 },
-      { x: 0, y: 3 },
-      { x: 0, y: 4 },
-      { x: 7, y: 0 },
-      { x: 7, y: 1 },
-      { x: 7, y: 2 },
-      { x: 7, y: 3 },
-      { x: 7, y: 4 },
+      { x: 0, y: 0 }, { x: 1, y: 0 }, { x: 2, y: 0 }, { x: 3, y: 0 }, { x: 4, y: 0 }, { x: 5, y: 0 }, { x: 6, y: 0 }, { x: 7, y: 0 },
+      { x: 0, y: 4 }, { x: 1, y: 4 }, { x: 2, y: 4 }, { x: 3, y: 4 }, { x: 4, y: 4 }, { x: 5, y: 4 }, { x: 6, y: 4 }, { x: 7, y: 4 },
+      { x: 0, y: 1 }, { x: 0, y: 2 }, { x: 0, y: 3 },
+      { x: 7, y: 1 }, { x: 7, y: 2 }, { x: 7, y: 3 },
+      { x: 1, y: 1 },
       { x: 2, y: 1 },
       { x: 2, y: 3 },
       { x: 5, y: 0 },
-      { x: 5, y: 4 },
     ],
     shadowWalls: [
-      { x: 0, y: 0 },
-      { x: 0, y: 1 },
-      { x: 0, y: 2 },
-      { x: 0, y: 3 },
-      { x: 0, y: 4 },
-      { x: 7, y: 0 },
-      { x: 7, y: 1 },
-      { x: 7, y: 2 },
-      { x: 7, y: 3 },
-      { x: 7, y: 4 },
+      { x: 0, y: 0 }, { x: 1, y: 0 }, { x: 2, y: 0 }, { x: 3, y: 0 }, { x: 4, y: 0 }, { x: 5, y: 0 }, { x: 6, y: 0 }, { x: 7, y: 0 },
+      { x: 0, y: 4 }, { x: 1, y: 4 }, { x: 2, y: 4 }, { x: 3, y: 4 }, { x: 4, y: 4 }, { x: 5, y: 4 }, { x: 6, y: 4 }, { x: 7, y: 4 },
+      { x: 0, y: 1 }, { x: 0, y: 2 }, { x: 0, y: 3 },
+      { x: 7, y: 1 }, { x: 7, y: 2 }, { x: 7, y: 3 },
+      { x: 6, y: 1 },
       { x: 5, y: 1 },
       { x: 5, y: 3 },
       { x: 2, y: 0 },
-      { x: 2, y: 4 },
     ],
     collapsingFloors: [
-      { id: 'cf-11-real-1', world: 'real', position: { x: 2, y: 2 } },
-      { id: 'cf-11-real-2', world: 'real', position: { x: 4, y: 2 } },
-      { id: 'cf-11-shadow-1', world: 'shadow', position: { x: 5, y: 2 } },
-      { id: 'cf-11-shadow-2', world: 'shadow', position: { x: 3, y: 2 } },
+      { id: 'cf-11-real-entry', world: 'real', position: { x: 2, y: 2 } },
+      { id: 'cf-11-shadow-entry', world: 'shadow', position: { x: 5, y: 2 } },
+      { id: 'cf-11-real-mid', world: 'real', position: { x: 4, y: 2 } },
+      { id: 'cf-11-shadow-mid', world: 'shadow', position: { x: 3, y: 2 } },
+      { id: 'cf-11-real-bridge', world: 'real', position: { x: 3, y: 1 } },
+      { id: 'cf-11-shadow-bridge', world: 'shadow', position: { x: 4, y: 1 } },
+      { id: 'cf-11-real-upper', world: 'real', position: { x: 4, y: 1 } },
+      { id: 'cf-11-shadow-upper', world: 'shadow', position: { x: 3, y: 1 } },
     ],
     checkpoints: [
       { id: 'cp-11', realPosition: { x: 3, y: 2 }, shadowPosition: { x: 4, y: 2 } },
@@ -686,14 +678,10 @@ export const ALL_LEVELS: readonly LevelDefinition[] = [
         id: 'saw-11-real',
         world: 'real',
         path: [
-          { x: 5, y: 0 },
+          { x: 5, y: 2 },
           { x: 5, y: 1 },
           { x: 5, y: 2 },
           { x: 5, y: 3 },
-          { x: 5, y: 4 },
-          { x: 5, y: 3 },
-          { x: 5, y: 2 },
-          { x: 5, y: 1 },
         ],
         initialIndex: 0,
       },
@@ -701,29 +689,46 @@ export const ALL_LEVELS: readonly LevelDefinition[] = [
         id: 'saw-11-shadow',
         world: 'shadow',
         path: [
-          { x: 2, y: 4 },
+          { x: 2, y: 2 },
           { x: 2, y: 3 },
           { x: 2, y: 2 },
           { x: 2, y: 1 },
-          { x: 2, y: 0 },
-          { x: 2, y: 1 },
-          { x: 2, y: 2 },
-          { x: 2, y: 3 },
         ],
         initialIndex: 0,
       },
     ],
     solutionTrace: [
-      'right', // 1. Real onto cf-11-real-1 at (2,2), Shadow onto cf-11-shadow-1 at (5,2)
-      'right', // 2. Real to (3,2) [cp-11 activated!], Shadow to (4,2) [Floors collapse behind!]
-      'right', // 3. Real to (4,2) [cf-11-real-2], Shadow to (3,2) [cf-11-shadow-2]
-      'right', // 4. Real crosses saw corridor to (5,2), Shadow to (2,2)
-      'right', // 5. Real to (6,2) [Real Exit], Shadow to (1,2) [Shadow Exit] -> VICTORY!
+      'right', // 1. Real onto cf-11-real-entry (2,2), Shadow onto cf-11-shadow-entry (5,2) [Floors crack!]
+      'right', // 2. Real to cp-11 (3,2), Shadow to cp-11 (4,2) [Checkpoint activated! Entry floors collapse, cross-collapse armed!]
+      'up',    // 3. Real up onto fragile bridge (3,1), Shadow up onto (4,1) [Shadow lower path collapses!]
+      'right', // 4. Real to cf-11-real-upper (4,1), Shadow to (3,1) [Bridge collapses behind!]
+      'down',  // 5. Real to cf-11-real-mid (4,2), Shadow to cf-11-shadow-mid (3,2) [Evading upper saw return!]
+      'down',  // 6. Real down to (4,3), Shadow down to (3,3)
+      'left',  // 7. Stagger step left: Real to (3,3), Shadow to (4,3) [Synchronizing saw cycle!]
+      'right', // 8. Real enters safe row 3 corridor (4,3), Shadow to (3,3)
+      'right', // 9. Real breaches column 5 into (5,3), Shadow breaches column 2 into (2,3) while saws swing north!
+      'right', // 10. Real to (6,3), Shadow to (1,3) [Saws swing behind into row 3!]
+      'up',    // 11. Real ascends into Real Exit (6,2), Shadow ascends into Shadow Exit (1,2) -> VICTORY!
     ],
     surpriseEvents: [
       {
-        id: 'se-11-nowayback',
-        name: 'No Way Back Collapse',
+        id: 'se-11-cross-collapse',
+        name: 'Sympathetic Vault Collapse',
+        triggerType: 'STEP_ON',
+        triggerWorld: 'real',
+        triggerPosition: { x: 3, y: 2 },
+        targetWorld: 'shadow',
+        targetType: 'COLLAPSE_FLOOR',
+        targetPosition: { x: 4, y: 3 },
+        activationDelay: 1,
+        action: 'COLLAPSE_TILE',
+        animation: 'crumble',
+        sound: 'crumble',
+        warningClue: 'A sympathetic tremor echoes through the lower Shadow corridor floor',
+      },
+      {
+        id: 'se-11-real-seal',
+        name: 'Origin Platform Collapse',
         triggerType: 'STEP_ON',
         triggerWorld: 'real',
         triggerPosition: { x: 3, y: 2 },
