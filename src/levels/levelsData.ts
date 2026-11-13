@@ -1631,8 +1631,8 @@ export const ALL_LEVELS: readonly LevelDefinition[] = [
     name: 'The Last Connection',
     width: 8,
     height: 6,
-    difficulty: 'EXPERT',
-    hint: 'Every mechanism is interconnected. Slide the magnetic core, breach the rift, and synchronize the final passage.',
+    difficulty: 'MASTER',
+    hint: 'Complete campaign mastery across five connected zones: optical timing, magnetic core, and portal synchronization.',
     realStart: { x: 1, y: 1 },
     shadowStart: { x: 6, y: 1 },
     realExit: { x: 6, y: 4 },
@@ -1642,108 +1642,149 @@ export const ALL_LEVELS: readonly LevelDefinition[] = [
       { x: 3, y: 1 },
       { x: 3, y: 2 },
       { x: 3, y: 3 },
+      { x: 3, y: 4 },
       { x: 3, y: 5 },
+      { x: 2, y: 1 },
+      { x: 2, y: 2 },
+      { x: 0, y: 4 },
+      { x: 5, y: 5 },
     ],
     shadowWalls: [
       { x: 4, y: 0 },
       { x: 4, y: 1 },
       { x: 4, y: 2 },
       { x: 4, y: 3 },
+      { x: 4, y: 4 },
       { x: 4, y: 5 },
+      { x: 5, y: 1 },
+      { x: 5, y: 2 },
+      { x: 7, y: 4 },
+      { x: 2, y: 5 },
     ],
-    checkpoints: [
-      { id: 'cp-19', realPosition: { x: 2, y: 1 }, shadowPosition: { x: 5, y: 1 } },
+    timeLocks: [
+      {
+        id: 'tl-19-real',
+        world: 'real',
+        position: { x: 0, y: 1 },
+        duration: 4,
+        linkedDoorId: 'door-19-shadow-vault',
+      },
     ],
-    collapsingFloors: [
-      { id: 'cf-19-real', world: 'real', position: { x: 2, y: 1 }, stepsToCollapse: 1 },
+    doors: [
+      { id: 'door-19-shadow-vault', world: 'shadow', position: { x: 6, y: 2 }, initialOpen: false },
+      { id: 'door-19-real-mid', world: 'real', position: { x: 1, y: 2 }, initialOpen: false },
+      { id: 'door-19-shadow-exit', world: 'shadow', position: { x: 2, y: 4 }, initialOpen: false },
+      { id: 'door-19-real-exit', world: 'real', position: { x: 5, y: 4 }, initialOpen: false },
+    ],
+    switches: [
+      { id: 'sw-19-shadow-1', world: 'shadow', position: { x: 6, y: 3 }, linkedDoorId: 'door-19-real-mid' },
+      { id: 'sw-19-real-exit', world: 'real', position: { x: 6, y: 2 }, linkedDoorId: 'door-19-shadow-exit' },
+    ],
+    laserEmitters: [
+      { id: 'le-19-shadow', world: 'shadow', position: { x: 7, y: 0 }, direction: 'down', initialActive: true },
+    ],
+    laserMirrors: [
+      { id: 'mirror-19-shadow', world: 'shadow', position: { x: 7, y: 5 }, orientation: '/', rotatable: false },
+    ],
+    laserReceivers: [
+      { id: 'rx-19-shadow', world: 'shadow', position: { x: 5, y: 5 }, linkedDoorId: 'door-19-real-exit' },
+    ],
+    pressurePlates: [
+      { id: 'pp-19-shadow', world: 'shadow', position: { x: 3, y: 4 }, linkedDoorId: 'door-19-shadow-exit' },
     ],
     portals: [
       {
+        id: 'p-19-real',
+        world: 'real',
+        position: { x: 1, y: 4 },
+        targetWorld: 'real',
+        targetPosition: { x: 4, y: 4 },
+      },
+      {
         id: 'p-19-shadow',
         world: 'shadow',
-        position: { x: 6, y: 3 },
+        position: { x: 6, y: 4 },
         targetWorld: 'shadow',
-        targetPosition: { x: 7, y: 4 },
+        targetPosition: { x: 3, y: 4 },
       },
     ],
     movingHazards: [
       {
-        id: 'saw-19-shadow',
-        world: 'shadow',
+        id: 'saw-19-real',
+        world: 'real',
         path: [
           { x: 5, y: 3 },
-          { x: 5, y: 2 },
+          { x: 6, y: 3 },
         ],
         initialIndex: 0,
       },
     ],
-    movableBlocks: [
-      { id: 'block-19-real', world: 'real', position: { x: 2, y: 3 } },
-    ],
-    magneticFields: [
-      {
-        id: 'mag-19-real',
-        world: 'real',
-        position: { x: 0, y: 3 },
-        direction: 'right',
-        polarity: 'ATTRACT',
-        initialActive: false,
-        linkedSwitchId: 'sw-19-shadow',
-      },
-    ],
-    pressurePlates: [
-      { id: 'pp-19-real', world: 'real', position: { x: 1, y: 3 }, linkedDoorId: 'door-19-shadow' },
-    ],
-    switches: [
-      { id: 'sw-19-shadow', world: 'shadow', position: { x: 6, y: 2 }, linkedDoorId: 'mag-19-real' },
-      { id: 'sw-19-real', world: 'real', position: { x: 1, y: 2 }, linkedDoorId: 'door-19-real' },
-    ],
-    doors: [
-      { id: 'door-19-real', world: 'real', position: { x: 3, y: 4 }, initialOpen: false },
-      { id: 'door-19-shadow', world: 'shadow', position: { x: 4, y: 4 }, initialOpen: false },
+    checkpoints: [
+      { id: 'cp-19', realPosition: { x: 4, y: 4 }, shadowPosition: { x: 3, y: 4 } },
     ],
     solutionTrace: [
-      'down',
-      'left',
-      'down',
-      'down',
-      'right',
-      'right',
-      'right',
-      'right',
-      'right',
-      'right',
+      'up',    // 1. Real to (1,0); Shadow to (6,0)
+      'left',  // 2. Real to (0,0); Shadow to (6,0)
+      'down',  // 3. Real to (0,1) [starts tl-19-real, 4 turns!]; Shadow to (6,1)
+      'down',  // 4. Real to (0,2); Shadow enters vault door (6,2)
+      'down',  // 5. Real to (0,3); Shadow steps on sw-19-shadow-1 (6,3) [unseals door-19-real-mid (1,2)!]
+      'right', // 6. Real to (1,3); Shadow to (5,3)
+      'down',  // 7. Real enters portal p-19-real (1,4) -> teleports to (4,4) [TRIGGERING MULTI-EVENT CHAIN REACTION!]; Shadow to (5,4)
+      'left',  // 8. Shadow enters portal p-19-shadow (6,4) -> teleports to (3,4) onto pp-19-shadow!; Real at (4,4) hits cp-19 checkpoint
+      'up',    // 9. Real to (4,3); Shadow to (3,3)
+      'up',    // 10. Real to (4,2) [northern perimeter flank avoiding saw on row 3]; Shadow to (3,2)
+      'right', // 11. Real to (5,2); Shadow to (2,2)
+      'right', // 12. Real steps on sw-19-real-exit (6,2) [unseals door-19-shadow-exit (2,4)!]; Shadow to (1,2)
+      'right', // 13. Real to (7,2); Shadow to (0,2)
+      'down',  // 14. Real descends column 7 to (7,3); Shadow descends column 0 to (0,3)
+      'down',  // 15. Real descends to (7,4); Shadow descends to (0,4)
+      'left',  // 16. Real arrives at Real Exit (6,4); Shadow reaches Shadow Exit (1,4) -> SIMULTANEOUS DUAL ARRIVAL VICTORY!
     ],
     surpriseEvents: [
       {
-        id: 'se-19-dimensional-breach',
-        name: 'Dimensional Breach Wall',
+        id: 'se-19-chain-breach',
+        name: 'Rift Convergence Shockwave',
         triggerType: 'STEP_ON',
         triggerWorld: 'real',
-        triggerPosition: { x: 1, y: 2 },
+        triggerPosition: { x: 4, y: 4 },
         targetWorld: 'real',
         targetType: 'WALL',
-        targetPosition: { x: 3, y: 0 },
+        targetPosition: { x: 3, y: 5 },
         activationDelay: 0,
         action: 'REMOVE_WALL',
-        animation: 'spark',
-        sound: 'wall_open',
-        warningClue: 'Sympathetic resonance dissolving the central boundary wall',
+        animation: 'shockwave',
+        sound: 'explosion',
+        warningClue: 'Harmonic resonance shattering the central dimensional partition!',
       },
       {
-        id: 'se-19-void-cascade',
-        name: 'Void Cascade Collapse',
+        id: 'se-19-chain-origin-collapse',
+        name: 'Singularity Void Cascade',
         triggerType: 'STEP_ON',
         triggerWorld: 'real',
-        triggerPosition: { x: 3, y: 4 },
+        triggerPosition: { x: 4, y: 4 },
         targetWorld: 'real',
         targetType: 'COLLAPSE_FLOOR',
         targetPosition: { x: 1, y: 1 },
-        activationDelay: 1,
+        activationDelay: 0,
         action: 'COLLAPSE_TILE',
         animation: 'crumble',
         sound: 'crumble',
-        warningClue: 'The reality behind you collapses into infinite blackness',
+        warningClue: 'The northern reality collapses into the void behind you!',
+      },
+      {
+        id: 'se-19-chain-shadow-collapse',
+        name: 'Shadow Dimension Annihilation',
+        triggerType: 'STEP_ON',
+        triggerWorld: 'real',
+        triggerPosition: { x: 4, y: 4 },
+        targetWorld: 'shadow',
+        targetType: 'COLLAPSE_FLOOR',
+        targetPosition: { x: 6, y: 1 },
+        activationDelay: 0,
+        action: 'COLLAPSE_TILE',
+        animation: 'crumble',
+        sound: 'crumble',
+        warningClue: 'The shadow origin disintegrates as the dimensions collapse toward the final threshold!',
       },
     ],
   },
