@@ -1,4 +1,5 @@
 import { LevelDefinition, CollapsingFloorState, MirrorOrientation } from '../types/level';
+import { SurpriseEventSnapshot } from '../types/surprise';
 import { MoveDirection } from '../engine/MovementEngine';
 import { LevelFactory, BuiltLevelSession } from '../levels/LevelFactory';
 import { TurnGameState } from '../engine/TurnEngine';
@@ -44,6 +45,7 @@ interface SolverStateSnapshot {
   readonly blockStates?: Record<string, GridPoint>;
   readonly magnetStates?: Record<string, boolean>;
   readonly cpStates: Record<string, { real: boolean; shadow: boolean; activated: boolean }>;
+  readonly surpriseStates?: Record<string, SurpriseEventSnapshot>;
   readonly gameState: TurnGameState;
 }
 
@@ -121,7 +123,9 @@ export class LevelSolver {
       )
       .join(';');
 
-    return `P(${p.position.x},${p.position.y},${p.isAtExit() ? 1 : 0})|S(${s.position.x},${s.position.y},${s.isAtExit() ? 1 : 0})|D[${doors}]|SW[${switches}]|PL[${plates}]|B[${bombs}]|DW[${walls}]|POR[${portals}]|SAW[${saws}]|FL[${floors}]|LE[${emitters}]|LM[${mirrors}]|TL[${timeLocks}]|MB[${blocks}]|MF[${magnets}]|CP[${cps}]`;
+    const se = session.surpriseManager ? session.surpriseManager.serialize() : '';
+
+    return `P(${p.position.x},${p.position.y},${p.isAtExit() ? 1 : 0})|S(${s.position.x},${s.position.y},${s.isAtExit() ? 1 : 0})|D[${doors}]|SW[${switches}]|PL[${plates}]|B[${bombs}]|DW[${walls}]|POR[${portals}]|SAW[${saws}]|FL[${floors}]|LE[${emitters}]|LM[${mirrors}]|TL[${timeLocks}]|MB[${blocks}]|MF[${magnets}]|CP[${cps}]|SE[${se}]`;
   }
 
   public static captureSnapshot(session: BuiltLevelSession): SolverStateSnapshot {
@@ -203,6 +207,7 @@ export class LevelSolver {
       blockStates,
       magnetStates,
       cpStates,
+      surpriseStates: session.surpriseManager?.captureSnapshot(),
       gameState: session.turnEngine.state,
     };
   }
@@ -265,6 +270,10 @@ export class LevelSolver {
     session.puzzleManager.simulateMagneticFields(snap.playerPos, snap.shadowPos);
     session.puzzleManager.evaluatePressurePlates(snap.playerPos, snap.shadowPos);
     session.puzzleManager.recalculateAllDoors();
+
+    if (snap.surpriseStates && session.surpriseManager) {
+      session.surpriseManager.restoreSnapshot(snap.surpriseStates);
+    }
 
     session.turnEngine.state = snap.gameState;
     session.turnEngine.endAnimation();

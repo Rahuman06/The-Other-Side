@@ -911,6 +911,49 @@ export class SoundEffects {
   }
 
   /**
+   * Dispatches surprise sound cues from SurpriseEventManager
+   */
+  public playSurpriseCue(cue: string): void {
+    switch (cue) {
+      case 'crumble':
+        this.playCollapsingFloor();
+        break;
+      case 'hazard_spawn':
+        this.playMechanicalWarning();
+        break;
+      case 'wall_shift':
+        this.playEnvironmentalTransformation();
+        break;
+      case 'shockwave':
+        this.playSurpriseImpact();
+        break;
+      case 'bomb_fuse':
+        this.playBombTick(1);
+        break;
+      case 'wall_open':
+        this.playDoor(true);
+        break;
+      case 'distortion':
+        this.playPortalDistortion();
+        break;
+      case 'stasis_tick':
+        this.playTimeLock(true);
+        break;
+      case 'explosion':
+        this.playBombExplosion();
+        break;
+      case 'hazard_trigger':
+        this.playMechanicalWarning();
+        break;
+      case 'illusion_shatter':
+      case 'whisper':
+      default:
+        this.playSurpriseImpact();
+        break;
+    }
+  }
+
+  /**
    * Portal Distortion: Corrupted void phase-inversion warp
    */
   public playPortalDistortion(): void {

@@ -3,6 +3,8 @@ import { PuzzleManager } from '../puzzles/PuzzleManager';
 import { Player } from '../entities/Player';
 import { Shadow } from '../entities/Shadow';
 import { CollapsingFloorState, MirrorOrientation } from '../types/level';
+import { SurpriseEventManager } from '../events/SurpriseEventManager';
+import { SurpriseEventSnapshot } from '../types/surprise';
 
 export interface CheckpointSnapshotData {
   readonly checkpointId: string | null;
@@ -21,6 +23,7 @@ export interface CheckpointSnapshotData {
   readonly timeLockStates?: Record<string, number>;
   readonly blockStates?: Record<string, GridPoint>;
   readonly magnetStates?: Record<string, boolean>;
+  readonly surpriseStates?: Record<string, SurpriseEventSnapshot>;
 }
 
 export class CheckpointSnapshot {
@@ -28,7 +31,8 @@ export class CheckpointSnapshot {
     checkpointId: string | null,
     player: Player,
     shadow: Shadow,
-    puzzleManager?: PuzzleManager
+    puzzleManager?: PuzzleManager,
+    surpriseManager?: SurpriseEventManager
   ): CheckpointSnapshotData {
     const doorStates: Record<string, boolean> = {};
     const switchStates: Record<string, boolean> = {};
@@ -103,6 +107,7 @@ export class CheckpointSnapshot {
       timeLockStates,
       blockStates,
       magnetStates,
+      surpriseStates: surpriseManager?.captureSnapshot(),
     };
   }
 
@@ -110,7 +115,8 @@ export class CheckpointSnapshot {
     snapshot: CheckpointSnapshotData,
     player: Player,
     shadow: Shadow,
-    puzzleManager?: PuzzleManager
+    puzzleManager?: PuzzleManager,
+    surpriseManager?: SurpriseEventManager
   ): void {
     player.setPosition(snapshot.playerPosition);
     shadow.setPosition(snapshot.shadowPosition);
@@ -201,6 +207,10 @@ export class CheckpointSnapshot {
       puzzleManager.simulateMagneticFields(player.position, shadow.position);
       puzzleManager.evaluatePressurePlates(player.position, shadow.position);
       puzzleManager.recalculateAllDoors();
+    }
+
+    if (snapshot.surpriseStates && surpriseManager) {
+      surpriseManager.restoreSnapshot(snapshot.surpriseStates);
     }
   }
 }

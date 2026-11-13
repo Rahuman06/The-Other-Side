@@ -2,6 +2,7 @@ import { GridPosition } from '../grid/GridPosition';
 import { MoveDirection } from '../engine/MovementEngine';
 import { DoorActivationRule } from '../puzzles/Door';
 import { SwitchActivationBehavior } from '../puzzles/Switch';
+import { SurpriseEventConfig } from './surprise';
 
 export type ChapterName =
   | 'THE BEGINNING'
@@ -185,6 +186,7 @@ export interface LevelDefinition {
   readonly timeLocks?: readonly LevelTimeLockConfig[];
   readonly movableBlocks?: readonly LevelMovableBlockConfig[];
   readonly magneticFields?: readonly LevelMagneticFieldConfig[];
+  readonly surpriseEvents?: readonly SurpriseEventConfig[];
   readonly difficulty: Difficulty;
   readonly exitBehavior?: ExitBehavior;
   readonly solutionTrace: readonly MoveDirection[];

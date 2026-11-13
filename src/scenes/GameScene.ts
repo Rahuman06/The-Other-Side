@@ -8,7 +8,9 @@ import { WinModal } from '../ui/WinModal';
 import { ObjectGuideModal } from '../ui/ObjectGuideModal';
 import { SettingsModal } from '../ui/SettingsModal';
 import { GridPoint } from '../grid/GridPosition';
+import { TileType } from '../grid/TileType';
 import { LevelDefinition } from '../types/level';
+import { SurpriseEventConfig } from '../types/surprise';
 import { ALL_LEVELS } from '../levels/levelsData';
 import { LevelFactory, BuiltLevelSession } from '../levels/LevelFactory';
 import { MoveDirection, MovementTransactionResult } from '../engine/MovementEngine';
@@ -51,6 +53,7 @@ export class GameScene extends Phaser.Scene {
   private characterAnimator!: CharacterAnimator;
   private vfxManager!: VisualEffectsManager;
   private puzzleRenderer!: PuzzleObjectRenderer;
+  private staticGridGraphics!: Phaser.GameObjects.Graphics;
   private dynamicPuzzleGraphics!: Phaser.GameObjects.Graphics;
   private bombLabels: Map<string, Phaser.GameObjects.Text> = new Map();
   private exitLabels: Map<string, Phaser.GameObjects.Text> = new Map();
@@ -122,6 +125,7 @@ export class GameScene extends Phaser.Scene {
     this.characterAnimator = new CharacterAnimator(this, this.cellSize, isReduced);
 
     // 5. Render Static Grids (Floors, Walls, Exits, Static Hazards)
+    this.staticGridGraphics = this.add.graphics().setDepth(2);
     this.renderStaticGrids();
 
     // 6. Dynamic Puzzle Graphics Layer
@@ -239,6 +243,12 @@ export class GameScene extends Phaser.Scene {
       onCancelAnimation: () => this.tweens.killAll(),
       onRestart: () => this.onRespawn(),
     });
+
+    if (this.session.surpriseManager) {
+      this.session.surpriseManager.setCallbacks({
+        onSurpriseTriggered: (ev: SurpriseEventConfig) => this.handleSurpriseTriggered(ev),
+      });
+    }
   }
 
   private calculateGridLayout(width: number, height: number): void {
@@ -274,7 +284,12 @@ export class GameScene extends Phaser.Scene {
   }
 
   private renderStaticGrids(): void {
-    const g = this.add.graphics().setDepth(2);
+    if (!this.staticGridGraphics) {
+      this.staticGridGraphics = this.add.graphics().setDepth(2);
+    }
+    const g = this.staticGridGraphics;
+    g.clear();
+
     const cols = this.levelDef.width;
     const rows = this.levelDef.height;
 
@@ -287,8 +302,11 @@ export class GameScene extends Phaser.Scene {
         const x = this.realOriginX + c * this.cellSize;
         const y = this.realOriginY + r * this.cellSize;
         const key = `${c},${r}`;
+        const isWall = this.session
+          ? this.session.playerGrid.getCell({ x: c, y: r })?.tileType === TileType.WALL
+          : rWalls.has(key);
 
-        if (rWalls.has(key)) {
+        if (isWall) {
           g.fillStyle(PALETTE.real.walls, 1);
           g.fillRect(x, y, this.cellSize, this.cellSize);
           // Architectural masonry inner bevel
@@ -307,8 +325,11 @@ export class GameScene extends Phaser.Scene {
         const x = this.shadowOriginX + c * this.cellSize;
         const y = this.shadowOriginY + r * this.cellSize;
         const key = `${c},${r}`;
+        const isWall = this.session
+          ? this.session.shadowGrid.getCell({ x: c, y: r })?.tileType === TileType.WALL
+          : sWalls.has(key);
 
-        if (sWalls.has(key)) {
+        if (isWall) {
           g.fillStyle(PALETTE.shadow.walls, 1);
           g.fillRect(x, y, this.cellSize, this.cellSize);
           g.lineStyle(1, 0xdddddd, 0.4);
@@ -320,7 +341,7 @@ export class GameScene extends Phaser.Scene {
       }
     }
 
-    // 3. Static Hazards
+    // 3. Static & Dynamic Hazards
     for (const hz of this.levelDef.hazards ?? []) {
       const isReal = hz.world === 'real';
       const coords = this.getScreenCoordinates(GridPoint.from(hz.position), isReal);
@@ -332,6 +353,53 @@ export class GameScene extends Phaser.Scene {
       g.lineBetween(coords.x - sz, coords.y + sz, coords.x + sz, coords.y - sz);
       g.strokeRect(coords.x - sz * 0.8, coords.y - sz * 0.8, sz * 1.6, sz * 1.6);
     }
+
+    if (this.session?.surpriseManager) {
+      for (let c = 0; c < cols; c++) {
+        for (let r = 0; r < rows; r++) {
+          const pos = { x: c, y: r };
+          if (this.session.surpriseManager.isDynamicHazard('real', pos)) {
+            const coords = this.getScreenCoordinates(GridPoint.from(pos), true);
+            g.lineStyle(2.5, 0x171717, 0.9);
+            const sz = this.cellSize * 0.42;
+            g.lineBetween(coords.x - sz, coords.y - sz, coords.x + sz, coords.y + sz);
+            g.lineBetween(coords.x - sz, coords.y + sz, coords.x + sz, coords.y - sz);
+            g.strokeRect(coords.x - sz * 0.8, coords.y - sz * 0.8, sz * 1.6, sz * 1.6);
+          }
+          if (this.session.surpriseManager.isDynamicHazard('shadow', pos)) {
+            const coords = this.getScreenCoordinates(GridPoint.from(pos), false);
+            g.lineStyle(2.5, 0xffffff, 0.9);
+            const sz = this.cellSize * 0.42;
+            g.lineBetween(coords.x - sz, coords.y - sz, coords.x + sz, coords.y + sz);
+            g.lineBetween(coords.x - sz, coords.y + sz, coords.x + sz, coords.y - sz);
+            g.strokeRect(coords.x - sz * 0.8, coords.y - sz * 0.8, sz * 1.6, sz * 1.6);
+          }
+        }
+      }
+    }
+  }
+
+  private handleSurpriseTriggered(ev: SurpriseEventConfig): void {
+    const isReduced = this.storage.getProgress().reducedMotion;
+    this.soundEffects.playSurpriseCue(ev.sound ?? 'shockwave');
+
+    if (ev.targetPosition) {
+      const isReal = ev.targetWorld === 'real' || ev.targetWorld === 'both';
+      const coords = this.getScreenCoordinates(GridPoint.from(ev.targetPosition), isReal);
+
+      if (ev.animation === 'crumble') {
+        this.vfxManager.spawnStoneDebris(coords.x, coords.y, 16, isReal);
+      } else if (ev.animation === 'shockwave') {
+        this.vfxManager.addShockwave(coords.x, coords.y, isReal ? 0x000000 : 0xffffff, this.cellSize * 1.6);
+      } else if (ev.animation === 'reveal') {
+        this.vfxManager.spawnSparkBurst(coords.x, coords.y, 20, 0x00e5ff);
+      } else if (ev.animation === 'glitch' && !isReduced) {
+        this.cameras.main.shake(120, 0.006);
+      }
+    }
+
+    // Refresh static grid graphics in case walls appeared/disappeared
+    this.renderStaticGrids();
   }
 
   private createCharacters(): void {

@@ -2,6 +2,7 @@ import { MoveDirection, MovementEngine, MovementTransactionResult } from './Move
 import { CheckpointPair } from '../puzzles/Checkpoint';
 import { CheckpointSnapshot, CheckpointSnapshotData } from './CheckpointSnapshot';
 import { PuzzleManager } from '../puzzles/PuzzleManager';
+import { SurpriseEventManager } from '../events/SurpriseEventManager';
 
 export type TurnGameState = 'PLAYING' | 'PAUSED' | 'DYING' | 'COMPLETED';
 
@@ -20,6 +21,7 @@ export interface TurnEngineConfig {
   readonly movementEngine: MovementEngine;
   readonly checkpoints?: readonly CheckpointPair[];
   readonly puzzleManager?: PuzzleManager;
+  readonly surpriseManager?: SurpriseEventManager;
   readonly events?: TurnEvents;
 }
 
@@ -27,11 +29,13 @@ export class TurnEngine {
   private readonly movementEngine: MovementEngine;
   private readonly checkpoints: readonly CheckpointPair[];
   private readonly puzzleManager?: PuzzleManager;
+  private readonly surpriseManager?: SurpriseEventManager;
   private readonly events: TurnEvents;
 
   private gameState: TurnGameState = 'PLAYING';
   private transactionActive = false;
   private isHandlingDeath = false;
+  private turnCounter = 0;
 
   private readonly initialSnapshot: CheckpointSnapshotData;
   private lastCheckpointSnapshot: CheckpointSnapshotData;
@@ -41,6 +45,7 @@ export class TurnEngine {
       this.movementEngine = config.movementEngine;
       this.checkpoints = config.checkpoints ?? [];
       this.puzzleManager = config.puzzleManager;
+      this.surpriseManager = config.surpriseManager;
       this.events = config.events ?? {};
     } else {
       this.movementEngine = config;
@@ -51,7 +56,7 @@ export class TurnEngine {
     // Capture initial level snapshot
     const player = this.movementEngine.getPlayer();
     const shadow = this.movementEngine.getShadow();
-    this.initialSnapshot = CheckpointSnapshot.capture(null, player, shadow, this.puzzleManager);
+    this.initialSnapshot = CheckpointSnapshot.capture(null, player, shadow, this.puzzleManager, this.surpriseManager);
     this.lastCheckpointSnapshot = this.initialSnapshot;
   }
 
@@ -102,6 +107,7 @@ export class TurnEngine {
     }
 
     // Steps 3 - 8: Execute movement transaction
+    this.turnCounter++;
     const result = this.movementEngine.executeMove(direction);
 
     // If neither moved and no hazard triggered, report blocked
@@ -124,7 +130,8 @@ export class TurnEngine {
           cp.id,
           player,
           shadow,
-          this.puzzleManager
+          this.puzzleManager,
+          this.surpriseManager
         );
         this.events.onCheckpointActivated?.(cp.id);
       }
@@ -189,6 +196,24 @@ export class TurnEngine {
       );
     }
 
+    // Step 9g: Evaluate Surprise Events
+    if (this.surpriseManager) {
+      this.surpriseManager.evaluateTurn({
+        playerPos: result.playerNewPosition,
+        shadowPos: result.shadowNewPosition,
+        playerOldPos: result.playerOldPosition,
+        shadowOldPos: result.shadowOldPosition,
+        turnCount: this.turnCounter,
+        realExitPos: this.movementEngine.getPlayer().exit ?? result.playerNewPosition,
+        shadowExitPos: this.movementEngine.getShadow().exit ?? result.shadowNewPosition,
+      });
+
+      if (this.surpriseManager.checkLethalCollision(result.playerNewPosition, result.shadowNewPosition)) {
+        this.executeDeathSequence();
+        return result;
+      }
+    }
+
     // Step 9b: Check Exit Completion
     if (result.bothAtExit) {
       this.gameState = 'COMPLETED';
@@ -230,7 +255,7 @@ export class TurnEngine {
       // 5 & 6. Restore characters and puzzle state to last activated checkpoint atomically
       const player = this.movementEngine.getPlayer();
       const shadow = this.movementEngine.getShadow();
-      CheckpointSnapshot.restore(this.lastCheckpointSnapshot, player, shadow, this.puzzleManager);
+      CheckpointSnapshot.restore(this.lastCheckpointSnapshot, player, shadow, this.puzzleManager, this.surpriseManager);
 
       // 7. Return to PLAYING
       this.gameState = 'PLAYING';
@@ -246,6 +271,7 @@ export class TurnEngine {
   public restartLevel(): void {
     this.gameState = 'PLAYING';
     this.isHandlingDeath = false;
+    this.turnCounter = 0;
     this.endAnimation();
     this.events.onCancelAnimation?.();
 
@@ -253,10 +279,11 @@ export class TurnEngine {
       cp.reset();
     }
 
+    this.surpriseManager?.reset();
     this.lastCheckpointSnapshot = this.initialSnapshot;
     const player = this.movementEngine.getPlayer();
     const shadow = this.movementEngine.getShadow();
-    CheckpointSnapshot.restore(this.initialSnapshot, player, shadow, this.puzzleManager);
+    CheckpointSnapshot.restore(this.initialSnapshot, player, shadow, this.puzzleManager, this.surpriseManager);
 
     this.events.onRestart?.();
   }

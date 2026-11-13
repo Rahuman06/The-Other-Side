@@ -20,6 +20,7 @@ import { PuzzleManager } from '../puzzles/PuzzleManager';
 import { CollisionEngine } from '../engine/CollisionEngine';
 import { MovementEngine } from '../engine/MovementEngine';
 import { TurnEngine, TurnEvents } from '../engine/TurnEngine';
+import { SurpriseEventManager } from '../events/SurpriseEventManager';
 
 export interface BuiltLevelSession {
   readonly definition: LevelDefinition;
@@ -28,6 +29,7 @@ export interface BuiltLevelSession {
   readonly playerGrid: WorldGrid;
   readonly shadowGrid: WorldGrid;
   readonly puzzleManager: PuzzleManager;
+  readonly surpriseManager: SurpriseEventManager;
   readonly checkpoints: CheckpointPair[];
   readonly collisionEngine: CollisionEngine;
   readonly movementEngine: MovementEngine;
@@ -354,10 +356,18 @@ export class LevelFactory {
 
     const movementEngine = new MovementEngine(player, shadow, collisionEngine);
 
+    const surpriseManager = new SurpriseEventManager({
+      events: level.surpriseEvents ?? [],
+      playerGrid,
+      shadowGrid,
+      puzzleManager,
+    });
+
     const turnEngine = new TurnEngine({
       movementEngine,
       checkpoints,
       puzzleManager,
+      surpriseManager,
       events,
     });
 
@@ -368,6 +378,7 @@ export class LevelFactory {
       playerGrid,
       shadowGrid,
       puzzleManager,
+      surpriseManager,
       checkpoints,
       collisionEngine,
       movementEngine,

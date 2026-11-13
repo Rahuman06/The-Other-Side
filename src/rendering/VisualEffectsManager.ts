@@ -416,6 +416,38 @@ export class VisualEffectsManager {
     }
   }
 
+  public spawnStoneDebris(x: number, y: number, count: number = 12, isReal: boolean = true): void {
+    if (this.isReducedMotion) return;
+    for (let i = 0; i < count; i++) {
+      this.particles.push({
+        x: x + (Math.random() - 0.5) * 24,
+        y: y + (Math.random() - 0.5) * 24,
+        vx: (Math.random() - 0.5) * 45,
+        vy: -15 + Math.random() * 50,
+        size: 2 + Math.random() * 3,
+        alpha: 0.85,
+        maxLife: 0.35 + Math.random() * 0.2,
+        life: 0,
+        color: isReal ? 0x333333 : 0xcccccc,
+        shape: 'square',
+        gravity: 100,
+      });
+    }
+  }
+
+  public addShockwave(x: number, y: number, color: number, radiusPx: number): void {
+    this.shockwaves.push({
+      x,
+      y,
+      currentRadius: 4,
+      maxRadius: radiusPx,
+      duration: 0.3,
+      elapsed: 0,
+      color,
+      lineWidth: 3,
+    });
+  }
+
   /**
    * Spawns portal ingestion motes (drawn inward toward event horizon)
    */

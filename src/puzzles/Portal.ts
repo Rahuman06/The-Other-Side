@@ -68,6 +68,11 @@ export class Portal {
     this.currentDestIndex = index % this.destinations.length;
   }
 
+  public setDestination(dest: PortalDestination): void {
+    (this as { destinations: readonly PortalDestination[] }).destinations = [dest];
+    this.currentDestIndex = 0;
+  }
+
   public get currentDestination(): PortalDestination {
     return this.destinations[this.currentDestIndex];
   }
