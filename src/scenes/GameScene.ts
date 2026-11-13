@@ -47,10 +47,13 @@ export class GameScene extends Phaser.Scene {
   private puzzleRenderer!: PuzzleObjectRenderer;
   private dynamicPuzzleGraphics!: Phaser.GameObjects.Graphics;
   private bombLabels: Map<string, Phaser.GameObjects.Text> = new Map();
+  private exitLabels: Map<string, Phaser.GameObjects.Text> = new Map();
 
   // State tracking
   private lastAttemptedDirection: MoveDirection = 'right';
   private knownDetonatedBombs: Set<string> = new Set();
+  private previousPlayerAtExit: boolean = false;
+  private previousShadowAtExit: boolean = false;
 
   constructor() {
     super('GameScene');
@@ -61,6 +64,8 @@ export class GameScene extends Phaser.Scene {
     this.levelDef = ALL_LEVELS.find((l) => l.id === this.levelId) ?? ALL_LEVELS[0];
     this.movesCount = 0;
     this.knownDetonatedBombs.clear();
+    this.previousPlayerAtExit = false;
+    this.previousShadowAtExit = false;
 
     this.storage = new StorageManager();
     const progress = this.storage.getProgress();
@@ -178,7 +183,8 @@ export class GameScene extends Phaser.Scene {
         this.dynamicPuzzleGraphics,
         this.session,
         (pos, isReal) => this.getScreenCoordinates(pos, isReal),
-        this.bombLabels
+        this.bombLabels,
+        this.exitLabels
       );
     }
   }
@@ -281,11 +287,7 @@ export class GameScene extends Phaser.Scene {
       }
     }
 
-    // 3. Exits (Rendered with architectural gateway styling)
-    this.puzzleRenderer.renderExit(g, GridPoint.from(this.levelDef.realExit), true, (p, isR) => this.getScreenCoordinates(p, isR));
-    this.puzzleRenderer.renderExit(g, GridPoint.from(this.levelDef.shadowExit), false, (p, isR) => this.getScreenCoordinates(p, isR));
-
-    // 4. Static Hazards
+    // 3. Static Hazards
     for (const hz of this.levelDef.hazards ?? []) {
       const isReal = hz.world === 'real';
       const coords = this.getScreenCoordinates(GridPoint.from(hz.position), isReal);
@@ -399,6 +401,16 @@ export class GameScene extends Phaser.Scene {
       }
     }
 
+    // 1b. Character Arrival energy response at exits
+    if (result.playerAtExit && !this.previousPlayerAtExit) {
+      this.vfxManager.spawnSparkBurst(realCoords.x, realCoords.y, 14, 0x00e5ff);
+    }
+    if (result.shadowAtExit && !this.previousShadowAtExit) {
+      this.vfxManager.spawnSparkBurst(shadowCoords.x, shadowCoords.y, 14, 0x00e5ff);
+    }
+    this.previousPlayerAtExit = result.playerAtExit;
+    this.previousShadowAtExit = result.shadowAtExit;
+
     // 2. Animate Characters
     let completedTweens = 0;
     const onAnimationDone = () => {
@@ -468,6 +480,8 @@ export class GameScene extends Phaser.Scene {
 
   private onRespawn(): void {
     this.knownDetonatedBombs.clear();
+    this.previousPlayerAtExit = false;
+    this.previousShadowAtExit = false;
     const realCoords = this.getScreenCoordinates(this.session.player.position, true);
     const shadowCoords = this.getScreenCoordinates(this.session.shadow.position, false);
 
@@ -552,6 +566,10 @@ export class GameScene extends Phaser.Scene {
       label.destroy();
     }
     this.bombLabels.clear();
+    for (const label of this.exitLabels.values()) {
+      label.destroy();
+    }
+    this.exitLabels.clear();
     this.vfxManager?.destroy();
     this.characterAnimator?.destroy();
     this.tweens.killAll();

@@ -20,54 +20,79 @@ export class PuzzleObjectRenderer {
   }
 
   /**
-   * Renders static exits with architectural gateway styling and pulsing ground beacon rings
+   * Renders exit doors with architectural doorway styling, subtle illumination, and visible EXIT typography
    */
   public renderExit(
     g: Phaser.GameObjects.Graphics,
     pos: GridPoint,
     isReal: boolean,
     getScreenCoords: ScreenCoordFn,
+    exitLabels: Map<string, Phaser.GameObjects.Text>,
+    isCharacterPresent: boolean = false,
     isUnlocked: boolean = true
   ): void {
     const coords = getScreenCoords(pos, isReal);
-    const color = isReal ? PALETTE.real.character : PALETTE.shadow.character;
-    const accentCol = 0x00e5ff;
-    const s = this.cellSize * 0.72;
+    const s = this.cellSize * 0.82;
+    const pulse = (Math.sin(this.vfx.exitPulsePhase) + 1) * 0.5;
 
-    // 1. Monolithic architectural gateway portal frame
-    g.lineStyle(2.5, color, 0.95);
-    g.strokeRoundedRect(coords.x - s / 2, coords.y - s / 2, s, s, 6);
-
-    // Inner archway bevel
-    g.lineStyle(1.5, color, 0.45);
-    g.strokeRoundedRect(coords.x - s / 2 + 4, coords.y - s / 2 + 4, s - 8, s - 8, 4);
-
+    // 1. Subtle Active Illumination Glow
     if (isUnlocked) {
-      // 2. Concentric pulsating ground beacon rings
-      const pulse1 = (Math.sin(this.vfx.exitPulsePhase) + 1) * 0.5;
-      const pulse2 = (Math.sin(this.vfx.exitPulsePhase + Math.PI) + 1) * 0.5;
-
-      const r1 = this.cellSize * (0.2 + pulse1 * 0.14);
-      const r2 = this.cellSize * (0.15 + pulse2 * 0.12);
-
-      g.lineStyle(1.5, color, 0.3 + pulse1 * 0.4);
-      g.strokeCircle(coords.x, coords.y, r1);
-
-      g.lineStyle(1.5, accentCol, 0.25 + pulse2 * 0.5);
-      g.strokeCircle(coords.x, coords.y, r2);
-
-      // Central radiant beacon core
-      g.fillStyle(color, 0.85);
-      g.fillCircle(coords.x, coords.y, this.cellSize * 0.1);
-
-      g.fillStyle(accentCol, 0.6);
-      g.fillCircle(coords.x, coords.y, this.cellSize * 0.06);
-    } else {
-      // Locked state: crossing seal
-      g.lineStyle(2, color, 0.6);
-      g.lineBetween(coords.x - s * 0.3, coords.y - s * 0.3, coords.x + s * 0.3, coords.y + s * 0.3);
-      g.lineBetween(coords.x - s * 0.3, coords.y + s * 0.3, coords.x + s * 0.3, coords.y - s * 0.3);
+      g.lineStyle(2.5, 0x00e5ff, 0.25 + pulse * 0.35);
+      g.strokeRoundedRect(coords.x - s / 2 - 2, coords.y - s / 2 - 2, s + 4, s + 4, 6);
     }
+
+    // 2. Architectural Doorway Frame & Doorway Panel
+    const frameCol = isReal ? PALETTE.real.walls : PALETTE.shadow.walls;
+    const doorPanelCol = isReal ? 0x181818 : 0xeeeeee;
+    const innerBorderCol = isReal ? 0x333333 : 0xcccccc;
+
+    // Doorway panel base fill
+    g.fillStyle(doorPanelCol, 1);
+    g.fillRoundedRect(coords.x - s / 2, coords.y - s / 2, s, s, 4);
+
+    // Outer door jamb frame
+    g.lineStyle(2, frameCol, 0.95);
+    g.strokeRoundedRect(coords.x - s / 2, coords.y - s / 2, s, s, 4);
+
+    // Inner architectural doorway bevel
+    g.lineStyle(1.5, innerBorderCol, 0.8);
+    g.strokeRoundedRect(coords.x - s / 2 + 3, coords.y - s / 2 + 3, s - 6, s - 6, 3);
+
+    // Threshold grounding bar
+    g.fillStyle(frameCol, 1);
+    g.fillRect(coords.x - s / 2, coords.y + s / 2 - 3, s, 3);
+
+    // 3. Locked indicator (if locked)
+    if (!isUnlocked) {
+      g.lineStyle(2, isReal ? 0x555555 : 0x999999, 0.8);
+      g.lineBetween(coords.x - s * 0.25, coords.y - s * 0.25, coords.x + s * 0.25, coords.y + s * 0.25);
+      g.lineBetween(coords.x - s * 0.25, coords.y + s * 0.25, coords.x + s * 0.25, coords.y - s * 0.25);
+    }
+
+    // 4. Centered "EXIT" Typography Label
+    const labelKey = isReal ? 'real_exit' : 'shadow_exit';
+    let label = exitLabels.get(labelKey);
+    const fontSize = Math.max(13, Math.round(this.cellSize * 0.26));
+    if (!label) {
+      label = (g.scene as Phaser.Scene).add.text(coords.x, coords.y, 'EXIT', {
+        fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, monospace, sans-serif',
+        fontSize: `${fontSize}px`,
+        fontStyle: 'bold',
+        color: isReal ? '#FFFFFF' : '#000000',
+        align: 'center',
+      }).setOrigin(0.5, 0.5).setDepth(18);
+      exitLabels.set(labelKey, label);
+    }
+
+    label.setPosition(coords.x, coords.y);
+    label.setFontSize(`${fontSize}px`);
+    const textColor = !isUnlocked
+      ? (isReal ? '#777777' : '#888888')
+      : (isReal ? '#FFFFFF' : '#000000');
+    label.setColor(textColor);
+    label.setDepth(18);
+    label.setAlpha(isCharacterPresent ? 0.35 : (isUnlocked ? 1.0 : 0.65));
+    label.setVisible(true);
   }
 
   /**
@@ -77,13 +102,17 @@ export class PuzzleObjectRenderer {
     g: Phaser.GameObjects.Graphics,
     session: BuiltLevelSession,
     getScreenCoords: ScreenCoordFn,
-    bombLabels: Map<string, Phaser.GameObjects.Text>
+    bombLabels: Map<string, Phaser.GameObjects.Text>,
+    exitLabels: Map<string, Phaser.GameObjects.Text>
   ): void {
     g.clear();
 
-    // 1. Exits (animated beacon overlay on real and shadow exits)
-    this.renderExit(g, GridPoint.from(session.definition.realExit), true, getScreenCoords);
-    this.renderExit(g, GridPoint.from(session.definition.shadowExit), false, getScreenCoords);
+    const pAtExit = session.player.position.equals(GridPoint.from(session.definition.realExit));
+    const sAtExit = session.shadow.position.equals(GridPoint.from(session.definition.shadowExit));
+
+    // 1. Exits (animated doorway panel with bold EXIT typography)
+    this.renderExit(g, GridPoint.from(session.definition.realExit), true, getScreenCoords, exitLabels, pAtExit, true);
+    this.renderExit(g, GridPoint.from(session.definition.shadowExit), false, getScreenCoords, exitLabels, sAtExit, true);
 
     // 2. Checkpoints
     this.renderCheckpoints(g, session, getScreenCoords);
