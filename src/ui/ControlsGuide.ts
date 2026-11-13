@@ -12,7 +12,7 @@ export class ControlsGuide {
 
     // Real world footer controls
     const realControls = scene.add
-      .text(40, footerY, 'WASD / ARROWS : MOVE  •  R : RESTART  •  Z : UNDO', {
+      .text(40, footerY, 'WASD / ARROWS : MOVE  •  R : RESTART', {
         fontFamily: 'system-ui, -apple-system, sans-serif',
         fontSize: '11px',
         color: PALETTE.real.secondaryHex,

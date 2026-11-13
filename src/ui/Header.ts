@@ -13,6 +13,7 @@ export interface HeaderConfig {
   totalLevels: number;
   levelName: string;
   moves?: number;
+  objective?: string;
 }
 
 export class Header {
@@ -21,6 +22,7 @@ export class Header {
   private movesText!: Phaser.GameObjects.Text;
   private levelLabelText!: Phaser.GameObjects.Text;
   private chapterLabelText!: Phaser.GameObjects.Text;
+  private objectiveText!: Phaser.GameObjects.Text;
 
   constructor(
     scene: Phaser.Scene,
@@ -129,6 +131,19 @@ export class Header {
       .setOrigin(0, 0.5);
     this.container.add(this.movesText);
 
+    // Current Level Objective
+    const objectiveStr = config.objective ?? 'REACH BOTH EXITS SIMULTANEOUSLY';
+    this.objectiveText = scene.add
+      .text(halfW, 52, `OBJECTIVE: ${objectiveStr}`, {
+        fontFamily: 'system-ui, -apple-system, sans-serif',
+        fontSize: '10px',
+        fontStyle: 'bold',
+        color: '#777777',
+        letterSpacing: 1.2,
+      })
+      .setOrigin(0.5, 0);
+    this.container.add(this.objectiveText);
+
     // Right action buttons: RESTART & PAUSE
     const btnW = 86;
     const btnH = 32;
@@ -215,5 +230,8 @@ export class Header {
     const lvlStr = `LEVEL ${String(config.levelNumber).padStart(2, '0')} / ${config.totalLevels}  •  ${config.levelName}`;
     this.levelLabelText.setText(lvlStr);
     this.updateMoves(config.moves ?? 0);
+    if (config.objective) {
+      this.objectiveText.setText(`OBJECTIVE: ${config.objective}`);
+    }
   }
 }

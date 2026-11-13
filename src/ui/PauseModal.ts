@@ -3,6 +3,8 @@ import Phaser from 'phaser';
 export interface PauseModalCallbacks {
   onResume: () => void;
   onRestart: () => void;
+  onObjectGuide?: () => void;
+  onSettings?: () => void;
   onMainMenu: () => void;
 }
 
@@ -14,18 +16,18 @@ export class PauseModal {
     this.container.setDepth(100);
     this.container.setVisible(false);
 
-    const modalW = 380;
-    const modalH = 250;
+    const modalW = 400;
+    const modalH = 320;
 
     // Background overlay backdrop
     const backdrop = scene.add.graphics();
-    backdrop.fillStyle(0x000000, 0.6);
+    backdrop.fillStyle(0x000000, 0.7);
     backdrop.fillRect(-width / 2, -height / 2, width, height);
     this.container.add(backdrop);
 
     // Modal container box
     const box = scene.add.graphics();
-    box.fillStyle(0x080808, 0.96);
+    box.fillStyle(0x080808, 0.98);
     box.fillRoundedRect(-modalW / 2, -modalH / 2, modalW, modalH, 8);
     box.lineStyle(1.5, 0xffffff, 0.85);
     box.strokeRoundedRect(-modalW / 2, -modalH / 2, modalW, modalH, 8);
@@ -33,7 +35,7 @@ export class PauseModal {
 
     // Title
     const title = scene.add
-      .text(0, -65, 'PAUSED', {
+      .text(0, -115, 'PAUSED', {
         fontFamily: 'system-ui, -apple-system, sans-serif',
         fontSize: '24px',
         fontStyle: 'bold',
@@ -46,17 +48,23 @@ export class PauseModal {
     // Divider line
     const div = scene.add.graphics();
     div.lineStyle(1, 0x333333, 0.8);
-    div.lineBetween(-modalW / 2 + 25, -35, modalW / 2 - 25, -35);
+    div.lineBetween(-modalW / 2 + 25, -85, modalW / 2 - 25, -85);
     this.container.add(div);
 
     // 1. Resume Button
-    this.createButton(scene, 0, -5, 260, 36, 'RESUME  [ P ]', () => callbacks.onResume(), true);
+    this.createButton(scene, 0, -50, 280, 36, 'RESUME  [ P ]', () => callbacks.onResume(), true);
 
     // 2. Restart Level Button
-    this.createButton(scene, 0, 42, 260, 36, 'RESTART LEVEL  [ R ]', () => callbacks.onRestart(), false);
+    this.createButton(scene, 0, -2, 280, 36, 'RESTART LEVEL  [ R ]', () => callbacks.onRestart(), false);
 
-    // 3. Main Menu Button
-    this.createButton(scene, 0, 89, 260, 36, 'MAIN MENU  [ M ]', () => callbacks.onMainMenu(), false);
+    // 3. Object Guide Button
+    this.createButton(scene, 0, 46, 280, 36, 'OBJECT GUIDE  [ G ]', () => callbacks.onObjectGuide?.(), false);
+
+    // 4. Settings Button
+    this.createButton(scene, 0, 94, 280, 36, 'SETTINGS  [ S ]', () => callbacks.onSettings?.(), false);
+
+    // 5. Main Menu Button
+    this.createButton(scene, 0, 142, 280, 36, 'MAIN MENU  [ M ]', () => callbacks.onMainMenu(), false);
   }
 
   private createButton(

@@ -4,7 +4,6 @@ export interface InputTarget {
   onDirection: (direction: MoveDirection) => void;
   onPause?: () => void;
   onRestart?: () => void;
-  onUndo?: () => void;
 }
 
 export class InputController {
@@ -114,11 +113,6 @@ export class InputController {
       case 'r':
         e.preventDefault?.();
         this.target.onRestart?.();
-        return true;
-      case 'z':
-      case 'u':
-        e.preventDefault?.();
-        this.target.onUndo?.();
         return true;
       default:
         return false;

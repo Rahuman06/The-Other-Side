@@ -280,7 +280,7 @@ export class GameEngine {
       };
     }
 
-    // Save history before moving for undo
+    // Action recording (Undo is disabled by design)
     this.saveSnapshot();
 
     const oldRealPos = { ...this.realPos };
@@ -446,38 +446,12 @@ export class GameEngine {
     this.updatePressurePlates();
   }
 
+  /**
+   * UNDO AND REDO ARE NOT ALLOWED BY DESIGN in THE OTHER SIDE.
+   * Action reversal is strictly prohibited. Players may only Restart.
+   */
   public undo(): boolean {
-    if (this.history.length === 0 || this.status === 'level_complete') {
-      return false;
-    }
-
-    const prev = this.history.pop()!;
-    this.realPos = { ...prev.realPos };
-    this.shadowPos = { ...prev.shadowPos };
-    this.moveCount = prev.moveCount;
-    this.lastCheckpoint = {
-      real: { ...prev.lastCheckpoint.real },
-      shadow: { ...prev.lastCheckpoint.shadow },
-      id: prev.lastCheckpoint.id,
-    };
-
-    for (const [id, isOpen] of prev.doors.entries()) {
-      const door = this.doors.get(id);
-      if (door) door.isOpen = isOpen;
-    }
-
-    for (const [id, isActive] of prev.switches.entries()) {
-      const sw = this.switches.get(id);
-      if (sw) sw.isActive = isActive;
-    }
-
-    for (const [id, isPressed] of prev.pressurePlates.entries()) {
-      const plate = this.pressurePlates.get(id);
-      if (plate) plate.isPressed = isPressed;
-    }
-
-    this.status = 'playing';
-    return true;
+    return false;
   }
 
   private saveSnapshot(): void {

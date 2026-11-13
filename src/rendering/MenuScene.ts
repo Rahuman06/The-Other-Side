@@ -19,6 +19,17 @@ export class MenuScene extends Phaser.Scene {
   private creditsModal!: Phaser.GameObjects.Container;
   private confirmResetModal!: Phaser.GameObjects.Container;
 
+  // Background Mirroring VFX
+  private ambientGraphics!: Phaser.GameObjects.Graphics;
+  private ambientParticles: Array<{
+    xOffset: number;
+    y: number;
+    vx: number;
+    vy: number;
+    radius: number;
+    baseAlpha: number;
+  }> = [];
+
   constructor() {
     super('MenuScene');
   }
@@ -55,6 +66,22 @@ export class MenuScene extends Phaser.Scene {
     // Center divider
     bg.lineStyle(1, PALETTE.divider, 0.7);
     bg.lineBetween(halfW, 0, halfW, height);
+
+    // Dynamic Ambient Mirroring Graphics (depth 1)
+    this.ambientGraphics = this.add.graphics().setDepth(1);
+    this.ambientParticles = [];
+    const isReduced = this.storage.getProgress().reducedMotion;
+    const particleCount = isReduced ? 0 : 28;
+    for (let i = 0; i < particleCount; i++) {
+      this.ambientParticles.push({
+        xOffset: Math.random() * (halfW - 50) + 25,
+        y: Math.random() * height,
+        vx: (Math.random() - 0.5) * 18,
+        vy: (Math.random() - 0.5) * 22,
+        radius: Math.random() * 2.5 + 1.2,
+        baseAlpha: Math.random() * 0.35 + 0.15,
+      });
+    }
 
     // 2. Initialize View Containers
     this.mainMenuContainer = this.add.container(0, 0);
@@ -110,76 +137,138 @@ export class MenuScene extends Phaser.Scene {
       .setOrigin(0, 0.5);
     this.mainMenuContainer.add(titleRight);
 
-    // Subtitle
+    // Tagline in all-caps
     const subtitle = this.add
-      .text(halfW, 220, 'Two worlds. One mind.', {
+      .text(halfW, 220, 'TWO WORLDS. ONE MIND.', {
         fontFamily: 'system-ui, -apple-system, sans-serif',
-        fontSize: '18px',
+        fontSize: '17px',
+        fontStyle: 'bold',
         color: '#888888',
-        letterSpacing: 2,
+        letterSpacing: 3,
       })
       .setOrigin(0.5);
     this.mainMenuContainer.add(subtitle);
 
     // Menu Buttons
     const btnW = 260;
-    const btnH = 46;
-    const startY = 300;
-    const spacingY = 58;
-
+    const btnH = 44;
     const hasProgress = progress.completedLevels.length > 0;
-    const playLabel = hasProgress ? `CONTINUE  (LVL ${progress.unlockedLevel})` : 'PLAY';
 
-    // 1. Play / Continue Button
-    this.createMenuButton(
-      this.mainMenuContainer,
-      halfW,
-      startY,
-      btnW,
-      btnH,
-      playLabel,
-      () => {
-        const targetLevel = progress.unlockedLevel;
-        this.startLevel(targetLevel);
-      },
-      true
-    );
+    if (hasProgress) {
+      const startY = 280;
+      const spacingY = 52;
 
-    // 2. Level Selection Button
-    this.createMenuButton(
-      this.mainMenuContainer,
-      halfW,
-      startY + spacingY,
-      btnW,
-      btnH,
-      'LEVEL SELECTION',
-      () => this.showLevelSelect(),
-      false
-    );
+      // 1. Continue Button (primary)
+      this.createMenuButton(
+        this.mainMenuContainer,
+        halfW,
+        startY,
+        btnW,
+        btnH,
+        `CONTINUE  (LVL ${progress.unlockedLevel})`,
+        () => this.startLevel(progress.unlockedLevel),
+        true
+      );
 
-    // 3. Settings Button
-    this.createMenuButton(
-      this.mainMenuContainer,
-      halfW,
-      startY + spacingY * 2,
-      btnW,
-      btnH,
-      'SETTINGS',
-      () => this.settingsModal.setVisible(true),
-      false
-    );
+      // 2. Play / New Game Button
+      this.createMenuButton(
+        this.mainMenuContainer,
+        halfW,
+        startY + spacingY,
+        btnW,
+        btnH,
+        'PLAY  (NEW GAME)',
+        () => this.startLevel(1),
+        false
+      );
 
-    // 4. Credits Button
-    this.createMenuButton(
-      this.mainMenuContainer,
-      halfW,
-      startY + spacingY * 3,
-      btnW,
-      btnH,
-      'CREDITS',
-      () => this.creditsModal.setVisible(true),
-      false
-    );
+      // 3. Level Selection Button
+      this.createMenuButton(
+        this.mainMenuContainer,
+        halfW,
+        startY + spacingY * 2,
+        btnW,
+        btnH,
+        'LEVEL SELECTION',
+        () => this.showLevelSelect(),
+        false
+      );
+
+      // 4. Settings Button
+      this.createMenuButton(
+        this.mainMenuContainer,
+        halfW,
+        startY + spacingY * 3,
+        btnW,
+        btnH,
+        'SETTINGS',
+        () => this.settingsModal.setVisible(true),
+        false
+      );
+
+      // 5. Credits Button
+      this.createMenuButton(
+        this.mainMenuContainer,
+        halfW,
+        startY + spacingY * 4,
+        btnW,
+        btnH,
+        'CREDITS',
+        () => this.creditsModal.setVisible(true),
+        false
+      );
+    } else {
+      const startY = 295;
+      const spacingY = 56;
+
+      // 1. Play Button (primary)
+      this.createMenuButton(
+        this.mainMenuContainer,
+        halfW,
+        startY,
+        btnW,
+        btnH,
+        'PLAY',
+        () => this.startLevel(1),
+        true
+      );
+
+      // 2. Level Selection Button
+      this.createMenuButton(
+        this.mainMenuContainer,
+        halfW,
+        startY + spacingY,
+        btnW,
+        btnH,
+        'LEVEL SELECTION',
+        () => this.showLevelSelect(),
+        false
+      );
+
+      // 3. Settings Button
+      this.createMenuButton(
+        this.mainMenuContainer,
+        halfW,
+        startY + spacingY * 2,
+        btnW,
+        btnH,
+        'SETTINGS',
+        () => this.settingsModal.setVisible(true),
+        false
+      );
+
+      // 4. Credits Button
+      this.createMenuButton(
+        this.mainMenuContainer,
+        halfW,
+        startY + spacingY * 3,
+        btnW,
+        btnH,
+        'CREDITS',
+        () => this.creditsModal.setVisible(true),
+        false
+      );
+    }
 
     // Controls hint footer
     const footer = this.add
@@ -735,7 +824,7 @@ export class MenuScene extends Phaser.Scene {
           'Concept & Design: Google DeepMind pair programming\n' +
           'Built with Phaser 3 & TypeScript\n' +
           'Publishing Platform: Poki\n\n' +
-          'Two worlds. One mind.',
+          'TWO WORLDS. ONE MIND.',
         {
           fontFamily: 'system-ui, -apple-system, sans-serif',
           fontSize: '13px',
@@ -762,5 +851,49 @@ export class MenuScene extends Phaser.Scene {
   private startLevel(levelId: number): void {
     AudioManager.getInstance().stopAllMusic();
     this.scene.start('GameScene', { levelId });
+  }
+
+  public update(time: number, delta: number): void {
+    if (!this.ambientGraphics) return;
+
+    const dt = Math.min(delta / 1000, 0.1);
+    const { width, height } = this.scale;
+    const halfW = width / 2;
+
+    this.ambientGraphics.clear();
+
+    // 1. Divider line subtle energy breathing
+    const pulseAlpha = 0.45 + 0.35 * Math.sin(time * 0.002);
+    this.ambientGraphics.lineStyle(1.5, 0x555555, pulseAlpha);
+    this.ambientGraphics.lineBetween(halfW, 0, halfW, height);
+
+    // 2. Mirrored particles
+    for (const p of this.ambientParticles) {
+      p.xOffset += p.vx * dt;
+      p.y += p.vy * dt;
+
+      // Wrap around bounds
+      if (p.xOffset < 15) {
+        p.xOffset = 15;
+        p.vx = -p.vx;
+      } else if (p.xOffset > halfW - 15) {
+        p.xOffset = halfW - 15;
+        p.vx = -p.vx;
+      }
+
+      if (p.y < 0) {
+        p.y = height;
+      } else if (p.y > height) {
+        p.y = 0;
+      }
+
+      // Left particle: Dark particle on light background
+      this.ambientGraphics.fillStyle(PALETTE.real.character, p.baseAlpha * 0.4);
+      this.ambientGraphics.fillCircle(halfW - p.xOffset, p.y, p.radius);
+
+      // Right particle: White particle on dark background (mirrored position)
+      this.ambientGraphics.fillStyle(PALETTE.shadow.character, p.baseAlpha * 0.85);
+      this.ambientGraphics.fillCircle(halfW + p.xOffset, p.y, p.radius);
+    }
   }
 }

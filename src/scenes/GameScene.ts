@@ -5,6 +5,8 @@ import { ControlsGuide } from '../ui/ControlsGuide';
 import { TouchControls } from '../ui/TouchControls';
 import { PauseModal } from '../ui/PauseModal';
 import { WinModal } from '../ui/WinModal';
+import { ObjectGuideModal } from '../ui/ObjectGuideModal';
+import { SettingsModal } from '../ui/SettingsModal';
 import { GridPoint } from '../grid/GridPosition';
 import { LevelDefinition } from '../types/level';
 import { ALL_LEVELS } from '../levels/levelsData';
@@ -34,6 +36,8 @@ export class GameScene extends Phaser.Scene {
   private touchControls!: TouchControls;
   private pauseModal!: PauseModal;
   private winModal!: WinModal;
+  private objectGuideModal!: ObjectGuideModal;
+  private settingsModal!: SettingsModal;
   private inputController!: InputController;
 
   // Grid layout metrics
@@ -154,11 +158,25 @@ export class GameScene extends Phaser.Scene {
     });
 
     // 11. Modals
+    this.objectGuideModal = new ObjectGuideModal(this, width, height, () => {
+      // Guide closed
+    });
+
+    this.settingsModal = new SettingsModal(this, width, height, this.storage, () => {
+      // Settings closed
+    });
+
     this.pauseModal = new PauseModal(this, width, height, {
       onResume: () => this.togglePause(),
       onRestart: () => {
         this.pauseModal.hide();
         this.restartLevel();
+      },
+      onObjectGuide: () => {
+        this.objectGuideModal.show();
+      },
+      onSettings: () => {
+        this.settingsModal.show();
       },
       onMainMenu: () => {
         pokiBridge.gameplayStop();
@@ -340,7 +358,30 @@ export class GameScene extends Phaser.Scene {
     let pointerStartY = 0;
     let pointerDown = false;
 
+    // Keyboard shortcut for Object Guide [ G ]
+    this.input.keyboard?.on('keydown-G', () => {
+      if (this.objectGuideModal.isVisible()) {
+        this.objectGuideModal.hide();
+        if (this.session.turnEngine.state === 'PAUSED' && !this.pauseModal.isVisible()) {
+          this.session.turnEngine.resume();
+        }
+      } else {
+        if (this.session.turnEngine.state === 'PLAYING') {
+          this.session.turnEngine.pause();
+        }
+        this.objectGuideModal.show();
+      }
+    });
+
     this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
+      if (
+        this.pauseModal.isVisible() ||
+        this.winModal.isVisible() ||
+        this.objectGuideModal?.isVisible() ||
+        this.settingsModal?.isVisible()
+      ) {
+        return;
+      }
       if (pointer.y < 70 || pointer.y > this.scale.height - 40) return;
       pointerStartX = pointer.x;
       pointerStartY = pointer.y;
@@ -387,6 +428,14 @@ export class GameScene extends Phaser.Scene {
 
   private handleDirectionInput(direction: MoveDirection): void {
     if (this.session.turnEngine.state !== 'PLAYING') return;
+    if (
+      this.pauseModal?.isVisible() ||
+      this.winModal?.isVisible() ||
+      this.objectGuideModal?.isVisible() ||
+      this.settingsModal?.isVisible()
+    ) {
+      return;
+    }
     this.lastAttemptedDirection = direction;
     this.session.turnEngine.handleInput(direction);
   }

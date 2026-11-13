@@ -3,7 +3,6 @@ import { Direction } from '../types/game.js';
 export interface InputHandlers {
   onMove: (dir: Direction) => void;
   onRestart: () => void;
-  onUndo: () => void;
   onPause: () => void;
   onMuteToggle: () => void;
 }
@@ -59,11 +58,6 @@ export class InputManager {
         case 'r':
           e.preventDefault();
           this.handlers.onRestart();
-          break;
-        case 'z':
-        case 'u':
-          e.preventDefault();
-          this.handlers.onUndo();
           break;
         case 'p':
         case 'escape':
