@@ -152,6 +152,7 @@ export class TurnEngine {
         }
       }
       if (explosion.lethal) {
+        (result as { hazardTriggered: boolean }).hazardTriggered = true;
         this.executeDeathSequence();
         return result;
       }
@@ -164,6 +165,7 @@ export class TurnEngine {
         result.shadowNewPosition
       );
       if (sawHit) {
+        (result as { hazardTriggered: boolean }).hazardTriggered = true;
         this.executeDeathSequence();
         return result;
       }
@@ -186,6 +188,7 @@ export class TurnEngine {
         `shadow:${result.shadowNewPosition.x}:${result.shadowNewPosition.y}`
       );
       if (playerHit || shadowHit) {
+        (result as { hazardTriggered: boolean }).hazardTriggered = true;
         this.executeDeathSequence();
         return result;
       }
@@ -221,6 +224,7 @@ export class TurnEngine {
       });
 
       if (this.surpriseManager.checkLethalCollision(result.playerNewPosition, result.shadowNewPosition)) {
+        (result as { hazardTriggered: boolean }).hazardTriggered = true;
         this.executeDeathSequence();
         return result;
       }

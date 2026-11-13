@@ -1666,7 +1666,7 @@ export const ALL_LEVELS: readonly LevelDefinition[] = [
         id: 'tl-19-real',
         world: 'real',
         position: { x: 0, y: 1 },
-        duration: 4,
+        duration: 2,
         linkedDoorId: 'door-19-shadow-vault',
       },
     ],
@@ -1689,8 +1689,8 @@ export const ALL_LEVELS: readonly LevelDefinition[] = [
     laserReceivers: [
       { id: 'rx-19-shadow', world: 'shadow', position: { x: 5, y: 5 }, linkedDoorId: 'door-19-real-exit' },
     ],
-    pressurePlates: [
-      { id: 'pp-19-shadow', world: 'shadow', position: { x: 3, y: 4 }, linkedDoorId: 'door-19-shadow-exit' },
+    collapsingFloors: [
+      { id: 'cf-19-real', world: 'real', position: { x: 0, y: 2 }, stepsToCollapse: 1 },
     ],
     portals: [
       {
@@ -1718,6 +1718,15 @@ export const ALL_LEVELS: readonly LevelDefinition[] = [
         ],
         initialIndex: 0,
       },
+      {
+        id: 'saw-19-shadow',
+        world: 'shadow',
+        path: [
+          { x: 1, y: 3 },
+          { x: 2, y: 3 },
+        ],
+        initialIndex: 0,
+      },
     ],
     checkpoints: [
       { id: 'cp-19', realPosition: { x: 4, y: 4 }, shadowPosition: { x: 3, y: 4 } },
@@ -1725,15 +1734,15 @@ export const ALL_LEVELS: readonly LevelDefinition[] = [
     solutionTrace: [
       'up',    // 1. Real to (1,0); Shadow to (6,0)
       'left',  // 2. Real to (0,0); Shadow to (6,0)
-      'down',  // 3. Real to (0,1) [starts tl-19-real, 4 turns!]; Shadow to (6,1)
-      'down',  // 4. Real to (0,2); Shadow enters vault door (6,2)
-      'down',  // 5. Real to (0,3); Shadow steps on sw-19-shadow-1 (6,3) [unseals door-19-real-mid (1,2)!]
+      'down',  // 3. Real steps on tl-19-real (0,1) [EXTREME 2-TURN WINDOW!]; Shadow to (6,1)
+      'down',  // 4. Real to cf-19-real (0,2); Shadow penetrates vault door (6,2) on final open turn!
+      'down',  // 5. cf-19-real collapses behind Real! Real to (0,3); Shadow hits sw-19-shadow-1 (6,3) [unseals door-19-real-mid (1,2)!]
       'right', // 6. Real to (1,3); Shadow to (5,3)
-      'down',  // 7. Real enters portal p-19-real (1,4) -> teleports to (4,4) [TRIGGERING MULTI-EVENT CHAIN REACTION!]; Shadow to (5,4)
-      'left',  // 8. Shadow enters portal p-19-shadow (6,4) -> teleports to (3,4) onto pp-19-shadow!; Real at (4,4) hits cp-19 checkpoint
+      'down',  // 7. Real enters portal p-19-real (1,4) -> teleports to (4,4) [TRIGGERING 3-EVENT CHAIN REACTION!]; Shadow to (5,4)
+      'left',  // 8. Shadow enters portal p-19-shadow (6,4) -> teleports to (3,4); cp-19 activated!
       'up',    // 9. Real to (4,3); Shadow to (3,3)
       'up',    // 10. Real to (4,2) [northern perimeter flank avoiding saw on row 3]; Shadow to (3,2)
-      'right', // 11. Real to (5,2); Shadow to (2,2)
+      'right', // 11. Real to (5,2); Shadow to (2,2) [flanks past saw-19-shadow on row 3]
       'right', // 12. Real steps on sw-19-real-exit (6,2) [unseals door-19-shadow-exit (2,4)!]; Shadow to (1,2)
       'right', // 13. Real to (7,2); Shadow to (0,2)
       'down',  // 14. Real descends column 7 to (7,3); Shadow descends column 0 to (0,3)
