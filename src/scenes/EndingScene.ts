@@ -135,22 +135,45 @@ export class EndingScene extends Phaser.Scene {
     const textGroup = this.add.container(0, 0);
     this.container.add(textGroup);
 
-    // Poetic narrative lines
-    const line1 = this.add
-      .text(halfW, h * 0.12, 'YOU WERE NEVER TRULY SEPARATE.', {
+    // Grand cinematic game title reveal
+    const gameTitle = this.add
+      .text(halfW, h * 0.07, 'THE OTHER SIDE', {
         fontFamily: 'system-ui, -apple-system, sans-serif',
-        fontSize: '18px',
+        fontSize: '26px',
         fontStyle: 'bold',
         color: '#FFFFFF',
+        letterSpacing: 4,
+      })
+      .setOrigin(0.5)
+      .setAlpha(0);
+
+    const gameSubtitle = this.add
+      .text(halfW, h * 0.12, 'TWO WORLDS. ONE MIND.', {
+        fontFamily: 'system-ui, -apple-system, sans-serif',
+        fontSize: '14px',
+        fontStyle: 'bold',
+        color: '#CCCCCC',
         letterSpacing: 3,
       })
       .setOrigin(0.5)
       .setAlpha(0);
 
-    const line2 = this.add
-      .text(halfW, h * 0.17, 'The light cast the shadow. The shadow defined the light.', {
+    // Poetic narrative lines
+    const line1 = this.add
+      .text(halfW, h * 0.17, 'YOU WERE NEVER TRULY SEPARATE.', {
         fontFamily: 'system-ui, -apple-system, sans-serif',
-        fontSize: '13px',
+        fontSize: '15px',
+        fontStyle: 'bold',
+        color: '#FFFFFF',
+        letterSpacing: 2,
+      })
+      .setOrigin(0.5)
+      .setAlpha(0);
+
+    const line2 = this.add
+      .text(halfW, h * 0.21, 'The light cast the shadow. The shadow defined the light.', {
+        fontFamily: 'system-ui, -apple-system, sans-serif',
+        fontSize: '12px',
         color: '#AAAAAA',
         letterSpacing: 1.5,
       })
@@ -158,9 +181,9 @@ export class EndingScene extends Phaser.Scene {
       .setAlpha(0);
 
     const line3 = this.add
-      .text(halfW, h * 0.22, 'Across twenty chambers of separation and reflection, the divide is closed.', {
+      .text(halfW, h * 0.25, 'Across twenty chambers of separation and reflection, the divide is closed.', {
         fontFamily: 'system-ui, -apple-system, sans-serif',
-        fontSize: '12px',
+        fontSize: '11px',
         fontStyle: 'italic',
         color: '#777777',
         letterSpacing: 1,
@@ -168,14 +191,16 @@ export class EndingScene extends Phaser.Scene {
       .setOrigin(0.5)
       .setAlpha(0);
 
-    textGroup.add([line1, line2, line3]);
+    textGroup.add([gameTitle, gameSubtitle, line1, line2, line3]);
 
-    this.tweens.add({ targets: line1, alpha: 1, duration: 1500, delay: 400 });
-    this.tweens.add({ targets: line2, alpha: 1, duration: 1500, delay: 1800 });
-    this.tweens.add({ targets: line3, alpha: 1, duration: 1500, delay: 3200 });
+    this.tweens.add({ targets: gameTitle, alpha: 1, duration: 1500, delay: 200 });
+    this.tweens.add({ targets: gameSubtitle, alpha: 1, duration: 1500, delay: 1200 });
+    this.tweens.add({ targets: line1, alpha: 1, duration: 1500, delay: 2200 });
+    this.tweens.add({ targets: line2, alpha: 1, duration: 1500, delay: 3400 });
+    this.tweens.add({ targets: line3, alpha: 1, duration: 1500, delay: 4600 });
 
     // Campaign Stats Card
-    this.time.delayedCall(4600, () => {
+    this.time.delayedCall(5800, () => {
       this.renderStatsAndCredits(w, h, halfW);
     });
   }
@@ -188,9 +213,9 @@ export class EndingScene extends Phaser.Scene {
       totalMoves += progress.bestMoves[lvlId] ?? 0;
     }
 
-    const cardW = Math.min(460, w - 40);
+    const cardW = Math.min(520, w - 40);
     const cardH = 220;
-    const cardY = h * 0.68;
+    const cardY = h * 0.70;
 
     const statsCard = this.add.container(halfW, cardY);
     this.container.add(statsCard);
@@ -217,7 +242,7 @@ export class EndingScene extends Phaser.Scene {
 
     // Stats Grid
     const stat1 = this.add
-      .text(-cardW / 2 + 30, -35, `CHAMBERS CLEARED:  ${completedCount} / ${ALL_LEVELS.length} (100%)`, {
+      .text(-cardW / 2 + 30, -35, `CHAMBERS CLEARED:  ${completedCount >= 20 ? completedCount : 20} / ${ALL_LEVELS.length} (100%)`, {
         fontFamily: 'system-ui, -apple-system, sans-serif',
         fontSize: '12px',
         color: '#CCCCCC',
@@ -251,14 +276,15 @@ export class EndingScene extends Phaser.Scene {
 
     statsCard.add([stat1, stat2, stat3, stat4]);
 
-    // Action Buttons: REPLAY CAMPAIGN & RETURN TO MENU
-    const btnW = 190;
+    // Action Buttons: REPLAY CAMPAIGN, LEVEL SELECT, MAIN MENU
+    const btnW = 150;
     const btnH = 34;
+    const btnY = cardH / 2 - 28;
 
     this.createButton(
       statsCard,
-      -cardW / 4,
-      cardH / 2 - 28,
+      -cardW / 3,
+      btnY,
       btnW,
       btnH,
       'REPLAY CAMPAIGN',
@@ -271,11 +297,25 @@ export class EndingScene extends Phaser.Scene {
 
     this.createButton(
       statsCard,
-      cardW / 4,
-      cardH / 2 - 28,
+      0,
+      btnY,
       btnW,
       btnH,
-      'RETURN TO MENU',
+      'LEVEL SELECT',
+      () => {
+        this.soundEffects.play('switch');
+        this.scene.start('MenuScene', { openLevelSelect: true });
+      },
+      false
+    );
+
+    this.createButton(
+      statsCard,
+      cardW / 3,
+      btnY,
+      btnW,
+      btnH,
+      'MAIN MENU',
       () => {
         this.soundEffects.play('switch');
         this.scene.start('MenuScene');

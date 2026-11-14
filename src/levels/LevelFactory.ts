@@ -21,6 +21,7 @@ import { CollisionEngine } from '../engine/CollisionEngine';
 import { MovementEngine } from '../engine/MovementEngine';
 import { TurnEngine, TurnEvents } from '../engine/TurnEngine';
 import { SurpriseEventManager } from '../events/SurpriseEventManager';
+import { InversionEngine } from '../engine/InversionEngine';
 
 export interface BuiltLevelSession {
   readonly definition: LevelDefinition;
@@ -30,6 +31,7 @@ export interface BuiltLevelSession {
   readonly shadowGrid: WorldGrid;
   readonly puzzleManager: PuzzleManager;
   readonly surpriseManager: SurpriseEventManager;
+  readonly inversionEngine: InversionEngine;
   readonly checkpoints: CheckpointPair[];
   readonly collisionEngine: CollisionEngine;
   readonly movementEngine: MovementEngine;
@@ -356,11 +358,25 @@ export class LevelFactory {
 
     const movementEngine = new MovementEngine(player, shadow, collisionEngine);
 
+    const fixedTilesReal = [level.realExit, ...(level.fixedTilesReal ?? [])];
+    const fixedTilesShadow = [level.shadowExit, ...(level.fixedTilesShadow ?? [])];
+
+    const inversionEngine = new InversionEngine({
+      player,
+      shadow,
+      playerGrid,
+      shadowGrid,
+      puzzleManager,
+      fixedTilesReal,
+      fixedTilesShadow,
+    });
+
     const surpriseManager = new SurpriseEventManager({
       events: level.surpriseEvents ?? [],
       playerGrid,
       shadowGrid,
       puzzleManager,
+      inversionEngine,
     });
 
     const turnEngine = new TurnEngine({
@@ -368,6 +384,7 @@ export class LevelFactory {
       checkpoints,
       puzzleManager,
       surpriseManager,
+      inversionEngine,
       events,
     });
 
@@ -379,6 +396,7 @@ export class LevelFactory {
       shadowGrid,
       puzzleManager,
       surpriseManager,
+      inversionEngine,
       checkpoints,
       collisionEngine,
       movementEngine,

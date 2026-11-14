@@ -377,6 +377,26 @@ export class MenuScene extends Phaser.Scene {
       false
     );
 
+    // Unlock All Levels button (direct access)
+    this.createMenuButton(
+      this.levelSelectContainer,
+      width - 90,
+      40,
+      130,
+      32,
+      'UNLOCK ALL ★',
+      () => {
+        const allUnlocked = Array.from({ length: 20 }, (_, i) => i + 1);
+        this.storage.saveProgress({
+          unlockedLevel: 20,
+          unlockedLevels: allUnlocked,
+          currentLevel: 20,
+        });
+        this.scene.restart({ openLevelSelect: true });
+      },
+      true
+    );
+
     // Chapter progress overview
     const levels = this.levelManager.getLevels();
     const progress = this.storage.getProgress();

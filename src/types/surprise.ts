@@ -28,7 +28,8 @@ export type SurpriseActionType =
   | 'ARM_BOMB'
   | 'REVEAL_FAKE_EXIT'
   | 'SHIFT_PORTAL'
-  | 'SHIFT_WALL';
+  | 'SHIFT_WALL'
+  | 'INVERT_WORLD';
 
 export type SurpriseAnimationType =
   | 'crumble'
@@ -39,7 +40,8 @@ export type SurpriseAnimationType =
   | 'glitch'
   | 'spike_thrust'
   | 'spark'
-  | 'flicker';
+  | 'flicker'
+  | 'inversion';
 
 export type SurpriseSoundCue =
   | 'crumble'
@@ -53,7 +55,8 @@ export type SurpriseSoundCue =
   | 'distortion'
   | 'stasis_tick'
   | 'explosion'
-  | 'hazard_trigger';
+  | 'hazard_trigger'
+  | 'inversion';
 
 export type SurpriseEventState = 'PENDING' | 'ARMED' | 'TRIGGERED' | 'COMPLETED';
 

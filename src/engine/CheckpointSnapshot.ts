@@ -5,6 +5,7 @@ import { Shadow } from '../entities/Shadow';
 import { CollapsingFloorState, MirrorOrientation } from '../types/level';
 import { SurpriseEventManager } from '../events/SurpriseEventManager';
 import { SurpriseEventSnapshot } from '../types/surprise';
+import { InversionEngine, InversionStateSnapshot } from './InversionEngine';
 
 export interface CheckpointSnapshotData {
   readonly checkpointId: string | null;
@@ -24,6 +25,7 @@ export interface CheckpointSnapshotData {
   readonly blockStates?: Record<string, GridPoint>;
   readonly magnetStates?: Record<string, boolean>;
   readonly surpriseStates?: Record<string, SurpriseEventSnapshot>;
+  readonly inversionState?: InversionStateSnapshot;
 }
 
 export class CheckpointSnapshot {
@@ -32,7 +34,8 @@ export class CheckpointSnapshot {
     player: Player,
     shadow: Shadow,
     puzzleManager?: PuzzleManager,
-    surpriseManager?: SurpriseEventManager
+    surpriseManager?: SurpriseEventManager,
+    inversionEngine?: InversionEngine
   ): CheckpointSnapshotData {
     const doorStates: Record<string, boolean> = {};
     const switchStates: Record<string, boolean> = {};
@@ -108,6 +111,7 @@ export class CheckpointSnapshot {
       blockStates,
       magnetStates,
       surpriseStates: surpriseManager?.captureSnapshot(),
+      inversionState: inversionEngine?.captureSnapshot(),
     };
   }
 
@@ -116,7 +120,8 @@ export class CheckpointSnapshot {
     player: Player,
     shadow: Shadow,
     puzzleManager?: PuzzleManager,
-    surpriseManager?: SurpriseEventManager
+    surpriseManager?: SurpriseEventManager,
+    inversionEngine?: InversionEngine
   ): void {
     player.setPosition(snapshot.playerPosition);
     shadow.setPosition(snapshot.shadowPosition);
@@ -211,6 +216,10 @@ export class CheckpointSnapshot {
 
     if (snapshot.surpriseStates && surpriseManager) {
       surpriseManager.restoreSnapshot(snapshot.surpriseStates);
+    }
+
+    if (snapshot.inversionState && inversionEngine) {
+      inversionEngine.restoreSnapshot(snapshot.inversionState);
     }
   }
 }

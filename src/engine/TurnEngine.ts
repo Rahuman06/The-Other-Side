@@ -3,6 +3,7 @@ import { CheckpointPair } from '../puzzles/Checkpoint';
 import { CheckpointSnapshot, CheckpointSnapshotData } from './CheckpointSnapshot';
 import { PuzzleManager } from '../puzzles/PuzzleManager';
 import { SurpriseEventManager } from '../events/SurpriseEventManager';
+import { InversionEngine } from './InversionEngine';
 
 export type TurnGameState = 'PLAYING' | 'PAUSED' | 'DYING' | 'COMPLETED';
 
@@ -22,6 +23,7 @@ export interface TurnEngineConfig {
   readonly checkpoints?: readonly CheckpointPair[];
   readonly puzzleManager?: PuzzleManager;
   readonly surpriseManager?: SurpriseEventManager;
+  readonly inversionEngine?: InversionEngine;
   readonly events?: TurnEvents;
 }
 
@@ -30,6 +32,7 @@ export class TurnEngine {
   private readonly checkpoints: readonly CheckpointPair[];
   private readonly puzzleManager?: PuzzleManager;
   private readonly surpriseManager?: SurpriseEventManager;
+  private readonly inversionEngine?: InversionEngine;
   private readonly events: TurnEvents;
 
   private gameState: TurnGameState = 'PLAYING';
@@ -46,6 +49,7 @@ export class TurnEngine {
       this.checkpoints = config.checkpoints ?? [];
       this.puzzleManager = config.puzzleManager;
       this.surpriseManager = config.surpriseManager;
+      this.inversionEngine = config.inversionEngine;
       this.events = config.events ?? {};
     } else {
       this.movementEngine = config;
@@ -56,7 +60,14 @@ export class TurnEngine {
     // Capture initial level snapshot
     const player = this.movementEngine.getPlayer();
     const shadow = this.movementEngine.getShadow();
-    this.initialSnapshot = CheckpointSnapshot.capture(null, player, shadow, this.puzzleManager, this.surpriseManager);
+    this.initialSnapshot = CheckpointSnapshot.capture(
+      null,
+      player,
+      shadow,
+      this.puzzleManager,
+      this.surpriseManager,
+      this.inversionEngine
+    );
     this.lastCheckpointSnapshot = this.initialSnapshot;
   }
 
@@ -131,7 +142,8 @@ export class TurnEngine {
           player,
           shadow,
           this.puzzleManager,
-          this.surpriseManager
+          this.surpriseManager,
+          this.inversionEngine
         );
         this.events.onCheckpointActivated?.(cp.id);
       }
@@ -203,6 +215,13 @@ export class TurnEngine {
         result.shadowNewPosition
       );
       if (this.surpriseManager) {
+        for (const sw of this.puzzleManager.getAllSwitches()) {
+          const pOn = sw.world === 'real' && sw.position.equals(result.playerNewPosition) && !sw.position.equals(result.playerOldPosition);
+          const sOn = sw.world === 'shadow' && sw.position.equals(result.shadowNewPosition) && !sw.position.equals(result.shadowOldPosition);
+          if (pOn || sOn) {
+            this.surpriseManager.notifySwitchToggle(sw.id, sw.isActive);
+          }
+        }
         for (const plate of this.puzzleManager.getAllPressurePlates()) {
           if (plate.isPressed) {
             this.surpriseManager.notifyPlatePress(plate.id, true);
@@ -271,7 +290,14 @@ export class TurnEngine {
       // 5 & 6. Restore characters and puzzle state to last activated checkpoint atomically
       const player = this.movementEngine.getPlayer();
       const shadow = this.movementEngine.getShadow();
-      CheckpointSnapshot.restore(this.lastCheckpointSnapshot, player, shadow, this.puzzleManager, this.surpriseManager);
+      CheckpointSnapshot.restore(
+        this.lastCheckpointSnapshot,
+        player,
+        shadow,
+        this.puzzleManager,
+        this.surpriseManager,
+        this.inversionEngine
+      );
 
       // 7. Return to PLAYING
       this.gameState = 'PLAYING';
@@ -296,10 +322,18 @@ export class TurnEngine {
     }
 
     this.surpriseManager?.reset();
+    this.inversionEngine?.reset();
     this.lastCheckpointSnapshot = this.initialSnapshot;
     const player = this.movementEngine.getPlayer();
     const shadow = this.movementEngine.getShadow();
-    CheckpointSnapshot.restore(this.initialSnapshot, player, shadow, this.puzzleManager, this.surpriseManager);
+    CheckpointSnapshot.restore(
+      this.initialSnapshot,
+      player,
+      shadow,
+      this.puzzleManager,
+      this.surpriseManager,
+      this.inversionEngine
+    );
 
     this.events.onRestart?.();
   }

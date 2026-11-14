@@ -249,6 +249,12 @@ export class GameScene extends Phaser.Scene {
         onSurpriseTriggered: (ev: SurpriseEventConfig) => this.handleSurpriseTriggered(ev),
       });
     }
+
+    if (this.session.inversionEngine) {
+      this.session.inversionEngine.setCallback((world, isInverted) => {
+        this.handleWorldInversion(world, isInverted);
+      });
+    }
   }
 
   private calculateGridLayout(width: number, height: number): void {
@@ -262,7 +268,7 @@ export class GameScene extends Phaser.Scene {
 
     const maxCellW = Math.floor(maxWorldW / cols);
     const maxCellH = Math.floor(playAreaH / rows);
-    this.cellSize = Math.min(64, Math.max(38, Math.min(maxCellW, maxCellH)));
+    this.cellSize = Math.min(64, Math.max(24, Math.min(maxCellW, maxCellH)));
 
     const totalGridW = cols * this.cellSize;
     const totalGridH = rows * this.cellSize;
@@ -399,6 +405,28 @@ export class GameScene extends Phaser.Scene {
     }
 
     // Refresh static grid graphics in case walls appeared/disappeared
+    this.renderStaticGrids();
+  }
+
+  private handleWorldInversion(world: 'real' | 'shadow' | 'both', _isInverted: boolean): void {
+    const isReduced = this.storage.getProgress().reducedMotion;
+    const isReal = world === 'real' || world === 'both';
+    const centerX = isReal
+      ? this.realOriginX + (this.levelDef.width * this.cellSize) / 2
+      : this.shadowOriginX + (this.levelDef.width * this.cellSize) / 2;
+    const centerY = this.realOriginY + (this.levelDef.height * this.cellSize) / 2;
+
+    if (!isReduced) {
+      this.cameras.main.shake(250, 0.01);
+      this.vfxManager.addShockwave(centerX, centerY, isReal ? 0x000000 : 0xffffff, this.cellSize * 4);
+      this.vfxManager.spawnSparkBurst(centerX, centerY, 24, isReal ? 0x00e5ff : 0xffffff);
+    }
+
+    const rCoords = this.getScreenCoordinates(this.session.player.position, true);
+    const sCoords = this.getScreenCoordinates(this.session.shadow.position, false);
+    this.characterAnimator.setPosition(true, rCoords.x, rCoords.y);
+    this.characterAnimator.setPosition(false, sCoords.x, sCoords.y);
+
     this.renderStaticGrids();
   }
 

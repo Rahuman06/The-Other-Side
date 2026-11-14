@@ -2,6 +2,7 @@ import { WorldGrid } from '../grid/WorldGrid';
 import { TileType } from '../grid/TileType';
 import { GridPoint, GridPosition } from '../grid/GridPosition';
 import { PuzzleManager } from '../puzzles/PuzzleManager';
+import { InversionEngine } from '../engine/InversionEngine';
 import {
   SurpriseEventConfig,
   SurpriseEventSnapshot,
@@ -18,6 +19,7 @@ export interface SurpriseManagerConfig {
   readonly playerGrid: WorldGrid;
   readonly shadowGrid: WorldGrid;
   readonly puzzleManager?: PuzzleManager;
+  readonly inversionEngine?: InversionEngine;
   readonly callbacks?: SurpriseManagerCallbacks;
 }
 
@@ -45,6 +47,7 @@ export class SurpriseEventManager {
   private readonly playerGrid: WorldGrid;
   private readonly shadowGrid: WorldGrid;
   private readonly puzzleManager?: PuzzleManager;
+  private readonly inversionEngine?: InversionEngine;
   private callbacks?: SurpriseManagerCallbacks;
 
   private readonly eventStates: Map<string, RuntimeEventState> = new Map();
@@ -55,6 +58,7 @@ export class SurpriseEventManager {
     this.playerGrid = config.playerGrid;
     this.shadowGrid = config.shadowGrid;
     this.puzzleManager = config.puzzleManager;
+    this.inversionEngine = config.inversionEngine;
     this.callbacks = config.callbacks;
 
     for (const ev of config.events ?? []) {
@@ -204,7 +208,7 @@ export class SurpriseEventManager {
 
   public notifySwitchToggle(switchId: string, _isActive: boolean): void {
     for (const evState of this.eventStates.values()) {
-      if (evState.state !== 'PENDING') continue;
+      if (evState.state !== 'PENDING' && !evState.config.repeatable) continue;
       const ev = evState.config;
       if (ev.triggerType === 'SWITCH_TOGGLE' && ev.triggerSourceId === switchId) {
         const delay = ev.activationDelay ?? 0;
@@ -220,7 +224,7 @@ export class SurpriseEventManager {
 
   public notifyPlatePress(plateId: string, isPressed: boolean): void {
     for (const evState of this.eventStates.values()) {
-      if (evState.state !== 'PENDING') continue;
+      if (evState.state !== 'PENDING' && !evState.config.repeatable) continue;
       const ev = evState.config;
       if (ev.triggerType === 'PLATE_PRESS' && ev.triggerSourceId === plateId && isPressed) {
         const delay = ev.activationDelay ?? 0;
@@ -342,10 +346,15 @@ export class SurpriseEventManager {
           }
           break;
         }
+
+        case 'INVERT_WORLD': {
+          this.inversionEngine?.invertWorld(ev.targetWorld);
+          break;
+        }
       }
     }
 
-    evState.state = 'COMPLETED';
+    evState.state = ev.repeatable ? 'PENDING' : 'COMPLETED';
     this.callbacks?.onSurpriseTriggered?.(ev);
   }
 
@@ -393,7 +402,9 @@ export class SurpriseEventManager {
 
       // If it was already triggered/completed in this snapshot, apply the action
       if (s.state === 'TRIGGERED' || s.state === 'COMPLETED') {
-        this.executeAction(evState);
+        if (evState.config.action !== 'INVERT_WORLD') {
+          this.executeAction(evState);
+        }
       }
     }
   }

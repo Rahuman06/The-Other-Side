@@ -189,6 +189,8 @@ export interface LevelDefinition {
   readonly surpriseEvents?: readonly SurpriseEventConfig[];
   readonly difficulty: Difficulty;
   readonly exitBehavior?: ExitBehavior;
+  readonly fixedTilesReal?: readonly GridPosition[];
+  readonly fixedTilesShadow?: readonly GridPosition[];
   readonly solutionTrace: readonly MoveDirection[];
   readonly hint: string;
 }

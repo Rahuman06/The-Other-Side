@@ -1,8 +1,10 @@
 import { LevelDefinition, CollapsingFloorState, MirrorOrientation } from '../types/level';
+import { TileType } from '../grid/TileType';
 import { SurpriseEventSnapshot } from '../types/surprise';
 import { MoveDirection } from '../engine/MovementEngine';
 import { PortalDestination } from '../puzzles/Portal';
 import { LevelFactory, BuiltLevelSession } from '../levels/LevelFactory';
+import { InversionStateSnapshot } from '../engine/InversionEngine';
 import { TurnGameState } from '../engine/TurnEngine';
 import { GridPoint } from '../grid/GridPosition';
 import { LevelValidator, SchemaValidationResult } from './LevelValidator';
@@ -54,6 +56,9 @@ interface SolverStateSnapshot {
   readonly magnetStates?: Record<string, boolean>;
   readonly cpStates: Record<string, { real: boolean; shadow: boolean; activated: boolean }>;
   readonly surpriseStates?: Record<string, SurpriseEventSnapshot>;
+  readonly inversionState?: InversionStateSnapshot;
+  readonly realTiles?: readonly TileType[];
+  readonly shadowTiles?: readonly TileType[];
   readonly gameState: TurnGameState;
 }
 
@@ -135,8 +140,11 @@ export class LevelSolver {
       .join(';');
 
     const se = session.surpriseManager ? session.surpriseManager.serialize() : '';
+    const inv = session.inversionEngine
+      ? `${session.inversionEngine.isRealInverted() ? 1 : 0}:${session.inversionEngine.isShadowInverted() ? 1 : 0}`
+      : '0:0';
 
-    return `P(${p.position.x},${p.position.y},${p.isAtExit() ? 1 : 0})|S(${s.position.x},${s.position.y},${s.isAtExit() ? 1 : 0})|D[${doors}]|SW[${switches}]|PL[${plates}]|B[${bombs}]|DW[${walls}]|POR[${portals}]|SAW[${saws}]|FL[${floors}]|LE[${emitters}]|LM[${mirrors}]|TL[${timeLocks}]|MB[${blocks}]|MF[${magnets}]|CP[${cps}]|SE[${se}]`;
+    return `P(${p.position.x},${p.position.y},${p.isAtExit() ? 1 : 0})|S(${s.position.x},${s.position.y},${s.isAtExit() ? 1 : 0})|D[${doors}]|SW[${switches}]|PL[${plates}]|B[${bombs}]|DW[${walls}]|POR[${portals}]|SAW[${saws}]|FL[${floors}]|LE[${emitters}]|LM[${mirrors}]|TL[${timeLocks}]|MB[${blocks}]|MF[${magnets}]|CP[${cps}]|SE[${se}]|INV[${inv}]`;
   }
 
   public static captureSnapshot(session: BuiltLevelSession): SolverStateSnapshot {
@@ -230,6 +238,9 @@ export class LevelSolver {
       magnetStates,
       cpStates,
       surpriseStates: session.surpriseManager?.captureSnapshot(),
+      inversionState: session.inversionEngine?.captureSnapshot(),
+      realTiles: session.playerGrid.serializeTiles(),
+      shadowTiles: session.shadowGrid.serializeTiles(),
       gameState: session.turnEngine.state,
     };
   }
@@ -294,8 +305,19 @@ export class LevelSolver {
     session.puzzleManager.evaluatePressurePlates(snap.playerPos, snap.shadowPos);
     session.puzzleManager.recalculateAllDoors();
 
+    if (snap.realTiles) {
+      session.playerGrid.restoreTiles(snap.realTiles);
+    }
+    if (snap.shadowTiles) {
+      session.shadowGrid.restoreTiles(snap.shadowTiles);
+    }
+
     if (snap.surpriseStates && session.surpriseManager) {
       session.surpriseManager.restoreSnapshot(snap.surpriseStates);
+    }
+
+    if (snap.inversionState && session.inversionEngine) {
+      session.inversionEngine.restoreSnapshot(snap.inversionState);
     }
 
     session.turnEngine.state = snap.gameState;

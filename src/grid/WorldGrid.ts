@@ -94,4 +94,27 @@ export class WorldGrid {
   public getAllCells(): readonly GridCell[] {
     return Array.from(this.cells.values());
   }
+
+  public serializeTiles(): TileType[] {
+    const result: TileType[] = [];
+    for (let y = 0; y < this.height; y++) {
+      for (let x = 0; x < this.width; x++) {
+        const cell = this.getCell({ x, y });
+        result.push(cell ? cell.tileType : TileType.FLOOR);
+      }
+    }
+    return result;
+  }
+
+  public restoreTiles(types: readonly TileType[]): void {
+    let idx = 0;
+    for (let y = 0; y < this.height; y++) {
+      for (let x = 0; x < this.width; x++) {
+        const cell = this.getCell({ x, y });
+        if (cell && idx < types.length) {
+          cell.tileType = types[idx++];
+        }
+      }
+    }
+  }
 }

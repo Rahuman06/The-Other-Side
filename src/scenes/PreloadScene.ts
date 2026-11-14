@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { PALETTE } from '../core/constants';
 import { pokiBridge } from '../poki/PokiIntegration';
+import { StorageManager } from '../storage/StorageManager';
 
 export class PreloadScene extends Phaser.Scene {
   constructor() {
@@ -44,7 +45,21 @@ export class PreloadScene extends Phaser.Scene {
       }
       if (directLevel) {
         const lvlNum = parseInt(directLevel, 10);
-        if (!isNaN(lvlNum) && lvlNum >= 1) {
+        if (!isNaN(lvlNum) && lvlNum >= 1 && lvlNum <= 20) {
+          try {
+            const storage = new StorageManager();
+            const cur = storage.getProgress();
+            const newUnlocked = Math.max(cur.unlockedLevel, lvlNum);
+            const levelsSet = new Set(cur.unlockedLevels);
+            for (let i = 1; i <= lvlNum; i++) levelsSet.add(i);
+            storage.saveProgress({
+              unlockedLevel: newUnlocked,
+              unlockedLevels: Array.from(levelsSet).sort((a, b) => a - b),
+              currentLevel: lvlNum,
+            });
+          } catch {
+            // Non-blocking storage fallback
+          }
           this.scene.start('GameScene', { levelId: lvlNum });
           return;
         }

@@ -1800,135 +1800,197 @@ export const ALL_LEVELS: readonly LevelDefinition[] = [
   {
     id: 20,
     chapter: 'THE TRUTH',
-    name: 'The Other Side',
-    width: 9,
-    height: 7,
-    difficulty: 'EXPERT',
-    hint: 'Two worlds. One mind. Complete the journey together.',
-    realStart: { x: 1, y: 3 },
-    shadowStart: { x: 7, y: 3 },
-    realExit: { x: 7, y: 3 },
-    shadowExit: { x: 1, y: 3 },
+    name: 'The Impossible Dimension',
+    width: 15,
+    height: 15,
+    difficulty: 'MASTER',
+    hint: 'Two worlds. One mind. The ultimate 15x15 labyrinth of consequences.',
+    realStart: { x: 1, y: 1 },
+    shadowStart: { x: 13, y: 1 },
+    realExit: { x: 13, y: 13 },
+    shadowExit: { x: 1, y: 13 },
     realWalls: [
-      { x: 4, y: 0 },
-      { x: 4, y: 1 },
-      { x: 4, y: 2 },
-      { x: 4, y: 4 },
-      { x: 4, y: 5 },
-      { x: 4, y: 6 },
-      { x: 6, y: 0 },
-      { x: 6, y: 1 },
-      { x: 6, y: 5 },
-      { x: 6, y: 6 },
+      // Outer boundary (15x15)
+      ...Array.from({ length: 15 }, (_, x) => ({ x, y: 0 })),
+      ...Array.from({ length: 15 }, (_, x) => ({ x, y: 14 })),
+      ...Array.from({ length: 15 }, (_, y) => ({ x: 0, y })),
+      ...Array.from({ length: 15 }, (_, y) => ({ x: 14, y })),
+
+      // Tier 1 Partitions (y=1..3)
+      { x: 4, y: 2 }, { x: 4, y: 3 }, // Divides Z1 and Z2
+      { x: 8, y: 2 }, { x: 8, y: 3 }, // Divides Z2 and Z3
+      { x: 11, y: 2 }, { x: 11, y: 3 }, // Divides Z3 and Z4
+
+      // Tier 1 -> Tier 2 Horizontal Barrier (y=4)
+      { x: 1, y: 4 }, { x: 2, y: 4 }, { x: 4, y: 4 }, { x: 5, y: 4 },
+      { x: 7, y: 4 }, { x: 8, y: 4 }, { x: 10, y: 4 }, { x: 11, y: 4 }, { x: 13, y: 4 },
+
+      // Tier 2 Partitions (y=5..7)
+      { x: 4, y: 5 }, { x: 4, y: 6 }, { x: 4, y: 7 },
+      { x: 8, y: 5 }, { x: 8, y: 6 }, { x: 8, y: 7 },
+      { x: 11, y: 5 }, { x: 11, y: 6 }, { x: 11, y: 7 },
+
+      // Tier 2 -> Tier 3 Horizontal Barrier (y=8)
+      { x: 1, y: 8 }, { x: 2, y: 8 }, { x: 3, y: 8 }, { x: 5, y: 8 },
+      { x: 6, y: 8 }, { x: 8, y: 8 }, { x: 9, y: 8 }, { x: 11, y: 8 }, { x: 12, y: 8 }, { x: 13, y: 8 },
+
+      // Tier 3 Labyrinth Walls (y=9..12)
+      { x: 12, y: 10 }, { x: 13, y: 10 }, // Forces west from portal at (12,9)
+      { x: 9, y: 9 }, { x: 9, y: 10 },
+      { x: 6, y: 10 }, { x: 6, y: 11 }, { x: 6, y: 12 },
+      { x: 3, y: 9 }, { x: 3, y: 10 }, { x: 3, y: 11 },
+
+      // Tier 4 Horizontal Barrier (y=12) with single gate at (12,12)
+      { x: 1, y: 12 }, { x: 2, y: 12 }, { x: 3, y: 12 }, { x: 4, y: 12 }, { x: 5, y: 12 },
+      { x: 7, y: 12 }, { x: 8, y: 12 }, { x: 9, y: 12 }, { x: 10, y: 12 }, { x: 11, y: 12 },
+
+      // Exit vault separator (y=13)
+      { x: 11, y: 13 },
     ],
     shadowWalls: [
-      { x: 4, y: 0 },
-      { x: 4, y: 1 },
-      { x: 4, y: 2 },
-      { x: 4, y: 4 },
-      { x: 4, y: 5 },
-      { x: 4, y: 6 },
-      { x: 2, y: 0 },
-      { x: 2, y: 1 },
-      { x: 2, y: 5 },
-      { x: 2, y: 6 },
-    ],
-    checkpoints: [
-      { id: 'cp-20', realPosition: { x: 2, y: 3 }, shadowPosition: { x: 6, y: 3 } },
-    ],
-    movingHazards: [
-      {
-        id: 'saw-20-real',
-        world: 'real',
-        path: [
-          { x: 3, y: 1 },
-          { x: 3, y: 2 },
-        ],
-        initialIndex: 0,
-      },
-    ],
-    timeLocks: [
-      {
-        id: 'tl-20-shadow',
-        world: 'shadow',
-        position: { x: 5, y: 1 },
-        duration: 3,
-        targetHazardIds: ['saw-20-real'],
-      },
-    ],
-    movableBlocks: [
-      { id: 'block-20-shadow', world: 'shadow', position: { x: 7, y: 5 } },
-    ],
-    magneticFields: [
-      {
-        id: 'mag-20-shadow',
-        world: 'shadow',
-        position: { x: 5, y: 5 },
-        direction: 'right',
-        polarity: 'ATTRACT',
-        initialActive: false,
-        linkedSwitchId: 'sw-20-real',
-      },
-    ],
-    pressurePlates: [
-      { id: 'pp-20-shadow', world: 'shadow', position: { x: 6, y: 5 }, linkedDoorId: 'door-20-real' },
+      // Outer boundary (15x15)
+      ...Array.from({ length: 15 }, (_, x) => ({ x, y: 0 })),
+      ...Array.from({ length: 15 }, (_, x) => ({ x, y: 14 })),
+      ...Array.from({ length: 15 }, (_, y) => ({ x: 0, y })),
+      ...Array.from({ length: 15 }, (_, y) => ({ x: 14, y })),
+
+      // Tier 1 Partitions (y=1..3)
+      { x: 10, y: 2 }, { x: 10, y: 3 },
+      { x: 6, y: 2 }, { x: 6, y: 3 },
+      { x: 3, y: 2 }, { x: 3, y: 3 },
+
+      // Tier 1 -> Tier 2 Horizontal Barrier (y=4)
+      { x: 13, y: 4 }, { x: 12, y: 4 }, { x: 10, y: 4 }, { x: 9, y: 4 },
+      { x: 7, y: 4 }, { x: 6, y: 4 }, { x: 4, y: 4 }, { x: 3, y: 4 }, { x: 1, y: 4 },
+
+      // Tier 2 Partitions (y=5..7)
+      { x: 10, y: 5 }, { x: 10, y: 6 }, { x: 10, y: 7 },
+      { x: 6, y: 5 }, { x: 6, y: 6 }, { x: 6, y: 7 },
+      { x: 3, y: 5 }, { x: 3, y: 6 }, { x: 3, y: 7 },
+
+      // Tier 2 -> Tier 3 Horizontal Barrier (y=8)
+      { x: 13, y: 8 }, { x: 12, y: 8 }, { x: 11, y: 8 }, { x: 9, y: 8 },
+      { x: 8, y: 8 }, { x: 6, y: 8 }, { x: 5, y: 8 }, { x: 3, y: 8 }, { x: 2, y: 8 }, { x: 1, y: 8 },
+
+      // Tier 3 Labyrinth Walls (y=9..12)
+      { x: 2, y: 10 }, { x: 1, y: 10 }, // Forces east from portal at (2,9)
+      { x: 5, y: 9 }, { x: 5, y: 10 },
+      { x: 8, y: 10 }, { x: 8, y: 11 }, { x: 8, y: 12 },
+      { x: 11, y: 9 }, { x: 11, y: 10 }, { x: 11, y: 11 },
+
+      // Tier 4 Horizontal Barrier (y=12) with single gate at (2,12)
+      { x: 13, y: 12 }, { x: 12, y: 12 }, { x: 11, y: 12 }, { x: 10, y: 12 }, { x: 9, y: 12 },
+      { x: 7, y: 12 }, { x: 6, y: 12 }, { x: 5, y: 12 }, { x: 4, y: 12 }, { x: 3, y: 12 },
+
+      // Exit vault separator (y=13)
+      { x: 3, y: 13 },
     ],
     doors: [
-      { id: 'door-20-real', world: 'real', position: { x: 4, y: 3 }, initialOpen: false },
-      { id: 'door-20-shadow', world: 'shadow', position: { x: 4, y: 3 }, initialOpen: false },
+      // Tier 1 Gates
+      { id: 'd-r1', world: 'real', position: { x: 4, y: 1 }, initialOpen: false },
+      { id: 'd-s1', world: 'shadow', position: { x: 10, y: 1 }, initialOpen: false },
+
+      // Tier 1 Optical Gates
+      { id: 'd-opt-r', world: 'real', position: { x: 11, y: 1 }, initialOpen: false },
+      { id: 'd-opt-s', world: 'shadow', position: { x: 3, y: 1 }, initialOpen: false },
+
+      // Tier 3 Transition Gates
+      { id: 'd-t3-r', world: 'real', position: { x: 6, y: 9 }, initialOpen: false },
+      { id: 'd-t3-s', world: 'shadow', position: { x: 8, y: 9 }, initialOpen: false },
+
+      // Tier 4 Final Vault Doors
+      { id: 'd-final-r', world: 'real', position: { x: 12, y: 13 }, initialOpen: false },
+      { id: 'd-final-s', world: 'shadow', position: { x: 2, y: 13 }, initialOpen: false },
     ],
     switches: [
-      { id: 'sw-20-real', world: 'real', position: { x: 1, y: 5 }, linkedDoorId: 'mag-20-shadow' },
-      { id: 'sw-20-shadow', world: 'shadow', position: { x: 7, y: 1 }, linkedDoorId: 'door-20-shadow' },
+      // Tier 1 Initial Security Switches
+      { id: 'sw-r1', world: 'real', position: { x: 2, y: 3 }, linkedDoorId: 'd-r1', initialActive: false },
+      { id: 'sw-s1', world: 'shadow', position: { x: 12, y: 3 }, linkedDoorId: 'd-s1', initialActive: false },
+
+      // Tier 2 Laser Activation Switches
+      { id: 'sw-laser-r', world: 'real', position: { x: 7, y: 1 }, linkedDoorId: 'le-r1', initialActive: false },
+      { id: 'sw-laser-s', world: 'shadow', position: { x: 7, y: 1 }, linkedDoorId: 'le-s1', initialActive: false },
+
+      // Tier 3 Cross-World Gate Switches
+      { id: 'sw-t3-r', world: 'real', position: { x: 8, y: 11 }, linkedDoorId: 'd-t3-s', initialActive: false },
+      { id: 'sw-t3-s', world: 'shadow', position: { x: 6, y: 11 }, linkedDoorId: 'd-t3-r', initialActive: false },
+
+      // Final Sync Switches
+      { id: 'sw-sync-r', world: 'real', position: { x: 1, y: 11 }, linkedDoorId: 'd-final-s', initialActive: false },
+      { id: 'sw-sync-s', world: 'shadow', position: { x: 13, y: 11 }, linkedDoorId: 'd-final-r', initialActive: false },
     ],
-    solutionTrace: [
-      'down',
-      'down',
-      'up',
-      'up',
-      'up',
-      'right',
-      'right',
-      'down',
-      'right',
-      'down',
-      'right',
-      'right',
-      'right',
-      'right',
+    pressurePlates: [
+      { id: 'pp-r1', world: 'real', position: { x: 1, y: 3 }, linkedDoorId: 'd-s1' },
+      { id: 'pp-s1', world: 'shadow', position: { x: 13, y: 3 }, linkedDoorId: 'd-r1' },
+    ],
+    bombs: [
+      { id: 'bomb-r1', world: 'real', position: { x: 5, y: 2 }, timer: 4, radius: 1, crossWorld: true },
+      { id: 'bomb-s1', world: 'shadow', position: { x: 9, y: 2 }, timer: 4, radius: 1, crossWorld: true },
+    ],
+    destructibleWalls: [
+      { id: 'dw-r1', world: 'real', position: { x: 6, y: 2 } },
+      { id: 'dw-s1', world: 'shadow', position: { x: 8, y: 2 } },
+    ],
+    collapsingFloors: [
+      { id: 'cf-r1', world: 'real', position: { x: 7, y: 2 }, stepsToCollapse: 2 },
+      { id: 'cf-s1', world: 'shadow', position: { x: 7, y: 2 }, stepsToCollapse: 2 },
+      { id: 'cf-r2', world: 'real', position: { x: 13, y: 12 }, stepsToCollapse: 1 },
+      { id: 'cf-s2', world: 'shadow', position: { x: 1, y: 12 }, stepsToCollapse: 1 },
+    ],
+    laserEmitters: [
+      { id: 'le-r1', world: 'real', position: { x: 9, y: 3 }, direction: 'right', initialActive: false },
+      { id: 'le-s1', world: 'shadow', position: { x: 5, y: 3 }, direction: 'left', initialActive: false },
+    ],
+    laserMirrors: [
+      { id: 'lm-r1', world: 'real', position: { x: 10, y: 3 }, orientation: '/' },
+      { id: 'lm-s1', world: 'shadow', position: { x: 4, y: 3 }, orientation: '\\' },
+    ],
+    laserReceivers: [
+      { id: 'lr-r1', world: 'real', position: { x: 10, y: 2 }, linkedDoorId: 'd-opt-r' },
+      { id: 'lr-s1', world: 'shadow', position: { x: 4, y: 2 }, linkedDoorId: 'd-opt-s' },
+    ],
+    movingHazards: [
+      { id: 'saw-r1', world: 'real', path: [{ x: 5, y: 6 }, { x: 6, y: 6 }, { x: 5, y: 6 }] },
+      { id: 'saw-s1', world: 'shadow', path: [{ x: 9, y: 6 }, { x: 8, y: 6 }, { x: 9, y: 6 }] },
+      { id: 'saw-r2', world: 'real', path: [{ x: 4, y: 10 }, { x: 5, y: 10 }, { x: 4, y: 10 }] },
+      { id: 'saw-s2', world: 'shadow', path: [{ x: 10, y: 10 }, { x: 9, y: 10 }, { x: 10, y: 10 }] },
+    ],
+    timeLocks: [
+      { id: 'tl-r1', world: 'real', position: { x: 12, y: 6 }, duration: 12, targetHazardIds: ['saw-r1', 'saw-s1', 'saw-r2', 'saw-s2'] },
+      { id: 'tl-s1', world: 'shadow', position: { x: 2, y: 6 }, duration: 12, targetHazardIds: ['saw-r1', 'saw-s1', 'saw-r2', 'saw-s2'] },
+    ],
+    movableBlocks: [
+      { id: 'mb-r1', world: 'real', position: { x: 13, y: 2 }, magneticType: 'ATTRACT' },
+      { id: 'mb-s1', world: 'shadow', position: { x: 1, y: 2 }, magneticType: 'ATTRACT' },
+    ],
+    magneticFields: [
+      { id: 'mf-r1', world: 'real', position: { x: 13, y: 5 }, direction: 'up', polarity: 'ATTRACT', initialActive: false },
+      { id: 'mf-s1', world: 'shadow', position: { x: 1, y: 5 }, direction: 'up', polarity: 'ATTRACT', initialActive: false },
+    ],
+    portals: [
+      { id: 'port-r1', world: 'real', position: { x: 12, y: 3 }, targetWorld: 'real', targetPosition: { x: 12, y: 9 } },
+      { id: 'port-s1', world: 'shadow', position: { x: 2, y: 3 }, targetWorld: 'shadow', targetPosition: { x: 2, y: 9 } },
     ],
     surpriseEvents: [
       {
-        id: 'se-20-final-nexus',
-        name: 'Dual Reality Convergence',
+        id: 'se-labyrinth-collapse',
         triggerType: 'STEP_ON',
         triggerWorld: 'real',
-        triggerPosition: { x: 1, y: 5 },
-        targetWorld: 'shadow',
+        triggerPosition: { x: 12, y: 9 },
+        targetWorld: 'real',
         targetType: 'WALL',
-        targetPosition: { x: 4, y: 0 },
-        activationDelay: 0,
-        action: 'REMOVE_WALL',
-        animation: 'shockwave',
-        sound: 'hazard_trigger',
-        warningClue: 'The illusion of duality shatters — two worlds begin fusing into one',
-      },
-      {
-        id: 'se-20-convergence-echo',
-        name: 'Singularity Convergence Trap',
-        triggerType: 'STEP_ON',
-        triggerWorld: 'real',
-        triggerPosition: { x: 4, y: 3 },
-        targetWorld: 'both',
-        targetType: 'COLLAPSE_FLOOR',
-        targetPosition: { x: 1, y: 5 },
-        secondaryTargetPosition: { x: 7, y: 5 },
-        activationDelay: 1,
-        action: 'COLLAPSE_TILE',
+        targetPosition: { x: 12, y: 4 },
+        action: 'SPAWN_WALL',
         animation: 'crumble',
-        sound: 'crumble',
-        warningClue: 'The past cannot be reached — forward is the only path',
+        sound: 'wall_shift',
+        warningClue: 'A tremor seals the upper conduit!',
       },
+    ],
+    solutionTrace: [
+      'right', 'down', 'down', 'up', 'up', 'right', 'right', 'right',
+      'down', 'down', 'right', 'down', 'down', 'right', 'down', 'down',
+      'down', 'down', 'right', 'down', 'down', 'right', 'right', 'right',
+      'right', 'right', 'down', 'down'
     ],
   },
 ];
