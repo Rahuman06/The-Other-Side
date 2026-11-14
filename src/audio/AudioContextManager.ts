@@ -115,6 +115,30 @@ export class AudioContextManager {
     ['pointerdown', 'touchstart', 'keydown', 'click'].forEach((evt) => {
       window.addEventListener(evt, unlock, { capture: true, once: false, passive: true });
     });
+
+    // Auto-suspend audio context when browser tab is hidden and auto-resume when visible
+    if (typeof document !== 'undefined') {
+      document.addEventListener('visibilitychange', () => {
+        if (document.hidden) {
+          this.suspend();
+        } else if (this.isUnlocked) {
+          this.resume();
+        }
+      });
+    }
+
+    // Auto-suspend/resume on window blur and focus
+    window.addEventListener('blur', () => {
+      if (document.hidden) {
+        this.suspend();
+      }
+    });
+
+    window.addEventListener('focus', () => {
+      if (this.isUnlocked && !document.hidden) {
+        this.resume();
+      }
+    });
   }
 
   private removeUnlockListeners(handler: () => void): void {

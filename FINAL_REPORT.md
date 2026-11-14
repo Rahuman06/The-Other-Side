@@ -2,7 +2,7 @@
 **Project**: THE OTHER SIDE ("Two worlds. One mind.")  
 **Role**: Independent Principal Game Engineer  
 **Date of Review**: November 13, 2026  
-**Repository Working Directory**: `d:\The other side`  
+**Repository Working Directory**: `.`  
 **Distribution Target**: HTML5 Standalone Web / Poki Publishing Target  
 **Verdict**: **APPROVED FOR PRODUCTION RELEASE AND EXTERNAL PLAYTESTING**
 

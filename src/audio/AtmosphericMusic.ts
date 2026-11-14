@@ -42,6 +42,8 @@ export class AtmosphericMusic {
   private filterNode: BiquadFilterNode | null = null;
   private delayNode: DelayNode | null = null;
   private delayFeedback: GainNode | null = null;
+  private realPanner: StereoPannerNode | null = null;
+  private shadowPanner: StereoPannerNode | null = null;
 
   // Active oscillators and timers for clean termination
   private activeNodes: Set<AudioNode> = new Set();
@@ -187,6 +189,8 @@ export class AtmosphericMusic {
     this.filterNode = null;
     this.delayNode = null;
     this.delayFeedback = null;
+    this.realPanner = null;
+    this.shadowPanner = null;
   }
 
   private setupAudioGraph(ctx: AudioContext, bus: GainNode): void {
@@ -197,6 +201,24 @@ export class AtmosphericMusic {
     this.filterNode.Q.setValueAtTime(2.5, ctx.currentTime);
     this.filterNode.connect(bus);
     this.activeNodes.add(this.filterNode);
+
+    // Two-world stereo panning (Real World = slightly left -0.22, Shadow World = slightly right +0.22)
+    if (typeof ctx.createStereoPanner === 'function') {
+      try {
+        this.realPanner = ctx.createStereoPanner();
+        this.realPanner.pan.setValueAtTime(-0.22, ctx.currentTime);
+        this.realPanner.connect(this.filterNode);
+        this.activeNodes.add(this.realPanner);
+
+        this.shadowPanner = ctx.createStereoPanner();
+        this.shadowPanner.pan.setValueAtTime(0.22, ctx.currentTime);
+        this.shadowPanner.connect(this.filterNode);
+        this.activeNodes.add(this.shadowPanner);
+      } catch {
+        this.realPanner = null;
+        this.shadowPanner = null;
+      }
+    }
 
     // Subtle feedback delay line for space and depth
     this.delayNode = ctx.createDelay();
@@ -211,15 +233,15 @@ export class AtmosphericMusic {
     this.activeNodes.add(this.delayNode);
     this.activeNodes.add(this.delayFeedback);
 
-    // Sub-bus gains
+    // Sub-bus gains: Real World harmonic pad vs Shadow World subterranean drone
     this.droneGain = ctx.createGain();
     this.droneGain.gain.setValueAtTime(0.12, ctx.currentTime);
-    this.droneGain.connect(this.filterNode);
+    this.droneGain.connect(this.shadowPanner ?? this.filterNode);
     this.activeNodes.add(this.droneGain);
 
     this.padGain = ctx.createGain();
     this.padGain.gain.setValueAtTime(0.08, ctx.currentTime);
-    this.padGain.connect(this.filterNode);
+    this.padGain.connect(this.realPanner ?? this.filterNode);
     this.activeNodes.add(this.padGain);
 
     this.pulseGain = ctx.createGain();
@@ -229,7 +251,7 @@ export class AtmosphericMusic {
 
     this.textureGain = ctx.createGain();
     this.textureGain.gain.setValueAtTime(0.03, ctx.currentTime);
-    this.textureGain.connect(bus);
+    this.textureGain.connect(this.shadowPanner ?? bus);
     this.activeNodes.add(this.textureGain);
   }
 
@@ -274,7 +296,7 @@ export class AtmosphericMusic {
    */
   private synthesizePianoNote(ctx: AudioContext, freq: number): void {
     const now = ctx.currentTime;
-    const bus = this.filterNode;
+    const bus = this.realPanner ?? this.filterNode;
     if (!bus) return;
 
     // Partials for acoustic string resonance: f0, 2f0, 3f0, 4.2f0

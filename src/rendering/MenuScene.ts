@@ -6,6 +6,7 @@ import { AudioManager } from '../audio/AudioManager';
 import { pokiBridge } from '../poki/PokiIntegration';
 import { ALL_LEVELS } from '../levels/levelsData';
 import { PALETTE } from '../core/constants';
+import { ObjectGuideModal } from '../ui/ObjectGuideModal';
 
 export class MenuScene extends Phaser.Scene {
   private levelManager!: LevelManager;
@@ -16,8 +17,8 @@ export class MenuScene extends Phaser.Scene {
   private mainMenuContainer!: Phaser.GameObjects.Container;
   private levelSelectContainer!: Phaser.GameObjects.Container;
   private settingsModal!: Phaser.GameObjects.Container;
-  private creditsModal!: Phaser.GameObjects.Container;
   private confirmResetModal!: Phaser.GameObjects.Container;
+  private objectGuideModal!: ObjectGuideModal;
 
   // Background Mirroring VFX
   private ambientGraphics!: Phaser.GameObjects.Graphics;
@@ -92,8 +93,11 @@ export class MenuScene extends Phaser.Scene {
     this.createMainMenu(width, height);
     this.createLevelSelectionGrid(width, height);
     this.createSettingsModal(width, height);
-    this.createCreditsModal(width, height);
     this.createConfirmResetModal(width, height);
+
+    this.objectGuideModal = new ObjectGuideModal(this, width, height, () => {
+      this.soundEffects.playMenuClose();
+    });
 
     if (data?.openLevelSelect) {
       this.showLevelSelect();
@@ -107,6 +111,22 @@ export class MenuScene extends Phaser.Scene {
     this.input.keyboard?.on('keydown-ENTER', () => {
       const progress = this.storage.getProgress();
       this.startLevel(progress.unlockedLevel);
+    });
+
+    // Escape key closes topmost modal or returns from level select
+    this.input.keyboard?.on('keydown-ESC', () => {
+      if (this.confirmResetModal.visible) {
+        this.soundEffects.playMenuClose();
+        this.confirmResetModal.setVisible(false);
+      } else if (this.settingsModal.visible) {
+        this.soundEffects.playMenuClose();
+        this.settingsModal.setVisible(false);
+      } else if (this.objectGuideModal.isVisible()) {
+        this.soundEffects.playMenuClose();
+        this.objectGuideModal.hide();
+      } else if (this.levelSelectContainer.visible) {
+        this.showMainMenu();
+      }
     });
   }
 
@@ -150,13 +170,13 @@ export class MenuScene extends Phaser.Scene {
     this.mainMenuContainer.add(subtitle);
 
     // Menu Buttons
-    const btnW = 260;
-    const btnH = 44;
+    const btnW = 280;
     const hasProgress = progress.completedLevels.length > 0;
 
     if (hasProgress) {
-      const startY = 280;
-      const spacingY = 52;
+      const btnH = 40;
+      const startY = 275;
+      const spacingY = 48;
 
       // 1. Continue Button (primary)
       this.createMenuButton(
@@ -164,7 +184,7 @@ export class MenuScene extends Phaser.Scene {
         halfW,
         startY,
         btnW,
-        btnH,
+        44,
         `CONTINUE  (LVL ${progress.unlockedLevel})`,
         () => this.startLevel(progress.unlockedLevel),
         true
@@ -194,32 +214,39 @@ export class MenuScene extends Phaser.Scene {
         false
       );
 
-      // 4. Settings Button
+      // 4. Object Guide Button
       this.createMenuButton(
         this.mainMenuContainer,
         halfW,
         startY + spacingY * 3,
         btnW,
         btnH,
-        'SETTINGS',
-        () => this.settingsModal.setVisible(true),
+        'OBJECT GUIDE',
+        () => {
+          this.soundEffects.playMenuOpen();
+          this.objectGuideModal.show();
+        },
         false
       );
 
-      // 5. Credits Button
+      // 5. Settings Button
       this.createMenuButton(
         this.mainMenuContainer,
         halfW,
         startY + spacingY * 4,
         btnW,
         btnH,
-        'CREDITS',
-        () => this.creditsModal.setVisible(true),
+        'SETTINGS',
+        () => {
+          this.soundEffects.playMenuOpen();
+          this.settingsModal.setVisible(true);
+        },
         false
       );
     } else {
+      const btnH = 42;
       const startY = 295;
-      const spacingY = 56;
+      const spacingY = 54;
 
       // 1. Play Button (primary)
       this.createMenuButton(
@@ -227,7 +254,7 @@ export class MenuScene extends Phaser.Scene {
         halfW,
         startY,
         btnW,
-        btnH,
+        46,
         'PLAY',
         () => this.startLevel(1),
         true
@@ -245,27 +272,33 @@ export class MenuScene extends Phaser.Scene {
         false
       );
 
-      // 3. Settings Button
+      // 3. Object Guide Button
       this.createMenuButton(
         this.mainMenuContainer,
         halfW,
         startY + spacingY * 2,
         btnW,
         btnH,
-        'SETTINGS',
-        () => this.settingsModal.setVisible(true),
+        'OBJECT GUIDE',
+        () => {
+          this.soundEffects.playMenuOpen();
+          this.objectGuideModal.show();
+        },
         false
       );
 
-      // 4. Credits Button
+      // 4. Settings Button
       this.createMenuButton(
         this.mainMenuContainer,
         halfW,
         startY + spacingY * 3,
         btnW,
         btnH,
-        'CREDITS',
-        () => this.creditsModal.setVisible(true),
+        'SETTINGS',
+        () => {
+          this.soundEffects.playMenuOpen();
+          this.settingsModal.setVisible(true);
+        },
         false
       );
     }
@@ -325,6 +358,7 @@ export class MenuScene extends Phaser.Scene {
     hit.on('pointerover', () => {
       render(true);
       txt.setColor('#FFFFFF');
+      this.soundEffects.playUiHover();
     });
 
     hit.on('pointerout', () => {
@@ -333,7 +367,7 @@ export class MenuScene extends Phaser.Scene {
     });
 
     hit.on('pointerdown', () => {
-      this.soundEffects.play('step');
+      this.soundEffects.playUiClick();
       onClick();
     });
 
@@ -341,11 +375,13 @@ export class MenuScene extends Phaser.Scene {
   }
 
   private showLevelSelect(): void {
+    this.soundEffects.playMenuOpen();
     this.mainMenuContainer.setVisible(false);
     this.levelSelectContainer.setVisible(true);
   }
 
   private showMainMenu(): void {
+    this.soundEffects.playMenuClose();
     this.levelSelectContainer.setVisible(false);
     this.mainMenuContainer.setVisible(true);
   }
@@ -353,17 +389,28 @@ export class MenuScene extends Phaser.Scene {
   private createLevelSelectionGrid(width: number, height: number): void {
     const halfW = width / 2;
 
-    // Header: "SELECT LEVEL" & Back Button
-    const title = this.add
-      .text(halfW, 40, 'LEVEL SELECTION', {
+    // Header: Split Title "LEVEL" (black on white) | "SELECTION" (white on black)
+    const titleLeft = this.add
+      .text(halfW - 8, 40, 'LEVEL', {
         fontFamily: 'system-ui, -apple-system, sans-serif',
         fontSize: '24px',
         fontStyle: 'bold',
-        color: '#FFFFFF',
+        color: PALETTE.real.text,
         letterSpacing: 2,
       })
-      .setOrigin(0.5);
-    this.levelSelectContainer.add(title);
+      .setOrigin(1, 0.5);
+    this.levelSelectContainer.add(titleLeft);
+
+    const titleRight = this.add
+      .text(halfW + 8, 40, 'SELECTION', {
+        fontFamily: 'system-ui, -apple-system, sans-serif',
+        fontSize: '24px',
+        fontStyle: 'bold',
+        color: PALETTE.shadow.text,
+        letterSpacing: 2,
+      })
+      .setOrigin(0, 0.5);
+    this.levelSelectContainer.add(titleRight);
 
     // Back to Menu button
     this.createMenuButton(
@@ -377,24 +424,16 @@ export class MenuScene extends Phaser.Scene {
       false
     );
 
-    // Unlock All Levels button (direct access)
+    // Upper-right close button
     this.createMenuButton(
       this.levelSelectContainer,
-      width - 90,
+      width - 40,
       40,
-      130,
+      40,
       32,
-      'UNLOCK ALL ★',
-      () => {
-        const allUnlocked = Array.from({ length: 20 }, (_, i) => i + 1);
-        this.storage.saveProgress({
-          unlockedLevel: 20,
-          unlockedLevels: allUnlocked,
-          currentLevel: 20,
-        });
-        this.scene.restart({ openLevelSelect: true });
-      },
-      true
+      '✕',
+      () => this.showMainMenu(),
+      false
     );
 
     // Chapter progress overview
@@ -458,13 +497,14 @@ export class MenuScene extends Phaser.Scene {
         .setOrigin(0.5);
       this.levelSelectContainer.add(subTxt);
 
-      if (isUnlocked) {
-        const hit = this.add
-          .zone(x, y, cellW, cellH)
-          .setOrigin(0.5)
-          .setInteractive({ useHandCursor: true });
+      const hit = this.add
+        .zone(x, y, cellW, cellH)
+        .setOrigin(0.5)
+        .setInteractive({ useHandCursor: isUnlocked });
 
+      if (isUnlocked) {
         hit.on('pointerover', () => {
+          this.soundEffects.playUiHover();
           g.lineStyle(2, 0xffffff, 1);
           g.strokeRoundedRect(x - cellW / 2, y - cellH / 2, cellW, cellH, 6);
         });
@@ -475,12 +515,23 @@ export class MenuScene extends Phaser.Scene {
         });
 
         hit.on('pointerdown', () => {
-          this.soundEffects.play('step');
+          this.soundEffects.playLevelSelect();
           this.startLevel(lvl.id);
         });
-
-        this.levelSelectContainer.add(hit);
+      } else {
+        hit.on('pointerdown', () => {
+          this.soundEffects.playLockedError();
+          // Visual denial pulse: flash red outline
+          g.lineStyle(2, 0xff3333, 1);
+          g.strokeRoundedRect(x - cellW / 2, y - cellH / 2, cellW, cellH, 6);
+          this.time.delayedCall(250, () => {
+            g.lineStyle(1, strokeCol, 0.9);
+            g.strokeRoundedRect(x - cellW / 2, y - cellH / 2, cellW, cellH, 6);
+          });
+        });
       }
+
+      this.levelSelectContainer.add(hit);
     });
 
     // Chapter legend at bottom
@@ -774,6 +825,18 @@ export class MenuScene extends Phaser.Scene {
       .setOrigin(0.5);
     this.confirmResetModal.add(msg);
 
+    // Upper-right close button
+    this.createMenuButton(
+      this.confirmResetModal,
+      modalW / 2 - 30,
+      -modalH / 2 + 25,
+      36,
+      28,
+      '✕',
+      () => this.confirmResetModal.setVisible(false),
+      false
+    );
+
     // Confirm button
     this.createMenuButton(
       this.confirmResetModal,
@@ -802,69 +865,6 @@ export class MenuScene extends Phaser.Scene {
       'CANCEL',
       () => this.confirmResetModal.setVisible(false),
       false
-    );
-  }
-
-  private createCreditsModal(width: number, height: number): void {
-    this.creditsModal = this.add.container(width / 2, height / 2);
-    this.creditsModal.setDepth(150);
-    this.creditsModal.setVisible(false);
-
-    const modalW = 440;
-    const modalH = 280;
-
-    const backdrop = this.add.graphics();
-    backdrop.fillStyle(0x000000, 0.7);
-    backdrop.fillRect(-width / 2, -height / 2, width, height);
-    this.creditsModal.add(backdrop);
-
-    const box = this.add.graphics();
-    box.fillStyle(0x080808, 0.98);
-    box.fillRoundedRect(-modalW / 2, -modalH / 2, modalW, modalH, 8);
-    box.lineStyle(1.5, 0xffffff, 0.9);
-    box.strokeRoundedRect(-modalW / 2, -modalH / 2, modalW, modalH, 8);
-    this.creditsModal.add(box);
-
-    const title = this.add
-      .text(0, -95, 'CREDITS', {
-        fontFamily: 'system-ui, -apple-system, sans-serif',
-        fontSize: '22px',
-        fontStyle: 'bold',
-        color: '#FFFFFF',
-        letterSpacing: 2,
-      })
-      .setOrigin(0.5);
-    this.creditsModal.add(title);
-
-    const creditsBody = this.add
-      .text(
-        0,
-        -10,
-        'THE OTHER SIDE\n\n' +
-          'Concept & Design: Google DeepMind pair programming\n' +
-          'Built with Phaser 3 & TypeScript\n' +
-          'Publishing Platform: Poki\n\n' +
-          'TWO WORLDS. ONE MIND.',
-        {
-          fontFamily: 'system-ui, -apple-system, sans-serif',
-          fontSize: '13px',
-          color: '#CCCCCC',
-          align: 'center',
-          lineSpacing: 4,
-        }
-      )
-      .setOrigin(0.5);
-    this.creditsModal.add(creditsBody);
-
-    this.createMenuButton(
-      this.creditsModal,
-      0,
-      95,
-      160,
-      34,
-      'CLOSE',
-      () => this.creditsModal.setVisible(false),
-      true
     );
   }
 

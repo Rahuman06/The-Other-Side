@@ -1,5 +1,10 @@
 node_modules
 dist
 .tmp
+.temp
 test-results
 *.log
+*.backup.ts
+backup_frozen/
+.DS_Store
+Thumbs.db

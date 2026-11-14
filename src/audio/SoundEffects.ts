@@ -87,21 +87,21 @@ export class SoundEffects {
       const gain = ctx.createGain();
 
       if (isReal) {
-        // Crisp stone footstep: 240 Hz -> 140 Hz triangle
+        // Crisp stone footstep: 240 Hz -> 140 Hz triangle (subtle & non-fatiguing)
         osc.type = 'triangle';
         osc.frequency.setValueAtTime(240, now);
-        osc.frequency.exponentialRampToValueAtTime(140, now + 0.04);
+        osc.frequency.exponentialRampToValueAtTime(140, now + 0.035);
 
-        gain.gain.setValueAtTime(0.09, now);
-        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.04);
+        gain.gain.setValueAtTime(0.05, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.035);
       } else {
-        // Shadow subterranean thud: 110 Hz -> 55 Hz sine
+        // Shadow subterranean thud: 110 Hz -> 55 Hz sine (subtle & non-fatiguing)
         osc.type = 'sine';
         osc.frequency.setValueAtTime(110, now);
-        osc.frequency.exponentialRampToValueAtTime(55, now + 0.06);
+        osc.frequency.exponentialRampToValueAtTime(55, now + 0.05);
 
-        gain.gain.setValueAtTime(0.12, now);
-        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.06);
+        gain.gain.setValueAtTime(0.06, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
       }
 
       osc.connect(gain);
@@ -1008,6 +1008,336 @@ export class SoundEffects {
       osc.stop(now + 0.1);
     } catch (err) {
       console.debug('[SoundEffects] playHiddenMechanism error:', err);
+    }
+  }
+
+  // =========================================================================
+  // 5. UI & INTERFACE SOUND EFFECTS (CATEGORY H)
+  // =========================================================================
+
+  /**
+   * Button Hover: Delicate high-frequency tactile tick
+   */
+  public playUiHover(): void {
+    const ab = this.getContextAndBus();
+    if (!ab) return;
+    const { ctx, bus } = ab;
+    const now = ctx.currentTime;
+
+    try {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(1200, now);
+      osc.frequency.exponentialRampToValueAtTime(800, now + 0.015);
+
+      gain.gain.setValueAtTime(0.025, now);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.015);
+
+      osc.connect(gain);
+      gain.connect(bus);
+      osc.start(now);
+      osc.stop(now + 0.015);
+    } catch (err) {
+      console.debug('[SoundEffects] playUiHover error:', err);
+    }
+  }
+
+  /**
+   * Button Click: Crisp mechanical actuation click
+   */
+  public playUiClick(): void {
+    const ab = this.getContextAndBus();
+    if (!ab) return;
+    const { ctx, bus } = ab;
+    const now = ctx.currentTime;
+
+    try {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(560, now);
+      osc.frequency.exponentialRampToValueAtTime(260, now + 0.025);
+
+      gain.gain.setValueAtTime(0.07, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.025);
+
+      osc.connect(gain);
+      gain.connect(bus);
+      osc.start(now);
+      osc.stop(now + 0.025);
+    } catch (err) {
+      console.debug('[SoundEffects] playUiClick error:', err);
+    }
+  }
+
+  /**
+   * UI Select / Toggle: Ascending confirmation tone
+   */
+  public playUiSelect(): void {
+    const ab = this.getContextAndBus();
+    if (!ab) return;
+    const { ctx, bus } = ab;
+    const now = ctx.currentTime;
+
+    try {
+      const notes = [440, 660];
+      notes.forEach((f, idx) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(f, now + idx * 0.03);
+
+        gain.gain.setValueAtTime(0.06, now + idx * 0.03);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.03 + 0.06);
+
+        osc.connect(gain);
+        gain.connect(bus);
+        osc.start(now + idx * 0.03);
+        osc.stop(now + idx * 0.03 + 0.06);
+      });
+    } catch (err) {
+      console.debug('[SoundEffects] playUiSelect error:', err);
+    }
+  }
+
+  /**
+   * Menu Open: Subtle atmospheric dimensional sweep open
+   */
+  public playMenuOpen(): void {
+    const ab = this.getContextAndBus();
+    if (!ab) return;
+    const { ctx, bus } = ab;
+    const now = ctx.currentTime;
+
+    try {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(220, now);
+      osc.frequency.exponentialRampToValueAtTime(520, now + 0.1);
+
+      gain.gain.setValueAtTime(0.001, now);
+      gain.gain.linearRampToValueAtTime(0.06, now + 0.03);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
+
+      osc.connect(gain);
+      gain.connect(bus);
+      osc.start(now);
+      osc.stop(now + 0.1);
+    } catch (err) {
+      console.debug('[SoundEffects] playMenuOpen error:', err);
+    }
+  }
+
+  /**
+   * Menu Close: Subtle atmospheric dimensional sweep close
+   */
+  public playMenuClose(): void {
+    const ab = this.getContextAndBus();
+    if (!ab) return;
+    const { ctx, bus } = ab;
+    const now = ctx.currentTime;
+
+    try {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(480, now);
+      osc.frequency.exponentialRampToValueAtTime(200, now + 0.08);
+
+      gain.gain.setValueAtTime(0.06, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+
+      osc.connect(gain);
+      gain.connect(bus);
+      osc.start(now);
+      osc.stop(now + 0.08);
+    } catch (err) {
+      console.debug('[SoundEffects] playMenuClose error:', err);
+    }
+  }
+
+  /**
+   * Pause: Muted soft suspension pulse
+   */
+  public playPause(): void {
+    const ab = this.getContextAndBus();
+    if (!ab) return;
+    const { ctx, bus } = ab;
+    const now = ctx.currentTime;
+
+    try {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(320, now);
+      osc.frequency.exponentialRampToValueAtTime(180, now + 0.12);
+
+      gain.gain.setValueAtTime(0.07, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+
+      osc.connect(gain);
+      gain.connect(bus);
+      osc.start(now);
+      osc.stop(now + 0.12);
+    } catch (err) {
+      console.debug('[SoundEffects] playPause error:', err);
+    }
+  }
+
+  /**
+   * Resume: Tactile re-engagement click/pulse
+   */
+  public playResume(): void {
+    const ab = this.getContextAndBus();
+    if (!ab) return;
+    const { ctx, bus } = ab;
+    const now = ctx.currentTime;
+
+    try {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(240, now);
+      osc.frequency.exponentialRampToValueAtTime(480, now + 0.08);
+
+      gain.gain.setValueAtTime(0.07, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+
+      osc.connect(gain);
+      gain.connect(bus);
+      osc.start(now);
+      osc.stop(now + 0.08);
+    } catch (err) {
+      console.debug('[SoundEffects] playResume error:', err);
+    }
+  }
+
+  /**
+   * Slider Tick: Volume and parameter adjustment feedback
+   */
+  public playSlider(): void {
+    const ab = this.getContextAndBus();
+    if (!ab) return;
+    const { ctx, bus } = ab;
+    const now = ctx.currentTime;
+
+    try {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(880, now);
+      osc.frequency.exponentialRampToValueAtTime(440, now + 0.018);
+
+      gain.gain.setValueAtTime(0.04, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.018);
+
+      osc.connect(gain);
+      gain.connect(bus);
+      osc.start(now);
+      osc.stop(now + 0.018);
+    } catch (err) {
+      console.debug('[SoundEffects] playSlider error:', err);
+    }
+  }
+
+  /**
+   * Level Select: Crisp affirmation chime
+   */
+  public playLevelSelect(): void {
+    const ab = this.getContextAndBus();
+    if (!ab) return;
+    const { ctx, bus } = ab;
+    const now = ctx.currentTime;
+
+    try {
+      const notes = [523.25, 659.25]; // C5, E5
+      notes.forEach((f, idx) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(f, now + idx * 0.04);
+
+        gain.gain.setValueAtTime(0.08, now + idx * 0.04);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.04 + 0.14);
+
+        osc.connect(gain);
+        gain.connect(bus);
+        osc.start(now + idx * 0.04);
+        osc.stop(now + idx * 0.04 + 0.14);
+      });
+    } catch (err) {
+      console.debug('[SoundEffects] playLevelSelect error:', err);
+    }
+  }
+
+  /**
+   * Locked Level Error Denial: Dull low-frequency refusal blip
+   */
+  public playLockedError(): void {
+    const ab = this.getContextAndBus();
+    if (!ab) return;
+    const { ctx, bus } = ab;
+    const now = ctx.currentTime;
+
+    try {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+
+      osc.type = 'square';
+      osc.frequency.setValueAtTime(110, now);
+      osc.frequency.setValueAtTime(82, now + 0.04);
+
+      gain.gain.setValueAtTime(0.07, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.09);
+
+      osc.connect(gain);
+      gain.connect(bus);
+      osc.start(now);
+      osc.stop(now + 0.09);
+    } catch (err) {
+      console.debug('[SoundEffects] playLockedError error:', err);
+    }
+  }
+
+  /**
+   * Rescue Trigger: Radiant cross-world harmonic release chime
+   */
+  public playRescueTrigger(): void {
+    const ab = this.getContextAndBus();
+    if (!ab) return;
+    const { ctx, bus } = ab;
+    const now = ctx.currentTime;
+
+    try {
+      const chord = [392.0, 587.33, 880.0]; // G4, D5, A5
+      chord.forEach((f, idx) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(f, now + idx * 0.035);
+
+        gain.gain.setValueAtTime(0.09, now + idx * 0.035);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.035 + 0.32);
+
+        osc.connect(gain);
+        gain.connect(bus);
+        osc.start(now + idx * 0.035);
+        osc.stop(now + idx * 0.035 + 0.32);
+      });
+    } catch (err) {
+      console.debug('[SoundEffects] playRescueTrigger error:', err);
     }
   }
 }

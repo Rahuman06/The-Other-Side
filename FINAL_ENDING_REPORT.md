@@ -66,4 +66,4 @@ From the completion card, players are presented with three clear, responsive act
 ## 3. Visual Capture
 
 The complete ending screen is captured in high-definition:
-- [phase8-level20-ending.png](file:///C:/Users/tmpra/.gemini/antigravity/brain/a881bca6-897a-4587-8134-d40075d6bac2/phase8-level20-ending.png)
+- [phase8-level20-ending.png](screenshots/phase8-level20-ending.png)

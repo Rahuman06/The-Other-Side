@@ -100,9 +100,9 @@ Phase 5 delivers a complete UI/UX modernization and polish of **THE OTHER SIDE**
 ## 4. Verification & Browser Demonstration Evidence
 
 All screens were rendered and verified via automated Playwright end-to-end tests:
-- **Main Menu**: [phase5-main-menu.png](file:///D:/The%20other%20side/screenshots/phase5-main-menu.png)
-- **Gameplay HUD & Exits**: [phase5-gameplay-hud.png](file:///D:/The%20other%20side/screenshots/phase5-gameplay-hud.png)
-- **Pause Menu**: [phase5-pause-menu.png](file:///D:/The%20other%20side/screenshots/phase5-pause-menu.png)
-- **Object Guide (Page 1)**: [phase5-object-guide.png](file:///D:/The%20other%20side/screenshots/phase5-object-guide.png)
-- **Object Guide (Page 2)**: [phase5-object-guide-page2.png](file:///D:/The%20other%20side/screenshots/phase5-object-guide-page2.png)
-- **Settings Modal**: [phase5-settings-modal.png](file:///D:/The%20other%20side/screenshots/phase5-settings-modal.png)
+- **Main Menu**: [phase5-main-menu.png](screenshots/phase5-main-menu.png)
+- **Gameplay HUD & Exits**: [phase5-gameplay-hud.png](screenshots/phase5-gameplay-hud.png)
+- **Pause Menu**: [phase5-pause-menu.png](screenshots/phase5-pause-menu.png)
+- **Object Guide (Page 1)**: [phase5-object-guide.png](screenshots/phase5-object-guide.png)
+- **Object Guide (Page 2)**: [phase5-object-guide-page2.png](screenshots/phase5-object-guide-page2.png)
+- **Settings Modal**: [phase5-settings-modal.png](screenshots/phase5-settings-modal.png)

@@ -98,13 +98,13 @@ Y\X  0   1   2   3   4   5   6   7
 ## 3. Visual Progression & Playable Demonstration
 
 ````carousel
-![Level 17 Initial Chamber](file:///C:/Users/tmpra/.gemini/antigravity/brain/a881bca6-897a-4587-8134-d40075d6bac2/phase8-level17-initial.png)
+![Level 17 Initial Chamber](screenshots/phase8-level17-initial.png)
 <!-- slide -->
-![Dual Plates Coordination & Portal Shift](file:///C:/Users/tmpra/.gemini/antigravity/brain/a881bca6-897a-4587-8134-d40075d6bac2/phase8-level17-plates-surprise.png)
+![Dual Plates Coordination & Portal Shift](screenshots/phase8-level17-plates-surprise.png)
 <!-- slide -->
-![Simultaneous Portal Teleportation](file:///C:/Users/tmpra/.gemini/antigravity/brain/a881bca6-897a-4587-8134-d40075d6bac2/phase8-level17-portal-teleport.png)
+![Simultaneous Portal Teleportation](screenshots/phase8-level17-portal-teleport.png)
 <!-- slide -->
-![Simultaneous Dual Exit Victory](file:///C:/Users/tmpra/.gemini/antigravity/brain/a881bca6-897a-4587-8134-d40075d6bac2/phase8-level17-complete.png)
+![Simultaneous Dual Exit Victory](screenshots/phase8-level17-complete.png)
 ````
 
 1. **Initial Chamber (Turn 0):** Both characters spawn separated by thick architectural partition walls. Portals and exit doors are visible across the central void.

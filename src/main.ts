@@ -9,6 +9,8 @@ export function initializeGame(): Phaser.Game {
 if (typeof window !== 'undefined') {
   window.addEventListener('DOMContentLoaded', async () => {
     await pokiBridge.init();
-    initializeGame();
+    const game = initializeGame();
+    (window as any).__PHASER_GAME__ = game;
+    (window as any).game = game;
   });
 }

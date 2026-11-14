@@ -19,7 +19,7 @@ This report documents the rigorous quality assurance verification of the visual 
 ## 2. Visual QA Findings & Evidence
 
 ### 2.1 Level 6: Detonation (Restored Stickmen, Cracked Blocks, Bombs, and Exit Doors)
-![Level 6 Gameplay - Restored Stickmen, Cracked Blocks, and Exit Doors](file:///C:/Users/tmpra/.gemini/antigravity/brain/a881bca6-897a-4587-8134-d40075d6bac2/gameplay-level6-restored.png)
+![Level 6 Gameplay - Restored Stickmen, Cracked Blocks, and Exit Doors](screenshots/gameplay-level6-restored.png)
 
 * **Real World Stickman (Left)**: Jet black oversized head, white pupil glancing right, slim torso, visible articulated arms and legs, rounded endpoints. **Zero attached objects or rods.**
 * **Shadow World Stickman (Right)**: Identical white silhouette, black pupil glancing left, matching proportions.
@@ -29,7 +29,7 @@ This report documents the rigorous quality assurance verification of the visual 
   - Shadow World Exit: Light doorway panel with bold black **"EXIT"** text and breathing cyan illumination.
 
 ### 2.2 Level 1: Awakening (Clean Starting State)
-![Level 1 Gameplay - Restored Stickmen and Exit Doors](file:///C:/Users/tmpra/.gemini/antigravity/brain/a881bca6-897a-4587-8134-d40075d6bac2/gameplay-level1-restored.png)
+![Level 1 Gameplay - Restored Stickmen and Exit Doors](screenshots/gameplay-level1-restored.png)
 
 * **Dual World Balance**: Perfectly mirrored split-screen presentation.
 * **Exit Legibility**: Unmistakable destination indicators in both worlds.

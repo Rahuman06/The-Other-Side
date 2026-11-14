@@ -103,9 +103,9 @@ flowchart TD
 
 ## 5. Visual Evidence & Assets
 
-- Initial Dual World: [phase8-level20-normal.png](file:///C:/Users/tmpra/.gemini/antigravity/brain/a881bca6-897a-4587-8134-d40075d6bac2/phase8-level20-normal.png)
-- Inverted Real World (Ascent): [phase8-level20-inverted-real.png](file:///C:/Users/tmpra/.gemini/antigravity/brain/a881bca6-897a-4587-8134-d40075d6bac2/phase8-level20-inverted-real.png)
-- Inverted Shadow World (Descent): [phase8-level20-inverted-shadow.png](file:///C:/Users/tmpra/.gemini/antigravity/brain/a881bca6-897a-4587-8134-d40075d6bac2/phase8-level20-inverted-shadow.png)
-- Solution A Victory: [phase8-level20-solution-a.png](file:///C:/Users/tmpra/.gemini/antigravity/brain/a881bca6-897a-4587-8134-d40075d6bac2/phase8-level20-solution-a.png)
-- Solution B Victory: [phase8-level20-solution-b.png](file:///C:/Users/tmpra/.gemini/antigravity/brain/a881bca6-897a-4587-8134-d40075d6bac2/phase8-level20-solution-b.png)
-- Final Cinematic Ending: [phase8-level20-ending.png](file:///C:/Users/tmpra/.gemini/antigravity/brain/a881bca6-897a-4587-8134-d40075d6bac2/phase8-level20-ending.png)
+- Initial Dual World: [phase8-level20-normal.png](screenshots/phase8-level20-normal.png)
+- Inverted Real World (Ascent): [phase8-level20-inverted-real.png](screenshots/phase8-level20-inverted-real.png)
+- Inverted Shadow World (Descent): [phase8-level20-inverted-shadow.png](screenshots/phase8-level20-inverted-shadow.png)
+- Solution A Victory: [phase8-level20-solution-a.png](screenshots/phase8-level20-solution-a.png)
+- Solution B Victory: [phase8-level20-solution-b.png](screenshots/phase8-level20-solution-b.png)
+- Final Cinematic Ending: [phase8-level20-ending.png](screenshots/phase8-level20-ending.png)

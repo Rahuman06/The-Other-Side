@@ -88,5 +88,5 @@ Every level definition from `src/levels/levelsData.ts` was audited to verify tha
 
 ## 4. Visual Evidence
 
-- **Screenshot Evidence:** [phase5-gameplay-hud.png](file:///D:/The%20other%20side/screenshots/phase5-gameplay-hud.png) captures Level 1 showing both Real World and Shadow World exit doorways prominently displaying bold, centered **`EXIT`** text.
+- **Screenshot Evidence:** [phase5-gameplay-hud.png](screenshots/phase5-gameplay-hud.png) captures Level 1 showing both Real World and Shadow World exit doorways prominently displaying bold, centered **`EXIT`** text.
 - **Automated Validation:** Verified across all levels with `npm run validate:levels` passing 20/20 levels and Playwright E2E browser tests passing 100%.

@@ -4,6 +4,7 @@ export interface WinModalCallbacks {
   onNextLevel: () => void;
   onLevelSelect: () => void;
   onRestart: () => void;
+  onMainMenu?: () => void;
 }
 
 export class WinModal {
@@ -19,12 +20,16 @@ export class WinModal {
     this.container.setVisible(false);
 
     const modalW = 420;
-    const modalH = 290;
+    const modalH = 340;
 
     // Dimmed background
     const backdrop = scene.add.graphics();
-    backdrop.fillStyle(0x000000, 0.65);
+    backdrop.fillStyle(0x000000, 0.75);
     backdrop.fillRect(-width / 2, -height / 2, width, height);
+    backdrop.setInteractive(
+      new Phaser.Geom.Rectangle(-width / 2, -height / 2, width, height),
+      Phaser.Geom.Rectangle.Contains
+    );
     this.container.add(backdrop);
 
     // Box
@@ -35,9 +40,21 @@ export class WinModal {
     box.strokeRoundedRect(-modalW / 2, -modalH / 2, modalW, modalH, 8);
     this.container.add(box);
 
+    // Mandatory upper-right '✕' close button
+    this.createButton(
+      scene,
+      modalW / 2 - 35,
+      -modalH / 2 + 25,
+      40,
+      30,
+      '✕',
+      () => callbacks.onLevelSelect(),
+      false
+    );
+
     // Title
     this.titleText = scene.add
-      .text(0, -95, 'LEVEL COMPLETED', {
+      .text(0, -120, 'LEVEL COMPLETED', {
         fontFamily: 'system-ui, -apple-system, sans-serif',
         fontSize: '22px',
         fontStyle: 'bold',
@@ -50,12 +67,12 @@ export class WinModal {
     // Divider
     const div = scene.add.graphics();
     div.lineStyle(1, 0x333333, 0.8);
-    div.lineBetween(-modalW / 2 + 25, -65, modalW / 2 - 25, -65);
+    div.lineBetween(-modalW / 2 + 25, -90, modalW / 2 - 25, -90);
     this.container.add(div);
 
     // Moves stats
     this.movesText = scene.add
-      .text(0, -40, 'MOVES: 0', {
+      .text(0, -65, 'MOVES: 0', {
         fontFamily: 'system-ui, -apple-system, sans-serif',
         fontSize: '16px',
         fontStyle: 'bold',
@@ -66,7 +83,7 @@ export class WinModal {
     this.container.add(this.movesText);
 
     this.bestMovesText = scene.add
-      .text(0, -18, 'BEST: 0', {
+      .text(0, -42, 'BEST: 0', {
         fontFamily: 'system-ui, -apple-system, sans-serif',
         fontSize: '13px',
         color: '#888888',
@@ -75,40 +92,58 @@ export class WinModal {
       .setOrigin(0.5);
     this.container.add(this.bestMovesText);
 
+    // Button stack
+    const btnW = 280;
+    const btnH = 34;
+    const startY = 0;
+    const gapY = 42;
+
     // 1. Next Level Button (Primary)
     const { label: nextTxt } = this.createButton(
       scene,
       0,
-      25,
-      280,
-      38,
+      startY,
+      btnW,
+      btnH,
       'NEXT LEVEL',
       () => callbacks.onNextLevel(),
       true
     );
     this.nextBtnText = nextTxt;
 
-    // 2. Level Selection Button
+    // 2. Play Again Button
     this.createButton(
       scene,
       0,
-      72,
-      280,
-      36,
+      startY + gapY,
+      btnW,
+      btnH,
+      'PLAY AGAIN',
+      () => callbacks.onRestart(),
+      false
+    );
+
+    // 3. Level Selection Button
+    this.createButton(
+      scene,
+      0,
+      startY + gapY * 2,
+      btnW,
+      btnH,
       'LEVEL SELECTION',
       () => callbacks.onLevelSelect(),
       false
     );
 
-    // 3. Restart Level Button
+    // 4. Main Menu Button
     this.createButton(
       scene,
       0,
-      116,
-      280,
-      34,
-      'PLAY AGAIN',
-      () => callbacks.onRestart(),
+      startY + gapY * 3,
+      btnW,
+      btnH,
+      'MAIN MENU',
+      () => callbacks.onMainMenu ? callbacks.onMainMenu() : callbacks.onLevelSelect(),
       false
     );
   }
@@ -129,7 +164,7 @@ export class WinModal {
 
     const render = (hover: boolean) => {
       bg.clear();
-      bg.fillStyle(hover ? 0x222222 : 0x111111, 0.9);
+      bg.fillStyle(hover ? 0x222222 : 0x111111, 0.95);
       bg.fillRoundedRect(x - w / 2, y - h / 2, w, h, 4);
       bg.lineStyle(hover ? 1.5 : 1, hover ? 0xffffff : borderCol, 0.9);
       bg.strokeRoundedRect(x - w / 2, y - h / 2, w, h, 4);
@@ -141,10 +176,10 @@ export class WinModal {
     const txt = scene.add
       .text(x, y, text, {
         fontFamily: 'system-ui, -apple-system, sans-serif',
-        fontSize: '13px',
+        fontSize: '12.5px',
         fontStyle: 'bold',
         color: textCol,
-        letterSpacing: 1.5,
+        letterSpacing: 1.2,
       })
       .setOrigin(0.5);
     this.container.add(txt);
@@ -170,16 +205,11 @@ export class WinModal {
     return { label: txt };
   }
 
-  public show(moves: number, bestMoves: number, isFinalLevel: boolean = false): void {
+  public show(moves: number, bestMoves: number, isLastLevel: boolean = false): void {
     this.movesText.setText(`MOVES: ${moves}`);
-    this.bestMovesText.setText(`BEST RECORD: ${bestMoves} MOVES`);
-    if (isFinalLevel) {
-      this.titleText.setText('CONGRATULATIONS!');
-      this.nextBtnText.setText('COMPLETE JOURNEY');
-    } else {
-      this.titleText.setText('LEVEL COMPLETED');
-      this.nextBtnText.setText('NEXT LEVEL');
-    }
+    this.bestMovesText.setText(`BEST: ${bestMoves}`);
+    this.nextBtnText.setText(isLastLevel ? 'ENDING SCENE ★' : 'NEXT LEVEL');
+    this.titleText.setText(isLastLevel ? 'THE TRUTH UNLOCKED' : 'LEVEL COMPLETED');
     this.container.setVisible(true);
   }
 

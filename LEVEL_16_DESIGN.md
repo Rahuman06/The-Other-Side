@@ -91,11 +91,11 @@ Y\X  0   1   2   3   4   5   6   7
 ## 3. Visual Progression & Playable Demonstration
 
 ````carousel
-![Level 16 Initial State](file:///C:/Users/tmpra/.gemini/antigravity/brain/a881bca6-897a-4587-8134-d40075d6bac2/phase8-level16-initial.png)
+![Level 16 Initial State](screenshots/phase8-level16-initial.png)
 <!-- slide -->
-![Optical Deception & Magnetic Activation](file:///C:/Users/tmpra/.gemini/antigravity/brain/a881bca6-897a-4587-8134-d40075d6bac2/phase8-level16-optical-surprise.png)
+![Optical Deception & Magnetic Activation](screenshots/phase8-level16-optical-surprise.png)
 <!-- slide -->
-![Simultaneous Dual Exit Victory](file:///C:/Users/tmpra/.gemini/antigravity/brain/a881bca6-897a-4587-8134-d40075d6bac2/phase8-level16-complete.png)
+![Simultaneous Dual Exit Victory](screenshots/phase8-level16-complete.png)
 ````
 
 1. **Initial Chamber (Turn 0):** Both characters spawn facing closed central doors. Lasers emit downward; the moving saws cycle actively in both corridors.

@@ -145,10 +145,10 @@ The puzzle sequence has been computed and mathematically validated by the Level 
 ## 4. Visual Demonstration & Artifacts
 
 All visual milestones were executed and validated via Playwright:
-- **Initial 5-Zone Chamber:** [phase8-level19-initial.png](file:///C:/Users/tmpra/.gemini/antigravity/brain/a881bca6-897a-4587-8134-d40075d6bac2/phase8-level19-initial.png)
-- **Optical Laser & Time-Lock Vault:** [phase8-level19-optical-timing.png](file:///C:/Users/tmpra/.gemini/antigravity/brain/a881bca6-897a-4587-8134-d40075d6bac2/phase8-level19-optical-timing.png)
-- **Multi-Event Chain Reaction Surprise:** [phase8-level19-chain-reaction.png](file:///C:/Users/tmpra/.gemini/antigravity/brain/a881bca6-897a-4587-8134-d40075d6bac2/phase8-level19-chain-reaction.png)
-- **Simultaneous Dual Exit Victory:** [phase8-level19-complete.png](file:///C:/Users/tmpra/.gemini/antigravity/brain/a881bca6-897a-4587-8134-d40075d6bac2/phase8-level19-complete.png)
+- **Initial 5-Zone Chamber:** [phase8-level19-initial.png](screenshots/phase8-level19-initial.png)
+- **Optical Laser & Time-Lock Vault:** [phase8-level19-optical-timing.png](screenshots/phase8-level19-optical-timing.png)
+- **Multi-Event Chain Reaction Surprise:** [phase8-level19-chain-reaction.png](screenshots/phase8-level19-chain-reaction.png)
+- **Simultaneous Dual Exit Victory:** [phase8-level19-complete.png](screenshots/phase8-level19-complete.png)
 
 ---
 
@@ -156,7 +156,7 @@ All visual milestones were executed and validated via Playwright:
 
 - **Level Schema & Integrity:** `LevelValidator.validateSchema(LEVEL_19_DEF)`: 0 errors, 100% compliant.
 - **BFS Solver Exhaustive Analysis:** Solved in 16 steps, 1,270 states explored, 0 limits encountered.
-- **Unit Test Suite:** [tests/unit/Level19.test.ts](file:///d:/The%20other%20side/tests/unit/Level19.test.ts) passing (3/3 tests).
+- **Unit Test Suite:** [tests/unit/Level19.test.ts](./tests/unit/Level19.test.ts) passing (3/3 tests).
 - **Campaign Replay Validator:** `npm run validate:levels` passing 20/20 levels.
-- **Browser Playwright E2E:** [tests/browser/level19.spec.ts](file:///d:/The%20other%20side/tests/browser/level19.spec.ts) passing in 10.0s on Microsoft Edge with zero console errors.
+- **Browser Playwright E2E:** [tests/browser/level19.spec.ts](./tests/browser/level19.spec.ts) passing in 10.0s on Microsoft Edge with zero console errors.
 - **Strict Compliance:** Zero Undo/Redo mechanisms present or referenced.

@@ -50,7 +50,7 @@ The irregular angular crack pattern introduced in earlier experiments has been r
 
 ## 3. Implementation Code
 
-From [src/rendering/PuzzleObjectRenderer.ts](file:///d:/The%20other%20side/src/rendering/PuzzleObjectRenderer.ts):
+From [src/rendering/PuzzleObjectRenderer.ts](./src/rendering/PuzzleObjectRenderer.ts):
 
 ```ts
 // --- 5. Destructible Walls ---

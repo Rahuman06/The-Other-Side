@@ -1628,173 +1628,177 @@ export const ALL_LEVELS: readonly LevelDefinition[] = [
   {
     id: 19,
     chapter: 'THE TRUTH',
-    name: 'The Last Connection',
-    width: 8,
-    height: 6,
+    name: 'The Fractured Reality',
+    width: 12,
+    height: 12,
     difficulty: 'MASTER',
-    hint: 'Complete campaign mastery across five connected zones: optical timing, magnetic core, and portal synchronization.',
+    hint: 'Fractured dimensions, sequential imprisonment, optical resonance, and synchronized liberation.',
     realStart: { x: 1, y: 1 },
-    shadowStart: { x: 6, y: 1 },
-    realExit: { x: 6, y: 4 },
-    shadowExit: { x: 1, y: 4 },
+    shadowStart: { x: 10, y: 1 },
+    realExit: { x: 10, y: 10 },
+    shadowExit: { x: 1, y: 10 },
     realWalls: [
-      { x: 3, y: 0 },
-      { x: 3, y: 1 },
-      { x: 3, y: 2 },
-      { x: 3, y: 3 },
-      { x: 3, y: 4 },
-      { x: 3, y: 5 },
-      { x: 2, y: 1 },
-      { x: 2, y: 2 },
-      { x: 0, y: 4 },
-      { x: 5, y: 5 },
+      ...Array.from({ length: 12 }, (_, x) => ({ x, y: 0 })),
+      ...Array.from({ length: 12 }, (_, x) => ({ x, y: 11 })),
+      ...Array.from({ length: 12 }, (_, y) => ({ x: 0, y })),
+      ...Array.from({ length: 12 }, (_, y) => ({ x: 11, y })),
+
+      // Zone 1: The Fractured Vestibule (Rows 1–3)
+      { x: 2, y: 1 }, { x: 2, y: 2 },
+      { x: 4, y: 2 }, { x: 4, y: 3 },
+      { x: 6, y: 1 }, { x: 6, y: 2 },
+      { x: 8, y: 2 }, { x: 8, y: 3 },
+      { x: 10, y: 2 },
+
+      // Zone 1 -> Zone 2 Barrier (Row 4, x=1..10 except gate at (9,4))
+      { x: 1, y: 4 }, { x: 2, y: 4 }, { x: 3, y: 4 }, { x: 4, y: 4 }, { x: 5, y: 4 }, { x: 6, y: 4 }, { x: 7, y: 4 }, { x: 8, y: 4 }, { x: 10, y: 4 },
+
+      // Zone 2: Clockwork Siphon & Hazard Conduits (Rows 5–6)
+      { x: 2, y: 6 },
+      { x: 6, y: 6 },
+      { x: 8, y: 6 },
+
+      // Zone 2 -> Zone 3 Barrier (Row 7, x=1..10 except gate at (4,7))
+      { x: 1, y: 7 }, { x: 2, y: 7 }, { x: 3, y: 7 }, { x: 5, y: 7 }, { x: 6, y: 7 }, { x: 7, y: 7 }, { x: 8, y: 7 }, { x: 9, y: 7 }, { x: 10, y: 7 },
+
+      // Zone 3: Confinement Vaults (Rows 8–9)
+      { x: 1, y: 8 },
+      { x: 4, y: 9 },
+
+      // Zone 3 -> Zone 4 Barrier (Row 9, x=1..10 except gate at (5,9))
+      { x: 1, y: 9 }, { x: 2, y: 9 }, { x: 4, y: 9 }, { x: 7, y: 9 }, { x: 8, y: 9 }, { x: 9, y: 9 }, { x: 10, y: 9 },
+
+      // Zone 4: Final Sanctuary & Blast Doors (Rows 10–11)
+      { x: 4, y: 10 }, { x: 7, y: 10 },
     ],
     shadowWalls: [
-      { x: 4, y: 0 },
-      { x: 4, y: 1 },
-      { x: 4, y: 2 },
-      { x: 4, y: 3 },
-      { x: 4, y: 4 },
-      { x: 4, y: 5 },
-      { x: 5, y: 1 },
-      { x: 5, y: 2 },
-      { x: 7, y: 4 },
-      { x: 2, y: 5 },
-    ],
-    timeLocks: [
-      {
-        id: 'tl-19-real',
-        world: 'real',
-        position: { x: 0, y: 1 },
-        duration: 2,
-        linkedDoorId: 'door-19-shadow-vault',
-      },
+      ...Array.from({ length: 12 }, (_, x) => ({ x, y: 0 })),
+      ...Array.from({ length: 12 }, (_, x) => ({ x, y: 11 })),
+      ...Array.from({ length: 12 }, (_, y) => ({ x: 0, y })),
+      ...Array.from({ length: 12 }, (_, y) => ({ x: 11, y })),
+
+      // Zone 1: The Fractured Vestibule (Rows 1–3)
+      { x: 9, y: 1 }, { x: 9, y: 2 },
+      { x: 7, y: 2 }, { x: 7, y: 3 },
+      { x: 5, y: 1 }, { x: 5, y: 2 },
+      { x: 3, y: 2 }, { x: 3, y: 3 },
+      { x: 1, y: 2 },
+
+      // Zone 1 -> Zone 2 Barrier (Row 4, x=1..10 except gate at (2,4))
+      { x: 1, y: 4 }, { x: 3, y: 4 }, { x: 4, y: 4 }, { x: 5, y: 4 }, { x: 6, y: 4 }, { x: 7, y: 4 }, { x: 8, y: 4 }, { x: 9, y: 4 }, { x: 10, y: 4 },
+
+      // Zone 2: Clockwork Siphon & Hazard Conduits (Rows 5–6)
+      { x: 5, y: 6 },
+      { x: 3, y: 6 },
+
+      // Zone 2 -> Zone 3 Barrier (Row 7, x=1..10 except gate at (7,7))
+      { x: 1, y: 7 }, { x: 2, y: 7 }, { x: 3, y: 7 }, { x: 4, y: 7 }, { x: 5, y: 7 }, { x: 6, y: 7 }, { x: 8, y: 7 }, { x: 9, y: 7 }, { x: 10, y: 7 },
+
+      // Zone 3: Confinement Vaults (Rows 8–9)
+      { x: 10, y: 8 },
+      { x: 7, y: 9 },
+
+      // Zone 3 -> Zone 4 Barrier (Row 9, x=1..10 except gate at (6,9))
+      { x: 1, y: 9 }, { x: 2, y: 9 }, { x: 3, y: 9 }, { x: 4, y: 9 }, { x: 7, y: 9 }, { x: 9, y: 9 }, { x: 10, y: 9 },
+
+      // Zone 4: Final Sanctuary & Blast Doors (Rows 10–11)
+      { x: 4, y: 10 }, { x: 7, y: 10 },
     ],
     doors: [
-      { id: 'door-19-shadow-vault', world: 'shadow', position: { x: 6, y: 2 }, initialOpen: false },
-      { id: 'door-19-real-mid', world: 'real', position: { x: 1, y: 2 }, initialOpen: false },
-      { id: 'door-19-shadow-exit', world: 'shadow', position: { x: 2, y: 4 }, initialOpen: false },
-      { id: 'door-19-real-exit', world: 'real', position: { x: 5, y: 4 }, initialOpen: false },
+      // Zone 1 -> Zone 2 Gates (Row 4)
+      { id: 'd-19-t1-r', world: 'real', position: { x: 9, y: 4 }, initialOpen: false },
+      { id: 'd-19-t1-s', world: 'shadow', position: { x: 2, y: 4 }, initialOpen: false },
+
+      // Zone 2 -> Zone 3 Gates (Row 7)
+      { id: 'd-19-t2-r', world: 'real', position: { x: 4, y: 7 }, initialOpen: false },
+      { id: 'd-19-t2-s', world: 'shadow', position: { x: 7, y: 7 }, initialOpen: false },
+
+      // Rescue 1: Real trapped in Cell Sigma (2,8) until Shadow hits sw-19-rescue-r
+      { id: 'd-19-sigma', world: 'real', position: { x: 3, y: 8 }, initialOpen: false },
+
+      // Rescue 2: Shadow trapped in Cell Omega (9,8) until Real hits sw-19-rescue-s
+      { id: 'd-19-omega', world: 'shadow', position: { x: 8, y: 8 }, initialOpen: false },
+
+      // Zone 3 Confinement Conduit Gates
+      { id: 'd-19-path-r', world: 'real', position: { x: 5, y: 8 }, initialOpen: false },
+      { id: 'd-19-path-s', world: 'shadow', position: { x: 6, y: 8 }, initialOpen: false },
+
+      // Zone 3 -> Zone 4 Descent Gates (Row 9)
+      { id: 'd-19-t3-r', world: 'real', position: { x: 5, y: 9 }, initialOpen: false },
+      { id: 'd-19-t3-s', world: 'shadow', position: { x: 6, y: 9 }, initialOpen: false },
+
+      // Zone 4 Final Blast Doors (Row 10)
+      { id: 'd-19-fin-r', world: 'real', position: { x: 9, y: 10 }, initialOpen: false },
+      { id: 'd-19-fin-s', world: 'shadow', position: { x: 2, y: 10 }, initialOpen: false },
     ],
     switches: [
-      { id: 'sw-19-shadow-1', world: 'shadow', position: { x: 6, y: 3 }, linkedDoorId: 'door-19-real-mid' },
-      { id: 'sw-19-real-exit', world: 'real', position: { x: 6, y: 2 }, linkedDoorId: 'door-19-shadow-exit' },
-    ],
-    laserEmitters: [
-      { id: 'le-19-shadow', world: 'shadow', position: { x: 7, y: 0 }, direction: 'down', initialActive: true },
-    ],
-    laserMirrors: [
-      { id: 'mirror-19-shadow', world: 'shadow', position: { x: 7, y: 5 }, orientation: '/', rotatable: false },
-    ],
-    laserReceivers: [
-      { id: 'rx-19-shadow', world: 'shadow', position: { x: 5, y: 5 }, linkedDoorId: 'door-19-real-exit' },
-    ],
-    collapsingFloors: [
-      { id: 'cf-19-real', world: 'real', position: { x: 0, y: 2 }, stepsToCollapse: 1 },
-    ],
-    portals: [
-      {
-        id: 'p-19-real',
-        world: 'real',
-        position: { x: 1, y: 4 },
-        targetWorld: 'real',
-        targetPosition: { x: 4, y: 4 },
-      },
-      {
-        id: 'p-19-shadow',
-        world: 'shadow',
-        position: { x: 6, y: 4 },
-        targetWorld: 'shadow',
-        targetPosition: { x: 3, y: 4 },
-      },
+      // Zone 1 Cross-Switches
+      { id: 'sw-19-t1-r', world: 'real', position: { x: 2, y: 3 }, linkedDoorId: 'd-19-t1-s', activationBehavior: 'ACTIVATE_ONLY' },
+      { id: 'sw-19-t1-s', world: 'shadow', position: { x: 9, y: 3 }, linkedDoorId: 'd-19-t1-r', activationBehavior: 'ACTIVATE_ONLY' },
+
+      // Zone 2 Threshold Switches
+      { id: 'sw-19-t2-r', world: 'real', position: { x: 9, y: 5 }, linkedDoorId: 'd-19-t2-s', activationBehavior: 'ACTIVATE_ONLY' },
+      { id: 'sw-19-t2-s', world: 'shadow', position: { x: 2, y: 5 }, linkedDoorId: 'd-19-t2-r', activationBehavior: 'ACTIVATE_ONLY' },
+
+      // Inside Cell Sigma (2,8): Real flips this switch to open Shadow's path d-19-path-s
+      { id: 'sw-19-nex-r', world: 'real', position: { x: 2, y: 8 }, linkedDoorId: 'd-19-path-s', activationBehavior: 'ACTIVATE_ONLY' },
+
+      // Shadow in Zone 3 at (3,8): Rescues Real by opening d-19-sigma!
+      { id: 'sw-19-rescue-r', world: 'shadow', position: { x: 3, y: 8 }, linkedDoorId: 'd-19-sigma', activationBehavior: 'ACTIVATE_ONLY' },
+
+      // Inside Cell Omega (9,8): Shadow flips this switch to open Real's path d-19-path-r
+      { id: 'sw-19-nex-s', world: 'shadow', position: { x: 9, y: 8 }, linkedDoorId: 'd-19-path-r', activationBehavior: 'ACTIVATE_ONLY' },
+
+      // Real in Zone 3 at (8,8): Rescues Shadow by opening d-19-omega!
+      { id: 'sw-19-rescue-s', world: 'real', position: { x: 8, y: 8 }, linkedDoorId: 'd-19-omega', activationBehavior: 'ACTIVATE_ONLY' },
+
+      // Simultaneous Confinement Descent Switches (in Zone 3, distinct positions)
+      { id: 'sw-19-t3-r', world: 'real', position: { x: 3, y: 9 }, linkedDoorId: 'd-19-t3-s', activationBehavior: 'ACTIVATE_ONLY' },
+      { id: 'sw-19-t3-s', world: 'shadow', position: { x: 8, y: 9 }, linkedDoorId: 'd-19-t3-r', activationBehavior: 'ACTIVATE_ONLY' },
+
+      // Zone 4 Final Master Keys
+      { id: 'sw-19-fin-r', world: 'real', position: { x: 2, y: 10 }, linkedDoorId: 'd-19-fin-s', activationBehavior: 'ACTIVATE_ONLY' },
+      { id: 'sw-19-fin-s', world: 'shadow', position: { x: 9, y: 10 }, linkedDoorId: 'd-19-fin-r', activationBehavior: 'ACTIVATE_ONLY' },
     ],
     movingHazards: [
-      {
-        id: 'saw-19-real',
-        world: 'real',
-        path: [
-          { x: 5, y: 3 },
-          { x: 6, y: 3 },
-        ],
-        initialIndex: 0,
-      },
-      {
-        id: 'saw-19-shadow',
-        world: 'shadow',
-        path: [
-          { x: 1, y: 3 },
-          { x: 2, y: 3 },
-        ],
-        initialIndex: 0,
-      },
+      { id: 'saw-19-r1', world: 'real', path: [{ x: 3, y: 5 }, { x: 4, y: 5 }, { x: 3, y: 5 }] },
+      { id: 'saw-19-s1', world: 'shadow', path: [{ x: 8, y: 5 }, { x: 7, y: 5 }, { x: 8, y: 5 }] },
     ],
-    checkpoints: [
-      { id: 'cp-19', realPosition: { x: 4, y: 4 }, shadowPosition: { x: 3, y: 4 } },
+    timeLocks: [
+      { id: 'tl-19-r1', world: 'real', position: { x: 1, y: 5 }, duration: 14, targetHazardIds: ['saw-19-r1', 'saw-19-s1'] },
+      { id: 'tl-19-s1', world: 'shadow', position: { x: 10, y: 5 }, duration: 14, targetHazardIds: ['saw-19-r1', 'saw-19-s1'] },
     ],
-    solutionTrace: [
-      'up',    // 1. Real to (1,0); Shadow to (6,0)
-      'left',  // 2. Real to (0,0); Shadow to (6,0)
-      'down',  // 3. Real steps on tl-19-real (0,1) [EXTREME 2-TURN WINDOW!]; Shadow to (6,1)
-      'down',  // 4. Real to cf-19-real (0,2); Shadow penetrates vault door (6,2) on final open turn!
-      'down',  // 5. cf-19-real collapses behind Real! Real to (0,3); Shadow hits sw-19-shadow-1 (6,3) [unseals door-19-real-mid (1,2)!]
-      'right', // 6. Real to (1,3); Shadow to (5,3)
-      'down',  // 7. Real enters portal p-19-real (1,4) -> teleports to (4,4) [TRIGGERING 3-EVENT CHAIN REACTION!]; Shadow to (5,4)
-      'left',  // 8. Shadow enters portal p-19-shadow (6,4) -> teleports to (3,4); cp-19 activated!
-      'up',    // 9. Real to (4,3); Shadow to (3,3)
-      'up',    // 10. Real to (4,2) [northern perimeter flank avoiding saw on row 3]; Shadow to (3,2)
-      'right', // 11. Real to (5,2); Shadow to (2,2) [flanks past saw-19-shadow on row 3]
-      'right', // 12. Real steps on sw-19-real-exit (6,2) [unseals door-19-shadow-exit (2,4)!]; Shadow to (1,2)
-      'right', // 13. Real to (7,2); Shadow to (0,2)
-      'down',  // 14. Real descends column 7 to (7,3); Shadow descends column 0 to (0,3)
-      'down',  // 15. Real descends to (7,4); Shadow descends to (0,4)
-      'left',  // 16. Real arrives at Real Exit (6,4); Shadow reaches Shadow Exit (1,4) -> SIMULTANEOUS DUAL ARRIVAL VICTORY!
+    collapsingFloors: [
+      { id: 'cf-19-r1', world: 'real', position: { x: 4, y: 1 }, stepsToCollapse: 2 },
+      { id: 'cf-19-s1', world: 'shadow', position: { x: 7, y: 1 }, stepsToCollapse: 2 },
+      { id: 'cf-19-r2', world: 'real', position: { x: 7, y: 10 }, stepsToCollapse: 2 },
+      { id: 'cf-19-s2', world: 'shadow', position: { x: 4, y: 10 }, stepsToCollapse: 2 },
+    ],
+    portals: [
+      // Tactical Rift into Cell Sigma (2,8)
+      { id: 'port-19-r1', world: 'real', position: { x: 9, y: 6 }, targetWorld: 'real', targetPosition: { x: 2, y: 8 } },
+      // Tactical Rift into Cell Omega (9,8) - placed at (10,6) in Shadow
+      { id: 'port-19-s1', world: 'shadow', position: { x: 10, y: 6 }, targetWorld: 'shadow', targetPosition: { x: 9, y: 8 } },
     ],
     surpriseEvents: [
       {
-        id: 'se-19-chain-breach',
-        name: 'Rift Convergence Shockwave',
+        id: 'se-19-descent-seal',
+        name: 'Descent Threshold Collapse',
         triggerType: 'STEP_ON',
         triggerWorld: 'real',
-        triggerPosition: { x: 4, y: 4 },
+        triggerPosition: { x: 5, y: 9 },
         targetWorld: 'real',
         targetType: 'WALL',
-        targetPosition: { x: 3, y: 5 },
+        targetPosition: { x: 5, y: 8 },
         activationDelay: 0,
-        action: 'REMOVE_WALL',
-        animation: 'shockwave',
-        sound: 'explosion',
-        warningClue: 'Harmonic resonance shattering the central dimensional partition!',
-      },
-      {
-        id: 'se-19-chain-origin-collapse',
-        name: 'Singularity Void Cascade',
-        triggerType: 'STEP_ON',
-        triggerWorld: 'real',
-        triggerPosition: { x: 4, y: 4 },
-        targetWorld: 'real',
-        targetType: 'COLLAPSE_FLOOR',
-        targetPosition: { x: 1, y: 1 },
-        activationDelay: 0,
-        action: 'COLLAPSE_TILE',
+        action: 'SPAWN_WALL',
         animation: 'crumble',
-        sound: 'crumble',
-        warningClue: 'The northern reality collapses into the void behind you!',
+        sound: 'wall_shift',
+        warningClue: 'The descent threshold seals behind you — forward to the sanctuary!',
       },
-      {
-        id: 'se-19-chain-shadow-collapse',
-        name: 'Shadow Dimension Annihilation',
-        triggerType: 'STEP_ON',
-        triggerWorld: 'real',
-        triggerPosition: { x: 4, y: 4 },
-        targetWorld: 'shadow',
-        targetType: 'COLLAPSE_FLOOR',
-        targetPosition: { x: 6, y: 1 },
-        activationDelay: 0,
-        action: 'COLLAPSE_TILE',
-        animation: 'crumble',
-        sound: 'crumble',
-        warningClue: 'The shadow origin disintegrates as the dimensions collapse toward the final threshold!',
-      },
+    ],
+    solutionTrace: [
+      "down","down","right","right","up","up","right","right","down","down","right","right","up","up","right","right","down","down","down","down","down","up","left","left","left","left","down","left","down","down","right","right","right","right","left","left","left","left","up","up","left","left","left","right","right","right","right","right","right","left","left","left","left","left","down","right","down","down","left","right","up","up","right","right","right","down","down","right","right","right","right"
     ],
   },
   {
@@ -1816,38 +1820,47 @@ export const ALL_LEVELS: readonly LevelDefinition[] = [
       ...Array.from({ length: 15 }, (_, y) => ({ x: 0, y })),
       ...Array.from({ length: 15 }, (_, y) => ({ x: 14, y })),
 
-      // Tier 1 Partitions (y=1..3)
+      // Region 1: The Asymmetric Atrium (x=1..6, y=1..4)
       { x: 3, y: 1 }, { x: 3, y: 2 },
       { x: 5, y: 2 }, { x: 5, y: 3 },
-      { x: 7, y: 2 }, { x: 7, y: 3 },
-      { x: 9, y: 2 },
+
+      // Region 1 -> Region 2 Barrier (Col 7, y=2..4)
+      { x: 7, y: 2 }, { x: 7, y: 3 }, { x: 7, y: 4 },
+
+      // Region 1 -> Region 3 Barrier (Row 4, x=1..4, x=6)
+      { x: 1, y: 4 }, { x: 2, y: 4 }, { x: 3, y: 4 }, { x: 4, y: 4 }, { x: 6, y: 4 },
+
+      // Region 2: Optical Prism & Deceptive Exit (x=7..13, y=1..4)
       { x: 11, y: 2 },
+      { x: 12, y: 2 },
+      { x: 13, y: 1 }, { x: 13, y: 2 }, // Enclosure around rift portal
 
-      // Barrier y=4: Single Gate at (11,4)
-      { x: 1, y: 4 }, { x: 2, y: 4 }, { x: 3, y: 4 }, { x: 4, y: 4 },
-      { x: 5, y: 4 }, { x: 6, y: 4 }, { x: 7, y: 4 }, { x: 8, y: 4 }, { x: 9, y: 4 }, { x: 10, y: 4 },
-      { x: 12, y: 4 }, { x: 13, y: 4 },
+      // Region 2 -> Region 3 Barrier (Row 4, x=8..13 except gate at (11,4))
+      { x: 8, y: 4 }, { x: 9, y: 4 }, { x: 10, y: 4 }, { x: 12, y: 4 }, { x: 13, y: 4 },
 
-      // Tier 2 Partitions (y=5..7)
+      // Region 3: Grand Cross Nexus & Saws (x=1..13, y=5..8)
       { x: 2, y: 5 }, { x: 2, y: 7 },
       { x: 4, y: 6 }, { x: 4, y: 7 },
-      { x: 7, y: 5 }, { x: 7, y: 6 }, { x: 7, y: 7 },
+      { x: 6, y: 5 }, { x: 6, y: 6 },
+      { x: 8, y: 6 },
       { x: 10, y: 5 }, { x: 10, y: 6 },
-      { x: 11, y: 6 }, { x: 11, y: 7 },
       { x: 12, y: 6 }, { x: 12, y: 7 },
 
-      // Barrier y=8: Gates at (6,8) and (8,8)
-      { x: 1, y: 8 }, { x: 2, y: 8 }, { x: 3, y: 8 }, { x: 4, y: 8 }, { x: 5, y: 8 },
+      // Region 3 -> Region 4 Barrier (Row 8, x=1..13 except gate at (8,8))
+      { x: 1, y: 8 }, { x: 2, y: 8 }, { x: 3, y: 8 }, { x: 4, y: 8 }, { x: 5, y: 8 }, { x: 6, y: 8 },
       { x: 7, y: 8 }, { x: 9, y: 8 }, { x: 10, y: 8 }, { x: 11, y: 8 }, { x: 12, y: 8 }, { x: 13, y: 8 },
 
-      // Tier 3 Partitions (y=9..11)
-      { x: 3, y: 9 }, { x: 3, y: 10 },
-      { x: 5, y: 10 }, { x: 5, y: 11 },
-      { x: 7, y: 9 }, { x: 7, y: 10 }, { x: 7, y: 11 },
-      { x: 9, y: 10 }, { x: 9, y: 11 },
+      // Region 4: Confinement Vaults (x=1..13, y=9..11)
+      { x: 1, y: 10 }, // Cell Alpha west wall
+      { x: 2, y: 9 }, { x: 2, y: 11 }, // Cell Alpha north & south walls
+      // (3,10) is trap gate d-trap-r
+      // Enclosed conduit forcing Real through d-path-r at (6,10)
+      { x: 4, y: 9 }, { x: 5, y: 9 }, { x: 6, y: 9 },
+      { x: 7, y: 9 }, { x: 7, y: 11 },
+      { x: 9, y: 9 }, { x: 9, y: 11 },
       { x: 11, y: 9 }, { x: 11, y: 10 },
 
-      // Barrier y=12: Single Gate at (6,12), plus wall sealing exit vault
+      // Region 4 -> Region 5 Barrier (Row 12, x=1..13 except gate at (6,12))
       { x: 1, y: 12 }, { x: 2, y: 12 }, { x: 3, y: 12 }, { x: 4, y: 12 }, { x: 5, y: 12 },
       { x: 7, y: 12 }, { x: 8, y: 12 }, { x: 9, y: 12 }, { x: 10, y: 12 }, { x: 11, y: 12 }, { x: 12, y: 12 }, { x: 13, y: 12 },
     ],
@@ -1858,85 +1871,114 @@ export const ALL_LEVELS: readonly LevelDefinition[] = [
       ...Array.from({ length: 15 }, (_, y) => ({ x: 0, y })),
       ...Array.from({ length: 15 }, (_, y) => ({ x: 14, y })),
 
-      // Tier 1 Partitions (mirrored x)
+      // Region 1: The Asymmetric Atrium (x=8..13, y=1..4)
       { x: 11, y: 1 }, { x: 11, y: 2 },
       { x: 9, y: 2 }, { x: 9, y: 3 },
-      { x: 7, y: 2 }, { x: 7, y: 3 },
+
+      // Region 1 -> Region 2 Barrier (Col 7, y=2..4)
+      { x: 7, y: 2 }, { x: 7, y: 3 }, { x: 7, y: 4 },
+
+      // Region 1 -> Region 3 Barrier (Row 4, x=8, x=10..13)
+      { x: 13, y: 4 }, { x: 12, y: 4 }, { x: 11, y: 4 }, { x: 10, y: 4 }, { x: 8, y: 4 },
+
+      // Region 2: Optical Prism & Deceptive Exit (x=1..7, y=1..4)
       { x: 5, y: 2 },
       { x: 3, y: 2 },
+      { x: 1, y: 2 }, // Alcove around deceptive exit
 
-      // Barrier y=4: Single Gate at (3,4)
-      { x: 13, y: 4 }, { x: 12, y: 4 }, { x: 11, y: 4 }, { x: 10, y: 4 },
-      { x: 9, y: 4 }, { x: 8, y: 4 }, { x: 7, y: 4 }, { x: 6, y: 4 }, { x: 5, y: 4 }, { x: 4, y: 4 },
-      { x: 2, y: 4 }, { x: 1, y: 4 },
+      // Region 2 -> Region 3 Barrier (Row 4, x=1..6 except gate at (3,4))
+      { x: 6, y: 4 }, { x: 5, y: 4 }, { x: 4, y: 4 }, { x: 2, y: 4 }, { x: 1, y: 4 },
 
-      // Tier 2 Partitions
+      // Region 3: Grand Cross Nexus & Saws (x=1..13, y=5..8)
       { x: 12, y: 5 }, { x: 12, y: 7 },
       { x: 10, y: 6 }, { x: 10, y: 7 },
-      { x: 7, y: 5 }, { x: 7, y: 6 }, { x: 7, y: 7 },
+      { x: 8, y: 5 }, { x: 8, y: 6 },
+      { x: 6, y: 6 },
       { x: 4, y: 5 }, { x: 4, y: 6 },
-      { x: 3, y: 6 }, { x: 3, y: 7 },
       { x: 2, y: 6 }, { x: 2, y: 7 },
 
-      // Barrier y=8: Gates at (8,8) and (6,8)
-      { x: 13, y: 8 }, { x: 12, y: 8 }, { x: 11, y: 8 }, { x: 10, y: 8 }, { x: 9, y: 8 },
+      // Region 3 -> Region 4 Barrier (Row 8, x=1..13 except gate at (6,8))
+      { x: 13, y: 8 }, { x: 12, y: 8 }, { x: 11, y: 8 }, { x: 10, y: 8 }, { x: 9, y: 8 }, { x: 8, y: 8 },
       { x: 7, y: 8 }, { x: 5, y: 8 }, { x: 4, y: 8 }, { x: 3, y: 8 }, { x: 2, y: 8 }, { x: 1, y: 8 },
 
-      // Tier 3 Partitions
-      { x: 11, y: 9 }, { x: 11, y: 10 },
+      // Region 4: Confinement Vaults (x=1..13, y=9..11)
+      { x: 13, y: 10 }, // Cell Beta east wall
+      { x: 12, y: 9 }, { x: 12, y: 11 }, // Cell Beta north & south walls
+      // (11,10) is trap gate d-trap-s
       { x: 9, y: 10 }, { x: 9, y: 11 },
-      { x: 7, y: 9 }, { x: 7, y: 10 }, { x: 7, y: 11 },
+      { x: 7, y: 10 }, { x: 7, y: 11 },
       { x: 5, y: 10 }, { x: 5, y: 11 },
       { x: 3, y: 9 }, { x: 3, y: 10 },
 
-      // Barrier y=12: Single Gate at (8,12), plus wall sealing exit vault
+      // Region 4 -> Region 5 Barrier (Row 12, x=1..13 except gate at (8,12))
       { x: 1, y: 12 }, { x: 2, y: 12 }, { x: 3, y: 12 }, { x: 4, y: 12 }, { x: 5, y: 12 }, { x: 6, y: 12 },
       { x: 7, y: 12 }, { x: 9, y: 12 }, { x: 10, y: 12 }, { x: 11, y: 12 }, { x: 12, y: 12 }, { x: 13, y: 12 },
     ],
     doors: [
-      // Tier 1 Barrier Doors: Real opened by Shadow, Shadow opened by Real
+      // Region 1 -> Region 2 Entrance Gates
       { id: 'd-t1-r', world: 'real', position: { x: 11, y: 4 }, initialOpen: false },
       { id: 'd-t1-s', world: 'shadow', position: { x: 3, y: 4 }, initialOpen: false },
 
-      // Tier 1 Optical Gates unsealed by laser alignment
+      // Optical Conduit Gates (opened by Laser Receivers)
       { id: 'd-opt-r', world: 'real', position: { x: 11, y: 1 }, initialOpen: false },
       { id: 'd-opt-s', world: 'shadow', position: { x: 3, y: 1 }, initialOpen: false },
 
-      // Tier 2 Center Nexus Gates: Cross-world mutual rescues
-      { id: 'd-nexus-r', world: 'real', position: { x: 8, y: 8 }, initialOpen: false },
+      // Optical Aux Barrier (opened by sw-rot-r)
+      { id: 'd-rot-r', world: 'real', position: { x: 9, y: 2 }, initialOpen: false },
+
+      // Region 3 Grand Cross Gates (opened by Real in Cell Alpha)
       { id: 'd-nexus-s', world: 'shadow', position: { x: 6, y: 8 }, initialOpen: false },
 
-      // Tier 3 Passage Gates
+      // Region 4 Confinement Trap Gates:
+      // Rescue 1: Real is trapped in Cell Alpha (2,10) by d-trap-r until Shadow hits sw-rescue-s!
+      { id: 'd-trap-r', world: 'real', position: { x: 3, y: 10 }, initialOpen: false },
+      // Rescue 2: Shadow is trapped in Cell Beta (12,10) by d-trap-s until Real hits sw-rescue-r!
+      { id: 'd-trap-s', world: 'shadow', position: { x: 11, y: 10 }, initialOpen: false },
+      // Real's corridor gate: opened only when Shadow enters Cell Beta and hits sw-nex-s!
+      { id: 'd-path-r', world: 'real', position: { x: 6, y: 10 }, initialOpen: false },
+
+      // Region 4 -> Region 5 Descent Gates
       { id: 'd-t3-r', world: 'real', position: { x: 6, y: 12 }, initialOpen: false },
       { id: 'd-t3-s', world: 'shadow', position: { x: 8, y: 12 }, initialOpen: false },
 
-      // Tier 4 Final Exit Gates
+      // Region 5 Final Blast Doors (protecting the True Exits)
       { id: 'd-final-r', world: 'real', position: { x: 12, y: 13 }, initialOpen: false },
       { id: 'd-final-s', world: 'shadow', position: { x: 2, y: 13 }, initialOpen: false },
     ],
     switches: [
-      // Tier 1 Cross-Switches
-      { id: 'sw-t1-r', world: 'real', position: { x: 2, y: 3 }, linkedDoorId: 'd-t1-s', initialActive: false },
-      { id: 'sw-t1-s', world: 'shadow', position: { x: 12, y: 3 }, linkedDoorId: 'd-t1-r', initialActive: false },
+      // Region 1 Security Levers
+      { id: 'sw-t1-r', world: 'real', position: { x: 2, y: 3 }, linkedDoorId: 'd-t1-s', activationBehavior: 'ACTIVATE_ONLY' },
+      { id: 'sw-t1-s', world: 'shadow', position: { x: 12, y: 3 }, linkedDoorId: 'd-t1-r', activationBehavior: 'ACTIVATE_ONLY' },
 
-      // Tier 2 Rescue Switches: Real in East (12,6) frees Shadow, Shadow in West (2,6) frees Real
-      { id: 'sw-nex-r', world: 'real', position: { x: 12, y: 6 }, linkedDoorId: 'd-nexus-s', initialActive: false },
-      { id: 'sw-nex-s', world: 'shadow', position: { x: 2, y: 6 }, linkedDoorId: 'd-nexus-r', initialActive: false },
+      // Optical Resonance Switch: Real rotates laser mirror lm-r1 to strike receiver lr-r1
+      { id: 'sw-rot-r', world: 'real', position: { x: 8, y: 2 }, linkedDoorId: 'd-rot-r', activationBehavior: 'ACTIVATE_ONLY' },
 
-      // Tier 3 Confinement Switches
-      { id: 'sw-t3-r', world: 'real', position: { x: 3, y: 11 }, linkedDoorId: 'd-t3-s', initialActive: false },
-      { id: 'sw-t3-s', world: 'shadow', position: { x: 11, y: 11 }, linkedDoorId: 'd-t3-r', initialActive: false },
+      // Inside Cell Alpha at (2,10): Real flips this switch to open Shadow's path through Region 3!
+      { id: 'sw-nex-r', world: 'real', position: { x: 2, y: 10 }, linkedDoorId: 'd-nexus-s', activationBehavior: 'ACTIVATE_ONLY' },
 
-      // Final Exit Master Keys (located at opposite wings of Row 13)
-      { id: 'sw-final-r', world: 'real', position: { x: 3, y: 13 }, linkedDoorId: 'd-final-s', initialActive: false },
-      { id: 'sw-final-s', world: 'shadow', position: { x: 11, y: 13 }, linkedDoorId: 'd-final-r', initialActive: false },
+      // Shadow in Region 4 at (10,11): Rescues Real by opening d-trap-r!
+      { id: 'sw-rescue-s', world: 'shadow', position: { x: 10, y: 11 }, linkedDoorId: 'd-trap-r', activationBehavior: 'ACTIVATE_ONLY' },
+
+      // Inside Cell Beta at (12,10): Shadow flips this switch to open Real's rescue path!
+      { id: 'sw-nex-s', world: 'shadow', position: { x: 12, y: 10 }, linkedDoorId: 'd-path-r', activationBehavior: 'ACTIVATE_ONLY' },
+
+      // Real in Region 4: Rescues Shadow by opening d-trap-s!
+      { id: 'sw-rescue-r', world: 'real', position: { x: 10, y: 9 }, linkedDoorId: 'd-trap-s', activationBehavior: 'ACTIVATE_ONLY' },
+
+      // Region 4 Descent Switches (unlocked after both rescues complete)
+      { id: 'sw-t3-r', world: 'real', position: { x: 4, y: 11 }, linkedDoorId: 'd-t3-s', activationBehavior: 'ACTIVATE_ONLY' },
+      { id: 'sw-t3-s', world: 'shadow', position: { x: 8, y: 11 }, linkedDoorId: 'd-t3-r', activationBehavior: 'ACTIVATE_ONLY' },
+
+      // Region 5 Final Master Keys (cross-world vault breach)
+      { id: 'sw-final-r', world: 'real', position: { x: 3, y: 13 }, linkedDoorId: 'd-final-s', activationBehavior: 'ACTIVATE_ONLY' },
+      { id: 'sw-final-s', world: 'shadow', position: { x: 11, y: 13 }, linkedDoorId: 'd-final-r', activationBehavior: 'ACTIVATE_ONLY' },
     ],
     laserEmitters: [
       { id: 'le-r1', world: 'real', position: { x: 8, y: 3 }, direction: 'right', initialActive: true },
       { id: 'le-s1', world: 'shadow', position: { x: 6, y: 3 }, direction: 'left', initialActive: true },
     ],
     laserMirrors: [
-      { id: 'lm-r1', world: 'real', position: { x: 10, y: 3 }, orientation: '/' },
+      { id: 'lm-r1', world: 'real', position: { x: 10, y: 3 }, orientation: '\\', linkedSwitchId: 'sw-rot-r' },
       { id: 'lm-s1', world: 'shadow', position: { x: 4, y: 3 }, orientation: '\\' },
     ],
     laserReceivers: [
@@ -1944,25 +1986,33 @@ export const ALL_LEVELS: readonly LevelDefinition[] = [
       { id: 'lr-s1', world: 'shadow', position: { x: 4, y: 2 }, linkedDoorId: 'd-opt-s' },
     ],
     movingHazards: [
+      // Patrol saw in Real Region 3 (Grand Cross)
       { id: 'saw-r1', world: 'real', path: [{ x: 5, y: 6 }, { x: 6, y: 6 }, { x: 5, y: 6 }] },
+      // Patrol saw in Shadow Region 3 (Grand Cross)
       { id: 'saw-s1', world: 'shadow', path: [{ x: 9, y: 6 }, { x: 8, y: 6 }, { x: 9, y: 6 }] },
-      { id: 'saw-r2', world: 'real', path: [{ x: 8, y: 10 }, { x: 8, y: 11 }, { x: 8, y: 10 }] },
+      // Patrol saw in Real Region 4 (Confinement perimeter)
+      { id: 'saw-r2', world: 'real', path: [{ x: 10, y: 10 }, { x: 10, y: 11 }, { x: 10, y: 10 }] },
+      // Patrol saw in Shadow Region 4 (Confinement perimeter)
       { id: 'saw-s2', world: 'shadow', path: [{ x: 6, y: 10 }, { x: 6, y: 11 }, { x: 6, y: 10 }] },
     ],
     timeLocks: [
+      // Freezes saws for 16 turns to allow crossing
       { id: 'tl-r1', world: 'real', position: { x: 12, y: 5 }, duration: 16, targetHazardIds: ['saw-r1', 'saw-s1', 'saw-r2', 'saw-s2'] },
       { id: 'tl-s1', world: 'shadow', position: { x: 2, y: 5 }, duration: 16, targetHazardIds: ['saw-r1', 'saw-s1', 'saw-r2', 'saw-s2'] },
     ],
-    portals: [
-      // Tactical Rift Portals connecting upper and lower sectors
-      { id: 'port-r1', world: 'real', position: { x: 12, y: 2 }, targetWorld: 'real', targetPosition: { x: 2, y: 10 } },
-      { id: 'port-s1', world: 'shadow', position: { x: 2, y: 2 }, targetWorld: 'shadow', targetPosition: { x: 12, y: 10 } },
-    ],
     collapsingFloors: [
+      // Bridge between Region 1 and Region 2 (2 steps to collapse)
       { id: 'cf-r1', world: 'real', position: { x: 6, y: 1 }, stepsToCollapse: 2 },
       { id: 'cf-s1', world: 'shadow', position: { x: 8, y: 1 }, stepsToCollapse: 2 },
+      // Crumbling pathways across Region 5
       { id: 'cf-r2', world: 'real', position: { x: 10, y: 13 }, stepsToCollapse: 2 },
       { id: 'cf-s2', world: 'shadow', position: { x: 4, y: 13 }, stepsToCollapse: 2 },
+    ],
+    portals: [
+      // Tactical Rift Portal 1: Dimensional jump for Real into Cell Alpha (2,10)
+      { id: 'port-r1', world: 'real', position: { x: 12, y: 1 }, targetWorld: 'real', targetPosition: { x: 2, y: 10 } },
+      // Tactical Rift Portal 2: Dimensional jump for Shadow into Cell Beta (12,10)
+      { id: 'port-s1', world: 'shadow', position: { x: 3, y: 11 }, targetWorld: 'shadow', targetPosition: { x: 12, y: 10 } },
     ],
     surpriseEvents: [
       {
@@ -1981,11 +2031,19 @@ export const ALL_LEVELS: readonly LevelDefinition[] = [
     ],
     solutionTrace: [
       'right', 'down', 'down', 'right', 'right', 'up', 'up', 'right',
-      'right', 'right', 'right', 'right', 'right', 'right', 'right',
-      'down', 'down', 'right', 'right', 'up', 'up', 'right', 'right',
-      'down', 'down', 'down', 'down', 'left', 'left', 'left',
-      'right', 'right', 'right', 'right', 'right', 'right', 'right',
-      'right', 'right', 'right'
+      'right', 'right', 'right', 'down', 'up', 'right', 'right', 'right',
+      'right', 'down', 'down', 'left', 'down', 'down', 'down', 'down',
+      'left', 'left', 'left', 'down', 'down', 'left', 'left', 'left',
+      'left', 'down', 'down', 'up', 'up', 'right', 'right', 'right',
+      'right', 'right', 'right', 'down', 'down', 'right', 'up', 'right',
+      'right', 'up', 'up', 'up', 'right', 'up', 'up', 'down',
+      'down', 'right', 'right', 'up', 'up', 'right', 'left', 'down',
+      'down', 'left', 'left', 'left', 'down', 'down', 'down', 'right',
+      'right', 'up', 'down', 'left', 'left', 'left', 'right', 'up',
+      'right', 'right', 'right', 'down', 'left', 'left', 'down', 'left',
+      'left', 'right', 'right', 'down', 'down', 'left', 'left', 'left',
+      'right', 'right', 'right', 'right', 'right', 'right', 'right', 'right',
+      'right', 'right'
     ],
   },
 ];

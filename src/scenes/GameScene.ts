@@ -163,11 +163,15 @@ export class GameScene extends Phaser.Scene {
 
     // 11. Modals
     this.objectGuideModal = new ObjectGuideModal(this, width, height, () => {
-      // Guide closed
+      if (this.session.turnEngine.state === 'PAUSED' && !this.pauseModal.isVisible()) {
+        this.session.turnEngine.resume();
+      }
     });
 
     this.settingsModal = new SettingsModal(this, width, height, this.storage, () => {
-      // Settings closed
+      if (this.session.turnEngine.state === 'PAUSED' && !this.pauseModal.isVisible()) {
+        this.session.turnEngine.resume();
+      }
     });
 
     this.pauseModal = new PauseModal(this, width, height, {
@@ -197,6 +201,10 @@ export class GameScene extends Phaser.Scene {
       onRestart: () => {
         this.winModal.hide();
         this.restartLevel();
+      },
+      onMainMenu: () => {
+        pokiBridge.gameplayStop();
+        this.scene.start('MenuScene', { openLevelSelect: true });
       },
     });
 
@@ -454,10 +462,10 @@ export class GameScene extends Phaser.Scene {
     let pointerStartY = 0;
     let pointerDown = false;
 
-    // Keyboard shortcut for Object Guide [ G ]
-    this.input.keyboard?.on('keydown-G', () => {
-      if (this.objectGuideModal.isVisible()) {
-        this.objectGuideModal.hide();
+    // Keyboard shortcut for Settings [ S ]
+    this.input.keyboard?.on('keydown-S', () => {
+      if (this.settingsModal.isVisible()) {
+        this.settingsModal.hide();
         if (this.session.turnEngine.state === 'PAUSED' && !this.pauseModal.isVisible()) {
           this.session.turnEngine.resume();
         }
@@ -465,7 +473,24 @@ export class GameScene extends Phaser.Scene {
         if (this.session.turnEngine.state === 'PLAYING') {
           this.session.turnEngine.pause();
         }
-        this.objectGuideModal.show();
+        this.settingsModal.show();
+      }
+    });
+
+    // Keyboard shortcut for ESC: close topmost modal or toggle pause
+    this.input.keyboard?.on('keydown-ESC', () => {
+      if (this.objectGuideModal.isVisible()) {
+        this.objectGuideModal.hide();
+        if (this.session.turnEngine.state === 'PAUSED' && !this.pauseModal.isVisible()) {
+          this.session.turnEngine.resume();
+        }
+      } else if (this.settingsModal.isVisible()) {
+        this.settingsModal.hide();
+        if (this.session.turnEngine.state === 'PAUSED' && !this.pauseModal.isVisible()) {
+          this.session.turnEngine.resume();
+        }
+      } else {
+        this.togglePause();
       }
     });
 
@@ -567,15 +592,19 @@ export class GameScene extends Phaser.Scene {
     }
 
     // 1b. Character Arrival energy response at exits
-    if (result.playerAtExit && !this.previousPlayerAtExit) {
-      this.vfxManager.spawnSparkBurst(realCoords.x, realCoords.y, 14, 0x00e5ff);
-      this.soundEffects.playExitArrival();
-      this.characterAnimator.playExitArrival(true);
-    }
-    if (result.shadowAtExit && !this.previousShadowAtExit) {
-      this.vfxManager.spawnSparkBurst(shadowCoords.x, shadowCoords.y, 14, 0x00e5ff);
-      this.soundEffects.playExitArrival();
-      this.characterAnimator.playExitArrival(false);
+    // Anticipation chime plays when one character arrives; dual victory chord is reserved for simultaneous win
+    const bothAtExit = result.playerAtExit && result.shadowAtExit;
+    if (!bothAtExit) {
+      if (result.playerAtExit && !this.previousPlayerAtExit) {
+        this.vfxManager.spawnSparkBurst(realCoords.x, realCoords.y, 14, 0x00e5ff);
+        this.soundEffects.playExitArrival();
+        this.characterAnimator.playExitArrival(true);
+      }
+      if (result.shadowAtExit && !this.previousShadowAtExit) {
+        this.vfxManager.spawnSparkBurst(shadowCoords.x, shadowCoords.y, 14, 0x00e5ff);
+        this.soundEffects.playExitArrival();
+        this.characterAnimator.playExitArrival(false);
+      }
     }
     this.previousPlayerAtExit = result.playerAtExit;
     this.previousShadowAtExit = result.shadowAtExit;

@@ -18,7 +18,7 @@ The reported visual defect—where the Real World character appeared to be carry
 
 ### 2.1 Technical Investigation
 * **The Defect**: In early Phase 2 renders, the Real World stickman appeared with a box-like frame and circular rings attached to its body.
-* **Source Code Inspection**: In [src/rendering/PuzzleObjectRenderer.ts](file:///d:/The%20other%20side/src/rendering/PuzzleObjectRenderer.ts), line 85 was identified as the direct cause:
+* **Source Code Inspection**: In [src/rendering/PuzzleObjectRenderer.ts](./src/rendering/PuzzleObjectRenderer.ts), line 85 was identified as the direct cause:
   ```ts
   // Faulty line in PuzzleObjectRenderer.ts:
   this.renderExit(g, GridPoint.from(session.player.position), true, getScreenCoords);

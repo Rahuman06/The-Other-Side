@@ -16,13 +16,17 @@ export class PauseModal {
     this.container.setDepth(100);
     this.container.setVisible(false);
 
-    const modalW = 400;
-    const modalH = 320;
+    const modalW = 420;
+    const modalH = 340;
 
     // Background overlay backdrop
     const backdrop = scene.add.graphics();
-    backdrop.fillStyle(0x000000, 0.7);
+    backdrop.fillStyle(0x000000, 0.75);
     backdrop.fillRect(-width / 2, -height / 2, width, height);
+    backdrop.setInteractive(
+      new Phaser.Geom.Rectangle(-width / 2, -height / 2, width, height),
+      Phaser.Geom.Rectangle.Contains
+    );
     this.container.add(backdrop);
 
     // Modal container box
@@ -35,7 +39,7 @@ export class PauseModal {
 
     // Title
     const title = scene.add
-      .text(0, -115, 'PAUSED', {
+      .text(0, -125, 'PAUSED', {
         fontFamily: 'system-ui, -apple-system, sans-serif',
         fontSize: '24px',
         fontStyle: 'bold',
@@ -45,26 +49,44 @@ export class PauseModal {
       .setOrigin(0.5);
     this.container.add(title);
 
+    // Mandatory upper-right '✕' close button
+    this.createButton(
+      scene,
+      modalW / 2 - 35,
+      -modalH / 2 + 25,
+      40,
+      30,
+      '✕',
+      () => callbacks.onResume(),
+      false
+    );
+
     // Divider line
     const div = scene.add.graphics();
     div.lineStyle(1, 0x333333, 0.8);
-    div.lineBetween(-modalW / 2 + 25, -85, modalW / 2 - 25, -85);
+    div.lineBetween(-modalW / 2 + 25, -95, modalW / 2 - 25, -95);
     this.container.add(div);
 
-    // 1. Resume Button
-    this.createButton(scene, 0, -50, 280, 36, 'RESUME  [ P ]', () => callbacks.onResume(), true);
+    // Menu Buttons
+    const btnW = 280;
+    const btnH = 34;
+    const startY = -60;
+    const gapY = 44;
+
+    // 1. Resume Button (Primary)
+    this.createButton(scene, 0, startY, btnW, btnH, 'RESUME  [ P / ESC ]', () => callbacks.onResume(), true);
 
     // 2. Restart Level Button
-    this.createButton(scene, 0, -2, 280, 36, 'RESTART LEVEL  [ R ]', () => callbacks.onRestart(), false);
+    this.createButton(scene, 0, startY + gapY, btnW, btnH, 'RESTART LEVEL  [ R ]', () => callbacks.onRestart(), false);
 
     // 3. Object Guide Button
-    this.createButton(scene, 0, 46, 280, 36, 'OBJECT GUIDE  [ G ]', () => callbacks.onObjectGuide?.(), false);
+    this.createButton(scene, 0, startY + gapY * 2, btnW, btnH, 'OBJECT GUIDE', () => callbacks.onObjectGuide?.(), false);
 
     // 4. Settings Button
-    this.createButton(scene, 0, 94, 280, 36, 'SETTINGS  [ S ]', () => callbacks.onSettings?.(), false);
+    this.createButton(scene, 0, startY + gapY * 3, btnW, btnH, 'SETTINGS  [ S ]', () => callbacks.onSettings?.(), false);
 
     // 5. Main Menu Button
-    this.createButton(scene, 0, 142, 280, 36, 'MAIN MENU  [ M ]', () => callbacks.onMainMenu(), false);
+    this.createButton(scene, 0, startY + gapY * 4, btnW, btnH, 'MAIN MENU  [ M ]', () => callbacks.onMainMenu(), false);
   }
 
   private createButton(
@@ -83,7 +105,7 @@ export class PauseModal {
 
     const render = (hover: boolean) => {
       bg.clear();
-      bg.fillStyle(hover ? 0x222222 : 0x111111, 0.9);
+      bg.fillStyle(hover ? 0x222222 : 0x111111, 0.95);
       bg.fillRoundedRect(x - w / 2, y - h / 2, w, h, 4);
       bg.lineStyle(hover ? 1.5 : 1, hover ? 0xffffff : borderCol, 0.9);
       bg.strokeRoundedRect(x - w / 2, y - h / 2, w, h, 4);
@@ -95,10 +117,10 @@ export class PauseModal {
     const txt = scene.add
       .text(x, y, text, {
         fontFamily: 'system-ui, -apple-system, sans-serif',
-        fontSize: '13px',
+        fontSize: '12.5px',
         fontStyle: 'bold',
         color: textCol,
-        letterSpacing: 1.5,
+        letterSpacing: 1.2,
       })
       .setOrigin(0.5);
     this.container.add(txt);

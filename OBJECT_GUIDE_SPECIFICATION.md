@@ -164,5 +164,5 @@ Players can access the guide at any time during gameplay by pressing `[ G ]` or 
 ## 4. Verification Evidence
 
 - Modal verified via automated Playwright test:
-  - Page 1: [phase5-object-guide.png](file:///D:/The%20other%20side/screenshots/phase5-object-guide.png)
-  - Page 2: [phase5-object-guide-page2.png](file:///D:/The%20other%20side/screenshots/phase5-object-guide-page2.png)
+  - Page 1: [phase5-object-guide.png](screenshots/phase5-object-guide.png)
+  - Page 2: [phase5-object-guide-page2.png](screenshots/phase5-object-guide-page2.png)

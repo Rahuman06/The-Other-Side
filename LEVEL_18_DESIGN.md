@@ -135,10 +135,10 @@ The complete sequence has been verified by the automated BFS Level Solver (2,654
 ## 4. Visual Demonstration & Artifacts
 
 All visual milestones were executed and validated via Playwright:
-- **Initial Hard Mode Layout:** [phase8-level18-initial.png](file:///C:/Users/tmpra/.gemini/antigravity/brain/a881bca6-897a-4587-8134-d40075d6bac2/phase8-level18-initial.png)
-- **Bomb Detonation, Origin Collapse & Wall Pulverization:** [phase8-level18-bomb-explode.png](file:///C:/Users/tmpra/.gemini/antigravity/brain/a881bca6-897a-4587-8134-d40075d6bac2/phase8-level18-bomb-explode.png)
-- **Portal Destination Shift to (4, 4):** [phase8-level18-portal-shift.png](file:///C:/Users/tmpra/.gemini/antigravity/brain/a881bca6-897a-4587-8134-d40075d6bac2/phase8-level18-portal-shift.png)
-- **Simultaneous Dual Exit Victory (Step 22):** [phase8-level18-complete.png](file:///C:/Users/tmpra/.gemini/antigravity/brain/a881bca6-897a-4587-8134-d40075d6bac2/phase8-level18-complete.png)
+- **Initial Hard Mode Layout:** [phase8-level18-initial.png](screenshots/phase8-level18-initial.png)
+- **Bomb Detonation, Origin Collapse & Wall Pulverization:** [phase8-level18-bomb-explode.png](screenshots/phase8-level18-bomb-explode.png)
+- **Portal Destination Shift to (4, 4):** [phase8-level18-portal-shift.png](screenshots/phase8-level18-portal-shift.png)
+- **Simultaneous Dual Exit Victory (Step 22):** [phase8-level18-complete.png](screenshots/phase8-level18-complete.png)
 
 ---
 
@@ -146,7 +146,7 @@ All visual milestones were executed and validated via Playwright:
 
 - **Level Schema & Integrity:** `LevelValidator.validateSchema(LEVEL_18_DEF)`: 0 errors, 100% compliant.
 - **BFS Solver Exhaustive Analysis:** Solved in 22 steps, 2,654 states explored, 0 limits encountered.
-- **Unit Test Suite:** [tests/unit/Level18.test.ts](file:///d:/The%20other%20side/tests/unit/Level18.test.ts) passing (3/3 tests).
+- **Unit Test Suite:** [tests/unit/Level18.test.ts](./tests/unit/Level18.test.ts) passing (3/3 tests).
 - **Campaign Replay Validator:** `npm run validate:levels` passing 20/20 levels.
-- **Browser Playwright E2E:** [tests/browser/level18.spec.ts](file:///d:/The%20other%20side/tests/browser/level18.spec.ts) passing in 10.8s on Microsoft Edge with zero console errors.
+- **Browser Playwright E2E:** [tests/browser/level18.spec.ts](./tests/browser/level18.spec.ts) passing in 10.8s on Microsoft Edge with zero console errors.
 - **Zero Undo/Redo Compliance:** No undo/redo mechanisms present or referenced.
