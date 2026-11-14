@@ -7,6 +7,8 @@ import { pokiBridge } from '../poki/PokiIntegration';
 import { ALL_LEVELS } from '../levels/levelsData';
 import { PALETTE } from '../core/constants';
 import { ObjectGuideModal } from '../ui/ObjectGuideModal';
+import { KeyboardNavManager, FocusableItem } from '../ui/KeyboardNavManager';
+import { MobileControlsOverlay } from '../ui/MobileControlsOverlay';
 
 export class MenuScene extends Phaser.Scene {
   private levelManager!: LevelManager;
@@ -19,6 +21,13 @@ export class MenuScene extends Phaser.Scene {
   private settingsModal!: Phaser.GameObjects.Container;
   private confirmResetModal!: Phaser.GameObjects.Container;
   private objectGuideModal!: ObjectGuideModal;
+
+  // Keyboard Navigation Items
+  private mainMenuItems: FocusableItem[] = [];
+  private levelSelectItems: FocusableItem[] = [];
+  private settingsItems: FocusableItem[] = [];
+  private confirmResetItems: FocusableItem[] = [];
+  private menuKeyDownListener: ((e: KeyboardEvent) => void) | null = null;
 
   // Background Mirroring VFX
   private ambientGraphics!: Phaser.GameObjects.Graphics;
@@ -99,34 +108,31 @@ export class MenuScene extends Phaser.Scene {
       this.soundEffects.playMenuClose();
     });
 
+    // Ensure mobile overlay is hidden on menus
+    MobileControlsOverlay.getInstance().setVisible(false);
+
+    // Keyboard navigation & focus system
+    KeyboardNavManager.getInstance().setScene(this);
+
     if (data?.openLevelSelect) {
       this.showLevelSelect();
+    } else {
+      this.showMainMenu();
     }
 
-    // Keyboard shortcuts for quick start from menu
-    this.input.keyboard?.on('keydown-SPACE', () => {
-      const progress = this.storage.getProgress();
-      this.startLevel(progress.unlockedLevel);
-    });
-    this.input.keyboard?.on('keydown-ENTER', () => {
-      const progress = this.storage.getProgress();
-      this.startLevel(progress.unlockedLevel);
-    });
+    this.menuKeyDownListener = (e: KeyboardEvent) => {
+      KeyboardNavManager.getInstance().handleKeyDown(e);
+    };
+    if (typeof window !== 'undefined') {
+      window.addEventListener('keydown', this.menuKeyDownListener);
+    }
 
-    // Escape key closes topmost modal or returns from level select
-    this.input.keyboard?.on('keydown-ESC', () => {
-      if (this.confirmResetModal.visible) {
-        this.soundEffects.playMenuClose();
-        this.confirmResetModal.setVisible(false);
-      } else if (this.settingsModal.visible) {
-        this.soundEffects.playMenuClose();
-        this.settingsModal.setVisible(false);
-      } else if (this.objectGuideModal.isVisible()) {
-        this.soundEffects.playMenuClose();
-        this.objectGuideModal.hide();
-      } else if (this.levelSelectContainer.visible) {
-        this.showMainMenu();
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      if (this.menuKeyDownListener && typeof window !== 'undefined') {
+        window.removeEventListener('keydown', this.menuKeyDownListener);
+        this.menuKeyDownListener = null;
       }
+      KeyboardNavManager.getInstance().reset();
     });
   }
 
@@ -172,6 +178,7 @@ export class MenuScene extends Phaser.Scene {
     // Menu Buttons
     const btnW = 280;
     const hasProgress = progress.completedLevels.length > 0;
+    this.mainMenuItems = [];
 
     if (hasProgress) {
       const btnH = 40;
@@ -179,69 +186,81 @@ export class MenuScene extends Phaser.Scene {
       const spacingY = 48;
 
       // 1. Continue Button (primary)
-      this.createMenuButton(
-        this.mainMenuContainer,
-        halfW,
-        startY,
-        btnW,
-        44,
-        `CONTINUE  (LVL ${progress.unlockedLevel})`,
-        () => this.startLevel(progress.unlockedLevel),
-        true
+      this.mainMenuItems.push(
+        this.createMenuButton(
+          this.mainMenuContainer,
+          'menu-continue',
+          halfW,
+          startY,
+          btnW,
+          44,
+          `CONTINUE  (LVL ${progress.unlockedLevel})`,
+          () => this.startLevel(progress.unlockedLevel),
+          true
+        )
       );
 
       // 2. Play / New Game Button
-      this.createMenuButton(
-        this.mainMenuContainer,
-        halfW,
-        startY + spacingY,
-        btnW,
-        btnH,
-        'PLAY  (NEW GAME)',
-        () => this.startLevel(1),
-        false
+      this.mainMenuItems.push(
+        this.createMenuButton(
+          this.mainMenuContainer,
+          'menu-play',
+          halfW,
+          startY + spacingY,
+          btnW,
+          btnH,
+          'PLAY  (NEW GAME)',
+          () => this.startLevel(1),
+          false
+        )
       );
 
       // 3. Level Selection Button
-      this.createMenuButton(
-        this.mainMenuContainer,
-        halfW,
-        startY + spacingY * 2,
-        btnW,
-        btnH,
-        'LEVEL SELECTION',
-        () => this.showLevelSelect(),
-        false
+      this.mainMenuItems.push(
+        this.createMenuButton(
+          this.mainMenuContainer,
+          'menu-level-select',
+          halfW,
+          startY + spacingY * 2,
+          btnW,
+          btnH,
+          'LEVEL SELECTION',
+          () => this.showLevelSelect(),
+          false
+        )
       );
 
       // 4. Object Guide Button
-      this.createMenuButton(
-        this.mainMenuContainer,
-        halfW,
-        startY + spacingY * 3,
-        btnW,
-        btnH,
-        'OBJECT GUIDE',
-        () => {
-          this.soundEffects.playMenuOpen();
-          this.objectGuideModal.show();
-        },
-        false
+      this.mainMenuItems.push(
+        this.createMenuButton(
+          this.mainMenuContainer,
+          'menu-guide',
+          halfW,
+          startY + spacingY * 3,
+          btnW,
+          btnH,
+          'OBJECT GUIDE',
+          () => {
+            this.soundEffects.playMenuOpen();
+            this.objectGuideModal.show();
+          },
+          false
+        )
       );
 
       // 5. Settings Button
-      this.createMenuButton(
-        this.mainMenuContainer,
-        halfW,
-        startY + spacingY * 4,
-        btnW,
-        btnH,
-        'SETTINGS',
-        () => {
-          this.soundEffects.playMenuOpen();
-          this.settingsModal.setVisible(true);
-        },
-        false
+      this.mainMenuItems.push(
+        this.createMenuButton(
+          this.mainMenuContainer,
+          'menu-settings',
+          halfW,
+          startY + spacingY * 4,
+          btnW,
+          btnH,
+          'SETTINGS',
+          () => this.openSettingsModal(),
+          false
+        )
       );
     } else {
       const btnH = 42;
@@ -249,57 +268,66 @@ export class MenuScene extends Phaser.Scene {
       const spacingY = 54;
 
       // 1. Play Button (primary)
-      this.createMenuButton(
-        this.mainMenuContainer,
-        halfW,
-        startY,
-        btnW,
-        46,
-        'PLAY',
-        () => this.startLevel(1),
-        true
+      this.mainMenuItems.push(
+        this.createMenuButton(
+          this.mainMenuContainer,
+          'menu-play',
+          halfW,
+          startY,
+          btnW,
+          46,
+          'PLAY',
+          () => this.startLevel(1),
+          true
+        )
       );
 
       // 2. Level Selection Button
-      this.createMenuButton(
-        this.mainMenuContainer,
-        halfW,
-        startY + spacingY,
-        btnW,
-        btnH,
-        'LEVEL SELECTION',
-        () => this.showLevelSelect(),
-        false
+      this.mainMenuItems.push(
+        this.createMenuButton(
+          this.mainMenuContainer,
+          'menu-level-select',
+          halfW,
+          startY + spacingY,
+          btnW,
+          btnH,
+          'LEVEL SELECTION',
+          () => this.showLevelSelect(),
+          false
+        )
       );
 
       // 3. Object Guide Button
-      this.createMenuButton(
-        this.mainMenuContainer,
-        halfW,
-        startY + spacingY * 2,
-        btnW,
-        btnH,
-        'OBJECT GUIDE',
-        () => {
-          this.soundEffects.playMenuOpen();
-          this.objectGuideModal.show();
-        },
-        false
+      this.mainMenuItems.push(
+        this.createMenuButton(
+          this.mainMenuContainer,
+          'menu-guide',
+          halfW,
+          startY + spacingY * 2,
+          btnW,
+          btnH,
+          'OBJECT GUIDE',
+          () => {
+            this.soundEffects.playMenuOpen();
+            this.objectGuideModal.show();
+          },
+          false
+        )
       );
 
       // 4. Settings Button
-      this.createMenuButton(
-        this.mainMenuContainer,
-        halfW,
-        startY + spacingY * 3,
-        btnW,
-        btnH,
-        'SETTINGS',
-        () => {
-          this.soundEffects.playMenuOpen();
-          this.settingsModal.setVisible(true);
-        },
-        false
+      this.mainMenuItems.push(
+        this.createMenuButton(
+          this.mainMenuContainer,
+          'menu-settings',
+          halfW,
+          startY + spacingY * 3,
+          btnW,
+          btnH,
+          'SETTINGS',
+          () => this.openSettingsModal(),
+          false
+        )
       );
     }
 
@@ -317,6 +345,7 @@ export class MenuScene extends Phaser.Scene {
 
   private createMenuButton(
     container: Phaser.GameObjects.Container,
+    id: string,
     x: number,
     y: number,
     w: number,
@@ -324,7 +353,7 @@ export class MenuScene extends Phaser.Scene {
     text: string,
     onClick: () => void,
     isPrimary: boolean
-  ): void {
+  ): FocusableItem {
     const bg = this.add.graphics();
     const borderCol = isPrimary ? 0xffffff : 0x777777;
 
@@ -359,6 +388,7 @@ export class MenuScene extends Phaser.Scene {
       render(true);
       txt.setColor('#FFFFFF');
       this.soundEffects.playUiHover();
+      KeyboardNavManager.getInstance().setFocusById(id);
     });
 
     hit.on('pointerout', () => {
@@ -372,18 +402,47 @@ export class MenuScene extends Phaser.Scene {
     });
 
     container.add(hit);
+
+    return {
+      id,
+      getBounds: () => ({
+        x: container.x + x,
+        y: container.y + y,
+        width: w,
+        height: h,
+      }),
+      onActivate: () => {
+        this.soundEffects.playUiClick();
+        onClick();
+      },
+    };
   }
 
   private showLevelSelect(): void {
     this.soundEffects.playMenuOpen();
     this.mainMenuContainer.setVisible(false);
     this.levelSelectContainer.setVisible(true);
+    KeyboardNavManager.getInstance().pushContext({
+      id: 'level-select',
+      items: this.levelSelectItems,
+      selectedIndex: 2,
+      gridCols: 5,
+      onEscape: () => this.showMainMenu(),
+      trapFocus: true,
+    });
   }
 
   private showMainMenu(): void {
     this.soundEffects.playMenuClose();
     this.levelSelectContainer.setVisible(false);
     this.mainMenuContainer.setVisible(true);
+    KeyboardNavManager.getInstance().pushContext({
+      id: 'main-menu',
+      items: this.mainMenuItems,
+      selectedIndex: 0,
+      onEscape: () => {},
+      trapFocus: true,
+    });
   }
 
   private createLevelSelectionGrid(width: number, height: number): void {
@@ -412,28 +471,36 @@ export class MenuScene extends Phaser.Scene {
       .setOrigin(0, 0.5);
     this.levelSelectContainer.add(titleRight);
 
+    this.levelSelectItems = [];
+
     // Back to Menu button
-    this.createMenuButton(
-      this.levelSelectContainer,
-      80,
-      40,
-      100,
-      32,
-      '← MENU',
-      () => this.showMainMenu(),
-      false
+    this.levelSelectItems.push(
+      this.createMenuButton(
+        this.levelSelectContainer,
+        'level-select-back',
+        80,
+        40,
+        100,
+        32,
+        '← MENU',
+        () => this.showMainMenu(),
+        false
+      )
     );
 
     // Upper-right close button
-    this.createMenuButton(
-      this.levelSelectContainer,
-      width - 40,
-      40,
-      40,
-      32,
-      '✕',
-      () => this.showMainMenu(),
-      false
+    this.levelSelectItems.push(
+      this.createMenuButton(
+        this.levelSelectContainer,
+        'level-select-close',
+        width - 40,
+        40,
+        40,
+        32,
+        '✕',
+        () => this.showMainMenu(),
+        false
+      )
     );
 
     // Chapter progress overview
@@ -507,6 +574,7 @@ export class MenuScene extends Phaser.Scene {
           this.soundEffects.playUiHover();
           g.lineStyle(2, 0xffffff, 1);
           g.strokeRoundedRect(x - cellW / 2, y - cellH / 2, cellW, cellH, 6);
+          KeyboardNavManager.getInstance().setFocusById(`level-card-${lvl.id}`);
         });
 
         hit.on('pointerout', () => {
@@ -519,6 +587,10 @@ export class MenuScene extends Phaser.Scene {
           this.startLevel(lvl.id);
         });
       } else {
+        hit.on('pointerover', () => {
+          KeyboardNavManager.getInstance().setFocusById(`level-card-${lvl.id}`);
+        });
+
         hit.on('pointerdown', () => {
           this.soundEffects.playLockedError();
           // Visual denial pulse: flash red outline
@@ -532,6 +604,25 @@ export class MenuScene extends Phaser.Scene {
       }
 
       this.levelSelectContainer.add(hit);
+
+      this.levelSelectItems.push({
+        id: `level-card-${lvl.id}`,
+        getBounds: () => ({ x, y, width: cellW, height: cellH }),
+        onActivate: () => {
+          if (isUnlocked) {
+            this.soundEffects.playLevelSelect();
+            this.startLevel(lvl.id);
+          } else {
+            this.soundEffects.playLockedError();
+            g.lineStyle(2, 0xff3333, 1);
+            g.strokeRoundedRect(x - cellW / 2, y - cellH / 2, cellW, cellH, 6);
+            this.time.delayedCall(250, () => {
+              g.lineStyle(1, strokeCol, 0.9);
+              g.strokeRoundedRect(x - cellW / 2, y - cellH / 2, cellW, cellH, 6);
+            });
+          }
+        },
+      });
     });
 
     // Chapter legend at bottom
@@ -551,6 +642,42 @@ export class MenuScene extends Phaser.Scene {
     this.levelSelectContainer.add(legend);
   }
 
+  private openSettingsModal(): void {
+    this.soundEffects.playMenuOpen();
+    this.settingsModal.setVisible(true);
+    KeyboardNavManager.getInstance().pushContext({
+      id: 'menu-settings',
+      items: this.settingsItems,
+      selectedIndex: 0,
+      onEscape: () => this.closeSettingsModal(),
+      trapFocus: true,
+    });
+  }
+
+  private closeSettingsModal(): void {
+    this.soundEffects.playMenuClose();
+    this.settingsModal.setVisible(false);
+    KeyboardNavManager.getInstance().popContext('menu-settings');
+  }
+
+  private openConfirmResetModal(): void {
+    this.soundEffects.playMenuOpen();
+    this.confirmResetModal.setVisible(true);
+    KeyboardNavManager.getInstance().pushContext({
+      id: 'menu-confirm-reset',
+      items: this.confirmResetItems,
+      selectedIndex: 1,
+      onEscape: () => this.closeConfirmResetModal(),
+      trapFocus: true,
+    });
+  }
+
+  private closeConfirmResetModal(): void {
+    this.soundEffects.playMenuClose();
+    this.confirmResetModal.setVisible(false);
+    KeyboardNavManager.getInstance().popContext('menu-confirm-reset');
+  }
+
   private createSettingsModal(width: number, height: number): void {
     this.settingsModal = this.add.container(width / 2, height / 2);
     this.settingsModal.setDepth(150);
@@ -558,6 +685,7 @@ export class MenuScene extends Phaser.Scene {
 
     const modalW = 460;
     const modalH = 430;
+    this.settingsItems = [];
 
     // Backdrop
     const backdrop = this.add.graphics();
@@ -600,19 +728,22 @@ export class MenuScene extends Phaser.Scene {
       .setOrigin(0.5);
     this.settingsModal.add(soundText);
 
-    this.createMenuButton(
-      this.settingsModal,
-      0,
-      -105,
-      260,
-      30,
-      'TOGGLE MUTE',
-      () => {
-        isMuted = !isMuted;
-        audio.setMuted(isMuted);
-        soundText.setText(`AUDIO: ${isMuted ? 'MUTED' : 'ENABLED'}`);
-      },
-      false
+    this.settingsItems.push(
+      this.createMenuButton(
+        this.settingsModal,
+        'settings-mute',
+        0,
+        -105,
+        260,
+        30,
+        'TOGGLE MUTE',
+        () => {
+          isMuted = !isMuted;
+          audio.setMuted(isMuted);
+          soundText.setText(`AUDIO: ${isMuted ? 'MUTED' : 'ENABLED'}`);
+        },
+        false
+      )
     );
 
     // 2. Master Volume
@@ -627,34 +758,40 @@ export class MenuScene extends Phaser.Scene {
       .setOrigin(0.5);
     this.settingsModal.add(masterText);
 
-    this.createMenuButton(
-      this.settingsModal,
-      -80,
-      -35,
-      70,
-      26,
-      '- 10%',
-      () => {
-        masterVal = Math.max(0, masterVal - 10);
-        audio.setMasterVolume(masterVal / 100);
-        masterText.setText(`MASTER VOLUME: ${masterVal}%`);
-      },
-      false
+    this.settingsItems.push(
+      this.createMenuButton(
+        this.settingsModal,
+        'settings-master-dec',
+        -80,
+        -35,
+        70,
+        26,
+        '- 10%',
+        () => {
+          masterVal = Math.max(0, masterVal - 10);
+          audio.setMasterVolume(masterVal / 100);
+          masterText.setText(`MASTER VOLUME: ${masterVal}%`);
+        },
+        false
+      )
     );
 
-    this.createMenuButton(
-      this.settingsModal,
-      80,
-      -35,
-      70,
-      26,
-      '+ 10%',
-      () => {
-        masterVal = Math.min(100, masterVal + 10);
-        audio.setMasterVolume(masterVal / 100);
-        masterText.setText(`MASTER VOLUME: ${masterVal}%`);
-      },
-      false
+    this.settingsItems.push(
+      this.createMenuButton(
+        this.settingsModal,
+        'settings-master-inc',
+        80,
+        -35,
+        70,
+        26,
+        '+ 10%',
+        () => {
+          masterVal = Math.min(100, masterVal + 10);
+          audio.setMasterVolume(masterVal / 100);
+          masterText.setText(`MASTER VOLUME: ${masterVal}%`);
+        },
+        false
+      )
     );
 
     // 3. Music Volume & SFX Volume Rows
@@ -668,34 +805,40 @@ export class MenuScene extends Phaser.Scene {
       .setOrigin(0.5);
     this.settingsModal.add(musicText);
 
-    this.createMenuButton(
-      this.settingsModal,
-      -145,
-      30,
-      50,
-      24,
-      '-',
-      () => {
-        musicVal = Math.max(0, musicVal - 10);
-        audio.setMusicVolume(musicVal / 100);
-        musicText.setText(`MUSIC: ${musicVal}%`);
-      },
-      false
+    this.settingsItems.push(
+      this.createMenuButton(
+        this.settingsModal,
+        'settings-music-dec',
+        -145,
+        30,
+        50,
+        24,
+        '-',
+        () => {
+          musicVal = Math.max(0, musicVal - 10);
+          audio.setMusicVolume(musicVal / 100);
+          musicText.setText(`MUSIC: ${musicVal}%`);
+        },
+        false
+      )
     );
 
-    this.createMenuButton(
-      this.settingsModal,
-      -55,
-      30,
-      50,
-      24,
-      '+',
-      () => {
-        musicVal = Math.min(100, musicVal + 10);
-        audio.setMusicVolume(musicVal / 100);
-        musicText.setText(`MUSIC: ${musicVal}%`);
-      },
-      false
+    this.settingsItems.push(
+      this.createMenuButton(
+        this.settingsModal,
+        'settings-music-inc',
+        -55,
+        30,
+        50,
+        24,
+        '+',
+        () => {
+          musicVal = Math.min(100, musicVal + 10);
+          audio.setMusicVolume(musicVal / 100);
+          musicText.setText(`MUSIC: ${musicVal}%`);
+        },
+        false
+      )
     );
 
     let sfxVal = Math.round(audio.getSfxVolume() * 100);
@@ -708,34 +851,40 @@ export class MenuScene extends Phaser.Scene {
       .setOrigin(0.5);
     this.settingsModal.add(sfxText);
 
-    this.createMenuButton(
-      this.settingsModal,
-      55,
-      30,
-      50,
-      24,
-      '-',
-      () => {
-        sfxVal = Math.max(0, sfxVal - 10);
-        audio.setSfxVolume(sfxVal / 100);
-        sfxText.setText(`SFX: ${sfxVal}%`);
-      },
-      false
+    this.settingsItems.push(
+      this.createMenuButton(
+        this.settingsModal,
+        'settings-sfx-dec',
+        55,
+        30,
+        50,
+        24,
+        '-',
+        () => {
+          sfxVal = Math.max(0, sfxVal - 10);
+          audio.setSfxVolume(sfxVal / 100);
+          sfxText.setText(`SFX: ${sfxVal}%`);
+        },
+        false
+      )
     );
 
-    this.createMenuButton(
-      this.settingsModal,
-      145,
-      30,
-      50,
-      24,
-      '+',
-      () => {
-        sfxVal = Math.min(100, sfxVal + 10);
-        audio.setSfxVolume(sfxVal / 100);
-        sfxText.setText(`SFX: ${sfxVal}%`);
-      },
-      false
+    this.settingsItems.push(
+      this.createMenuButton(
+        this.settingsModal,
+        'settings-sfx-inc',
+        145,
+        30,
+        50,
+        24,
+        '+',
+        () => {
+          sfxVal = Math.min(100, sfxVal + 10);
+          audio.setSfxVolume(sfxVal / 100);
+          sfxText.setText(`SFX: ${sfxVal}%`);
+        },
+        false
+      )
     );
 
     // 4. Reduced Motion Toggle
@@ -751,45 +900,54 @@ export class MenuScene extends Phaser.Scene {
       .setOrigin(0.5);
     this.settingsModal.add(motionText);
 
-    this.createMenuButton(
-      this.settingsModal,
-      0,
-      105,
-      260,
-      30,
-      'TOGGLE REDUCED MOTION',
-      () => {
-        isReduced = !isReduced;
-        this.storage.setReducedMotion(isReduced);
-        motionText.setText(`MOTION: ${isReduced ? 'REDUCED' : 'NORMAL'}`);
-      },
-      false
+    this.settingsItems.push(
+      this.createMenuButton(
+        this.settingsModal,
+        'settings-motion',
+        0,
+        105,
+        260,
+        30,
+        'TOGGLE REDUCED MOTION',
+        () => {
+          isReduced = !isReduced;
+          this.storage.setReducedMotion(isReduced);
+          motionText.setText(`MOTION: ${isReduced ? 'REDUCED' : 'NORMAL'}`);
+        },
+        false
+      )
     );
 
     // 5. Reset Game Progress Button
-    this.createMenuButton(
-      this.settingsModal,
-      0,
-      150,
-      260,
-      30,
-      'RESET PROGRESS',
-      () => {
-        this.confirmResetModal.setVisible(true);
-      },
-      false
+    this.settingsItems.push(
+      this.createMenuButton(
+        this.settingsModal,
+        'settings-reset',
+        0,
+        150,
+        260,
+        30,
+        'RESET PROGRESS',
+        () => {
+          this.openConfirmResetModal();
+        },
+        false
+      )
     );
 
     // Close button
-    this.createMenuButton(
-      this.settingsModal,
-      modalW / 2 - 35,
-      -modalH / 2 + 25,
-      40,
-      30,
-      '✕',
-      () => this.settingsModal.setVisible(false),
-      false
+    this.settingsItems.push(
+      this.createMenuButton(
+        this.settingsModal,
+        'settings-close',
+        modalW / 2 - 35,
+        -modalH / 2 + 25,
+        40,
+        30,
+        '✕',
+        () => this.closeSettingsModal(),
+        false
+      )
     );
   }
 
@@ -800,6 +958,7 @@ export class MenuScene extends Phaser.Scene {
 
     const modalW = 380;
     const modalH = 200;
+    this.confirmResetItems = [];
 
     const backdrop = this.add.graphics();
     backdrop.fillStyle(0x000000, 0.8);
@@ -825,46 +984,55 @@ export class MenuScene extends Phaser.Scene {
       .setOrigin(0.5);
     this.confirmResetModal.add(msg);
 
-    // Upper-right close button
-    this.createMenuButton(
-      this.confirmResetModal,
-      modalW / 2 - 30,
-      -modalH / 2 + 25,
-      36,
-      28,
-      '✕',
-      () => this.confirmResetModal.setVisible(false),
-      false
+    // Cancel button
+    this.confirmResetItems.push(
+      this.createMenuButton(
+        this.confirmResetModal,
+        'confirm-cancel',
+        -70,
+        35,
+        110,
+        36,
+        'CANCEL',
+        () => this.closeConfirmResetModal(),
+        false
+      )
     );
 
     // Confirm button
-    this.createMenuButton(
-      this.confirmResetModal,
-      -70,
-      35,
-      110,
-      36,
-      'CONFIRM',
-      () => {
-        this.storage.startNewGame(true);
-        this.confirmResetModal.setVisible(false);
-        this.settingsModal.setVisible(false);
-        // Refresh scene
-        this.scene.restart();
-      },
-      true
+    this.confirmResetItems.push(
+      this.createMenuButton(
+        this.confirmResetModal,
+        'confirm-reset',
+        70,
+        35,
+        110,
+        36,
+        'CONFIRM',
+        () => {
+          this.storage.startNewGame(true);
+          this.closeConfirmResetModal();
+          this.closeSettingsModal();
+          // Refresh scene
+          this.scene.restart();
+        },
+        true
+      )
     );
 
-    // Cancel button
-    this.createMenuButton(
-      this.confirmResetModal,
-      70,
-      35,
-      110,
-      36,
-      'CANCEL',
-      () => this.confirmResetModal.setVisible(false),
-      false
+    // Upper-right close button
+    this.confirmResetItems.push(
+      this.createMenuButton(
+        this.confirmResetModal,
+        'confirm-close',
+        modalW / 2 - 30,
+        -modalH / 2 + 25,
+        36,
+        28,
+        '✕',
+        () => this.closeConfirmResetModal(),
+        false
+      )
     );
   }
 

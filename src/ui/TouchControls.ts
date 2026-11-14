@@ -27,16 +27,27 @@ export class TouchControls {
   }
 
   private createControls(scene: Phaser.Scene, width: number, height: number): void {
-    const btnSize = 54;
+    const btnSize = 52;
 
     // Left D-pad cluster on the bottom left (Real World side)
     const dpadCenterX = 130;
-    const dpadCenterY = height - 70;
+    const dpadCenterY = height - 95;
 
-    // D-Pad Directional Buttons
+    // Cross-shaped D-Pad Directional Buttons
     this.createButton(
       scene,
-      dpadCenterX - btnSize - 4,
+      dpadCenterX,
+      dpadCenterY - btnSize - 6,
+      btnSize,
+      btnSize,
+      '↑',
+      () => this.callbacks.onDirection('up'),
+      true
+    );
+
+    this.createButton(
+      scene,
+      dpadCenterX - btnSize - 6,
       dpadCenterY,
       btnSize,
       btnSize,
@@ -47,7 +58,7 @@ export class TouchControls {
 
     this.createButton(
       scene,
-      dpadCenterX + btnSize + 4,
+      dpadCenterX + btnSize + 6,
       dpadCenterY,
       btnSize,
       btnSize,
@@ -59,18 +70,7 @@ export class TouchControls {
     this.createButton(
       scene,
       dpadCenterX,
-      dpadCenterY - btnSize - 4,
-      btnSize,
-      btnSize,
-      '↑',
-      () => this.callbacks.onDirection('up'),
-      true
-    );
-
-    this.createButton(
-      scene,
-      dpadCenterX,
-      dpadCenterY + btnSize + 4,
+      dpadCenterY + btnSize + 6,
       btnSize,
       btnSize,
       '↓',
@@ -80,7 +80,7 @@ export class TouchControls {
 
     // Right action cluster on the bottom right (Shadow World side)
     const actionCenterX = width - 110;
-    const actionCenterY = height - 70;
+    const actionCenterY = height - 95;
 
     this.createButton(
       scene,

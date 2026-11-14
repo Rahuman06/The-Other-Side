@@ -1,11 +1,15 @@
 import Phaser from 'phaser';
 import { StorageManager } from '../storage/StorageManager';
 import { AudioManager } from '../audio/AudioManager';
+import { KeyboardNavManager, FocusableItem } from './KeyboardNavManager';
 
 export class SettingsModal {
   private container: Phaser.GameObjects.Container;
   private storage: StorageManager;
   private onCloseCallback: () => void;
+  private readonly focusItems: FocusableItem[] = [];
+  private readonly centerX: number;
+  private readonly centerY: number;
 
   constructor(
     scene: Phaser.Scene,
@@ -16,8 +20,10 @@ export class SettingsModal {
   ) {
     this.storage = storage;
     this.onCloseCallback = onClose;
+    this.centerX = width / 2;
+    this.centerY = height / 2;
 
-    this.container = scene.add.container(width / 2, height / 2);
+    this.container = scene.add.container(this.centerX, this.centerY);
     this.container.setDepth(150);
     this.container.setVisible(false);
 
@@ -69,7 +75,7 @@ export class SettingsModal {
       .setOrigin(0.5);
     this.container.add(soundText);
 
-    this.createButton(scene, 0, -105, 260, 30, 'TOGGLE MUTE', () => {
+    this.createButton(scene, 'settings-mute', 0, -105, 260, 30, 'TOGGLE MUTE', () => {
       isMuted = !isMuted;
       audio.setMuted(isMuted);
       soundText.setText(`AUDIO: ${isMuted ? 'MUTED' : 'ENABLED'}`);
@@ -87,13 +93,13 @@ export class SettingsModal {
       .setOrigin(0.5);
     this.container.add(masterText);
 
-    this.createButton(scene, -80, -35, 70, 26, '- 10%', () => {
+    this.createButton(scene, 'settings-master-dec', -80, -35, 70, 26, '- 10%', () => {
       masterVal = Math.max(0, masterVal - 10);
       audio.setMasterVolume(masterVal / 100);
       masterText.setText(`MASTER VOLUME: ${masterVal}%`);
     });
 
-    this.createButton(scene, 80, -35, 70, 26, '+ 10%', () => {
+    this.createButton(scene, 'settings-master-inc', 80, -35, 70, 26, '+ 10%', () => {
       masterVal = Math.min(100, masterVal + 10);
       audio.setMasterVolume(masterVal / 100);
       masterText.setText(`MASTER VOLUME: ${masterVal}%`);
@@ -110,13 +116,13 @@ export class SettingsModal {
       .setOrigin(0.5);
     this.container.add(musicText);
 
-    this.createButton(scene, -145, 30, 50, 24, '-', () => {
+    this.createButton(scene, 'settings-music-dec', -145, 30, 50, 24, '-', () => {
       musicVal = Math.max(0, musicVal - 10);
       audio.setMusicVolume(musicVal / 100);
       musicText.setText(`MUSIC: ${musicVal}%`);
     });
 
-    this.createButton(scene, -55, 30, 50, 24, '+', () => {
+    this.createButton(scene, 'settings-music-inc', -55, 30, 50, 24, '+', () => {
       musicVal = Math.min(100, musicVal + 10);
       audio.setMusicVolume(musicVal / 100);
       musicText.setText(`MUSIC: ${musicVal}%`);
@@ -132,13 +138,13 @@ export class SettingsModal {
       .setOrigin(0.5);
     this.container.add(sfxText);
 
-    this.createButton(scene, 55, 30, 50, 24, '-', () => {
+    this.createButton(scene, 'settings-sfx-dec', 55, 30, 50, 24, '-', () => {
       sfxVal = Math.max(0, sfxVal - 10);
       audio.setSfxVolume(sfxVal / 100);
       sfxText.setText(`SFX: ${sfxVal}%`);
     });
 
-    this.createButton(scene, 145, 30, 50, 24, '+', () => {
+    this.createButton(scene, 'settings-sfx-inc', 145, 30, 50, 24, '+', () => {
       sfxVal = Math.min(100, sfxVal + 10);
       audio.setSfxVolume(sfxVal / 100);
       sfxText.setText(`SFX: ${sfxVal}%`);
@@ -157,7 +163,7 @@ export class SettingsModal {
       .setOrigin(0.5);
     this.container.add(motionText);
 
-    this.createButton(scene, 0, 105, 260, 30, 'TOGGLE REDUCED MOTION', () => {
+    this.createButton(scene, 'settings-motion', 0, 105, 260, 30, 'TOGGLE REDUCED MOTION', () => {
       isReduced = !isReduced;
       this.storage.setReducedMotion(isReduced);
       motionText.setText(`MOTION: ${isReduced ? 'REDUCED' : 'NORMAL'}`);
@@ -166,6 +172,7 @@ export class SettingsModal {
     // Close button
     this.createButton(
       scene,
+      'settings-close-btn',
       0,
       160,
       180,
@@ -181,6 +188,7 @@ export class SettingsModal {
     // Top-right X button
     this.createButton(
       scene,
+      'settings-close-x',
       modalW / 2 - 35,
       -modalH / 2 + 25,
       40,
@@ -195,6 +203,7 @@ export class SettingsModal {
 
   private createButton(
     scene: Phaser.Scene,
+    id: string,
     x: number,
     y: number,
     w: number,
@@ -237,6 +246,7 @@ export class SettingsModal {
     hit.on('pointerover', () => {
       render(true);
       txt.setColor('#FFFFFF');
+      KeyboardNavManager.getInstance().setFocusById(id);
     });
 
     hit.on('pointerout', () => {
@@ -246,14 +256,36 @@ export class SettingsModal {
 
     hit.on('pointerdown', onClick);
     this.container.add(hit);
+
+    this.focusItems.push({
+      id,
+      getBounds: () => ({
+        x: this.centerX + x,
+        y: this.centerY + y,
+        width: w,
+        height: h,
+      }),
+      onActivate: onClick,
+    });
   }
 
   public show(): void {
     this.container.setVisible(true);
+    KeyboardNavManager.getInstance().pushContext({
+      id: 'settings-modal',
+      items: this.focusItems,
+      selectedIndex: 0,
+      onEscape: () => {
+        this.hide();
+        this.onCloseCallback();
+      },
+      trapFocus: true,
+    });
   }
 
   public hide(): void {
     this.container.setVisible(false);
+    KeyboardNavManager.getInstance().popContext('settings-modal');
   }
 
   public isVisible(): boolean {

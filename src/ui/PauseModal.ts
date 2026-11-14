@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { KeyboardNavManager, FocusableItem } from './KeyboardNavManager';
 
 export interface PauseModalCallbacks {
   onResume: () => void;
@@ -10,9 +11,16 @@ export interface PauseModalCallbacks {
 
 export class PauseModal {
   private container: Phaser.GameObjects.Container;
+  private readonly callbacks: PauseModalCallbacks;
+  private readonly focusItems: FocusableItem[] = [];
+  private readonly centerX: number;
+  private readonly centerY: number;
 
   constructor(scene: Phaser.Scene, width: number, height: number, callbacks: PauseModalCallbacks) {
-    this.container = scene.add.container(width / 2, height / 2);
+    this.callbacks = callbacks;
+    this.centerX = width / 2;
+    this.centerY = height / 2;
+    this.container = scene.add.container(this.centerX, this.centerY);
     this.container.setDepth(100);
     this.container.setVisible(false);
 
@@ -49,18 +57,6 @@ export class PauseModal {
       .setOrigin(0.5);
     this.container.add(title);
 
-    // Mandatory upper-right '✕' close button
-    this.createButton(
-      scene,
-      modalW / 2 - 35,
-      -modalH / 2 + 25,
-      40,
-      30,
-      '✕',
-      () => callbacks.onResume(),
-      false
-    );
-
     // Divider line
     const div = scene.add.graphics();
     div.lineStyle(1, 0x333333, 0.8);
@@ -74,23 +70,37 @@ export class PauseModal {
     const gapY = 44;
 
     // 1. Resume Button (Primary)
-    this.createButton(scene, 0, startY, btnW, btnH, 'RESUME  [ P / ESC ]', () => callbacks.onResume(), true);
+    this.createButton(scene, 'pause-resume', 0, startY, btnW, btnH, 'RESUME  [ P / ESC ]', () => callbacks.onResume(), true);
 
     // 2. Restart Level Button
-    this.createButton(scene, 0, startY + gapY, btnW, btnH, 'RESTART LEVEL  [ R ]', () => callbacks.onRestart(), false);
+    this.createButton(scene, 'pause-restart', 0, startY + gapY, btnW, btnH, 'RESTART LEVEL  [ R ]', () => callbacks.onRestart(), false);
 
     // 3. Object Guide Button
-    this.createButton(scene, 0, startY + gapY * 2, btnW, btnH, 'OBJECT GUIDE', () => callbacks.onObjectGuide?.(), false);
+    this.createButton(scene, 'pause-guide', 0, startY + gapY * 2, btnW, btnH, 'OBJECT GUIDE', () => callbacks.onObjectGuide?.(), false);
 
     // 4. Settings Button
-    this.createButton(scene, 0, startY + gapY * 3, btnW, btnH, 'SETTINGS  [ S ]', () => callbacks.onSettings?.(), false);
+    this.createButton(scene, 'pause-settings', 0, startY + gapY * 3, btnW, btnH, 'SETTINGS  [ S ]', () => callbacks.onSettings?.(), false);
 
     // 5. Main Menu Button
-    this.createButton(scene, 0, startY + gapY * 4, btnW, btnH, 'MAIN MENU  [ M ]', () => callbacks.onMainMenu(), false);
+    this.createButton(scene, 'pause-main-menu', 0, startY + gapY * 4, btnW, btnH, 'MAIN MENU  [ M ]', () => callbacks.onMainMenu(), false);
+
+    // 6. Mandatory upper-right '✕' close button
+    this.createButton(
+      scene,
+      'pause-close',
+      modalW / 2 - 35,
+      -modalH / 2 + 25,
+      40,
+      30,
+      '✕',
+      () => callbacks.onResume(),
+      false
+    );
   }
 
   private createButton(
     scene: Phaser.Scene,
+    id: string,
     x: number,
     y: number,
     w: number,
@@ -133,6 +143,7 @@ export class PauseModal {
     hit.on('pointerover', () => {
       render(true);
       txt.setColor('#FFFFFF');
+      KeyboardNavManager.getInstance().setFocusById(id);
     });
 
     hit.on('pointerout', () => {
@@ -143,14 +154,33 @@ export class PauseModal {
     hit.on('pointerdown', onClick);
 
     this.container.add(hit);
+
+    this.focusItems.push({
+      id,
+      getBounds: () => ({
+        x: this.centerX + x,
+        y: this.centerY + y,
+        width: w,
+        height: h,
+      }),
+      onActivate: onClick,
+    });
   }
 
   public show(): void {
     this.container.setVisible(true);
+    KeyboardNavManager.getInstance().pushContext({
+      id: 'pause-modal',
+      items: this.focusItems,
+      selectedIndex: 0,
+      onEscape: () => this.callbacks.onResume(),
+      trapFocus: true,
+    });
   }
 
   public hide(): void {
     this.container.setVisible(false);
+    KeyboardNavManager.getInstance().popContext('pause-modal');
   }
 
   public isVisible(): boolean {

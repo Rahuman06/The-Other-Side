@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { KeyboardNavManager, FocusableItem } from './KeyboardNavManager';
 
 export interface WinModalCallbacks {
   onNextLevel: () => void;
@@ -13,9 +14,16 @@ export class WinModal {
   private bestMovesText!: Phaser.GameObjects.Text;
   private titleText!: Phaser.GameObjects.Text;
   private nextBtnText!: Phaser.GameObjects.Text;
+  private readonly callbacks: WinModalCallbacks;
+  private readonly focusItems: FocusableItem[] = [];
+  private readonly centerX: number;
+  private readonly centerY: number;
 
   constructor(scene: Phaser.Scene, width: number, height: number, callbacks: WinModalCallbacks) {
-    this.container = scene.add.container(width / 2, height / 2);
+    this.callbacks = callbacks;
+    this.centerX = width / 2;
+    this.centerY = height / 2;
+    this.container = scene.add.container(this.centerX, this.centerY);
     this.container.setDepth(100);
     this.container.setVisible(false);
 
@@ -39,18 +47,6 @@ export class WinModal {
     box.lineStyle(1.5, 0xffffff, 0.9);
     box.strokeRoundedRect(-modalW / 2, -modalH / 2, modalW, modalH, 8);
     this.container.add(box);
-
-    // Mandatory upper-right '✕' close button
-    this.createButton(
-      scene,
-      modalW / 2 - 35,
-      -modalH / 2 + 25,
-      40,
-      30,
-      '✕',
-      () => callbacks.onLevelSelect(),
-      false
-    );
 
     // Title
     this.titleText = scene.add
@@ -101,6 +97,7 @@ export class WinModal {
     // 1. Next Level Button (Primary)
     const { label: nextTxt } = this.createButton(
       scene,
+      'win-next',
       0,
       startY,
       btnW,
@@ -114,6 +111,7 @@ export class WinModal {
     // 2. Play Again Button
     this.createButton(
       scene,
+      'win-restart',
       0,
       startY + gapY,
       btnW,
@@ -126,6 +124,7 @@ export class WinModal {
     // 3. Level Selection Button
     this.createButton(
       scene,
+      'win-select',
       0,
       startY + gapY * 2,
       btnW,
@@ -138,18 +137,33 @@ export class WinModal {
     // 4. Main Menu Button
     this.createButton(
       scene,
+      'win-main-menu',
       0,
       startY + gapY * 3,
       btnW,
       btnH,
       'MAIN MENU',
-      () => callbacks.onMainMenu ? callbacks.onMainMenu() : callbacks.onLevelSelect(),
+      () => (callbacks.onMainMenu ? callbacks.onMainMenu() : callbacks.onLevelSelect()),
+      false
+    );
+
+    // 5. Mandatory upper-right '✕' close button
+    this.createButton(
+      scene,
+      'win-close',
+      modalW / 2 - 35,
+      -modalH / 2 + 25,
+      40,
+      30,
+      '✕',
+      () => callbacks.onLevelSelect(),
       false
     );
   }
 
   private createButton(
     scene: Phaser.Scene,
+    id: string,
     x: number,
     y: number,
     w: number,
@@ -192,6 +206,7 @@ export class WinModal {
     hit.on('pointerover', () => {
       render(true);
       txt.setColor('#FFFFFF');
+      KeyboardNavManager.getInstance().setFocusById(id);
     });
 
     hit.on('pointerout', () => {
@@ -202,6 +217,18 @@ export class WinModal {
     hit.on('pointerdown', onClick);
 
     this.container.add(hit);
+
+    this.focusItems.push({
+      id,
+      getBounds: () => ({
+        x: this.centerX + x,
+        y: this.centerY + y,
+        width: w,
+        height: h,
+      }),
+      onActivate: onClick,
+    });
+
     return { label: txt };
   }
 
@@ -211,10 +238,19 @@ export class WinModal {
     this.nextBtnText.setText(isLastLevel ? 'ENDING SCENE ★' : 'NEXT LEVEL');
     this.titleText.setText(isLastLevel ? 'THE TRUTH UNLOCKED' : 'LEVEL COMPLETED');
     this.container.setVisible(true);
+
+    KeyboardNavManager.getInstance().pushContext({
+      id: 'win-modal',
+      items: this.focusItems,
+      selectedIndex: 0,
+      onEscape: () => this.callbacks.onLevelSelect(),
+      trapFocus: true,
+    });
   }
 
   public hide(): void {
     this.container.setVisible(false);
+    KeyboardNavManager.getInstance().popContext('win-modal');
   }
 
   public isVisible(): boolean {

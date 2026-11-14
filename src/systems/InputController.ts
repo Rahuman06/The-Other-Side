@@ -1,4 +1,5 @@
 import { MoveDirection } from '../engine/MovementEngine';
+import { KeyboardNavManager } from '../ui/KeyboardNavManager';
 
 export interface InputTarget {
   onDirection: (direction: MoveDirection) => void;
@@ -32,6 +33,12 @@ export class InputController {
     this.windowRef = win;
 
     this.keyDownHandler = (e: KeyboardEvent) => {
+      // First allow KeyboardNavManager to handle menu/modal navigation
+      const navManager = KeyboardNavManager.getInstance();
+      if (navManager.handleKeyDown(e)) {
+        return;
+      }
+
       this.handleKeyDown(e);
     };
 
@@ -69,6 +76,11 @@ export class InputController {
 
   public handleKeyDown(e: { key: string; repeat?: boolean; preventDefault?: () => void }): boolean {
     if (!this.isEnabled) return false;
+
+    // Isolate input: Do not process gameplay controls when a modal or menu has focus
+    if (KeyboardNavManager.getInstance().isInputTrapped()) {
+      return false;
+    }
 
     // Ignore OS key auto-repeat when held
     if (e.repeat) {

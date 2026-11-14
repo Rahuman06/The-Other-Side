@@ -23,6 +23,8 @@ import { pokiBridge } from '../poki/PokiIntegration';
 import { CharacterAnimator } from '../rendering/CharacterAnimator';
 import { VisualEffectsManager } from '../rendering/VisualEffectsManager';
 import { PuzzleObjectRenderer } from '../rendering/PuzzleObjectRenderer';
+import { KeyboardNavManager } from '../ui/KeyboardNavManager';
+import { MobileControlsOverlay } from '../ui/MobileControlsOverlay';
 
 export class GameScene extends Phaser.Scene {
   private levelId: number = 1;
@@ -154,24 +156,38 @@ export class GameScene extends Phaser.Scene {
     // 9. Controls Guide
     new ControlsGuide(this, width, height);
 
-    // 10. Touch Controls
+    // 10. Touch Controls (In-Canvas Fallback)
     this.touchControls = new TouchControls(this, width, height, {
       onDirection: (dir: MoveDirection) => this.handleDirectionInput(dir),
       onPause: () => this.togglePause(),
       onRestart: () => this.restartLevel(),
     });
 
-    // 11. Modals
+    // 11. Mobile Responsive DOM Controls Overlay
+    const mobileControls = MobileControlsOverlay.getInstance();
+    mobileControls.setCallbacks({
+      onDirection: (dir: MoveDirection) => this.handleDirectionInput(dir),
+      onPause: () => this.togglePause(),
+      onRestart: () => this.restartLevel(),
+    });
+    const isMobile =
+      typeof window !== 'undefined' &&
+      ('ontouchstart' in window || navigator.maxTouchPoints > 0 || window.innerWidth <= 1024);
+    mobileControls.setVisible(isMobile);
+
+    // 12. Modals
     this.objectGuideModal = new ObjectGuideModal(this, width, height, () => {
       if (this.session.turnEngine.state === 'PAUSED' && !this.pauseModal.isVisible()) {
         this.session.turnEngine.resume();
       }
+      mobileControls.setVisible(isMobile && this.session.turnEngine.state === 'PLAYING');
     });
 
     this.settingsModal = new SettingsModal(this, width, height, this.storage, () => {
       if (this.session.turnEngine.state === 'PAUSED' && !this.pauseModal.isVisible()) {
         this.session.turnEngine.resume();
       }
+      mobileControls.setVisible(isMobile && this.session.turnEngine.state === 'PLAYING');
     });
 
     this.pauseModal = new PauseModal(this, width, height, {
@@ -181,12 +197,15 @@ export class GameScene extends Phaser.Scene {
         this.restartLevel();
       },
       onObjectGuide: () => {
+        mobileControls.setVisible(false);
         this.objectGuideModal.show();
       },
       onSettings: () => {
+        mobileControls.setVisible(false);
         this.settingsModal.show();
       },
       onMainMenu: () => {
+        mobileControls.setVisible(false);
         pokiBridge.gameplayStop();
         this.scene.start('MenuScene', { openLevelSelect: true });
       },
@@ -195,6 +214,7 @@ export class GameScene extends Phaser.Scene {
     this.winModal = new WinModal(this, width, height, {
       onNextLevel: () => this.goToNextLevel(),
       onLevelSelect: () => {
+        mobileControls.setVisible(false);
         pokiBridge.gameplayStop();
         this.scene.start('MenuScene', { openLevelSelect: true });
       },
@@ -203,15 +223,17 @@ export class GameScene extends Phaser.Scene {
         this.restartLevel();
       },
       onMainMenu: () => {
+        mobileControls.setVisible(false);
         pokiBridge.gameplayStop();
         this.scene.start('MenuScene', { openLevelSelect: true });
       },
     });
 
-    // 12. Hardware Keyboard Controller
+    // 13. Hardware Keyboard Controller & Keyboard Navigation
+    KeyboardNavManager.getInstance().setScene(this);
     this.setupInput();
 
-    // 13. Lifecycle Cleanup Handlers
+    // 14. Lifecycle Cleanup Handlers
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, this.shutdown, this);
     this.events.once(Phaser.Scenes.Events.DESTROY, this.shutdown, this);
   }
@@ -702,6 +724,7 @@ export class GameScene extends Phaser.Scene {
     this.soundEffects.playWin();
     AudioManager.getInstance().setGameplayState('level_complete');
     pokiBridge.gameplayStop();
+    MobileControlsOverlay.getInstance().setVisible(false);
 
     // Spawn victory celebration radiant beacons
     const rCoords = this.getScreenCoordinates(this.session.player.position, true);
@@ -881,14 +904,20 @@ export class GameScene extends Phaser.Scene {
   public togglePause(): void {
     if (this.session.turnEngine.state === 'COMPLETED') return;
 
+    const isMobile =
+      typeof window !== 'undefined' &&
+      ('ontouchstart' in window || navigator.maxTouchPoints > 0 || window.innerWidth <= 1024);
+
     if (this.session.turnEngine.state === 'PLAYING') {
       this.session.turnEngine.pause();
       this.pauseModal.show();
+      MobileControlsOverlay.getInstance().setVisible(false);
       this.header.setPauseText('RESUME');
       pokiBridge.gameplayStop();
     } else {
       this.session.turnEngine.resume();
       this.pauseModal.hide();
+      MobileControlsOverlay.getInstance().setVisible(isMobile);
       this.header.setPauseText('PAUSE');
       pokiBridge.gameplayStart();
     }
@@ -901,6 +930,8 @@ export class GameScene extends Phaser.Scene {
   public shutdown(): void {
     pokiBridge.gameplayStop();
     AudioManager.getInstance().stopAllMusic();
+    MobileControlsOverlay.getInstance().setVisible(false);
+    KeyboardNavManager.getInstance().reset();
     if (this.inputController) {
       this.inputController.detach();
     }

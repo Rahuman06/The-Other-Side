@@ -2,11 +2,36 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
+    />
     <title>THE OTHER SIDE — Two worlds. One mind.</title>
     <!-- Poki SDK v2 -->
     <script src="https://game-cdn.poki.com/scripts/v2/poki-sdk.js"></script>
     <style>
+      :root {
+        --dpad-btn-size: 58px;
+        --dpad-gap: 6px;
+        --action-btn-size: 52px;
+      }
+
+      @media (max-width: 360px), (max-height: 620px) {
+        :root {
+          --dpad-btn-size: 50px;
+          --dpad-gap: 5px;
+          --action-btn-size: 46px;
+        }
+      }
+
+      @media (min-width: 480px) and (min-height: 800px) and (orientation: portrait) {
+        :root {
+          --dpad-btn-size: 64px;
+          --dpad-gap: 8px;
+          --action-btn-size: 56px;
+        }
+      }
+
       * {
         box-sizing: border-box;
         margin: 0;
@@ -15,7 +40,9 @@
         -webkit-user-select: none;
         -webkit-touch-callout: none;
       }
-      html, body {
+
+      html,
+      body {
         width: 100%;
         height: 100%;
         overflow: hidden;
@@ -25,16 +52,161 @@
         align-items: center;
         touch-action: none;
       }
+
       #game-container {
         width: 100vw;
         height: 100vh;
+        height: 100dvh;
         display: flex;
         justify-content: center;
         align-items: center;
       }
+
+      @media (orientation: portrait) and (max-width: 1024px) {
+        #game-container {
+          flex-direction: column;
+          justify-content: flex-start;
+          padding-top: max(8px, env(safe-area-inset-top, 8px));
+        }
+      }
+
       canvas {
         display: block;
         box-shadow: 0 0 30px rgba(255, 255, 255, 0.08);
+      }
+
+      /* Mobile Touch Overlay */
+      .mobile-controls {
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        z-index: 1000;
+        transition: opacity 0.2s ease, visibility 0.2s ease;
+      }
+
+      .mobile-controls.hidden {
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
+      }
+
+      .mobile-controls.visible {
+        opacity: 1;
+        visibility: visible;
+        pointer-events: none;
+      }
+
+      /* Hide mobile controls on desktop mice / wide screens */
+      @media (hover: hover) and (pointer: fine) and (min-width: 1025px) {
+        .mobile-controls {
+          display: none !important;
+        }
+      }
+
+      /* Cross-shaped D-pad container */
+      .dpad-container {
+        display: grid;
+        grid-template-columns: repeat(3, var(--dpad-btn-size));
+        grid-template-rows: repeat(3, var(--dpad-btn-size));
+        gap: var(--dpad-gap);
+        position: fixed;
+        left: max(16px, env(safe-area-inset-left, 16px));
+        bottom: max(16px, env(safe-area-inset-bottom, 16px));
+        pointer-events: auto;
+        touch-action: none;
+      }
+
+      .dpad-up {
+        grid-column: 2;
+        grid-row: 1;
+      }
+
+      .dpad-left {
+        grid-column: 1;
+        grid-row: 2;
+      }
+
+      .dpad-right {
+        grid-column: 3;
+        grid-row: 2;
+      }
+
+      .dpad-down {
+        grid-column: 2;
+        grid-row: 3;
+      }
+
+      .dpad-btn {
+        width: var(--dpad-btn-size);
+        height: var(--dpad-btn-size);
+        background: rgba(18, 18, 18, 0.88);
+        border: 1.5px solid rgba(255, 255, 255, 0.75);
+        border-radius: 12px;
+        color: #FFFFFF;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        cursor: pointer;
+        outline: none;
+        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.6);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        transition: transform 0.08s ease, background 0.08s ease, border-color 0.08s ease;
+        user-select: none;
+        -webkit-user-select: none;
+        -webkit-touch-callout: none;
+        touch-action: none;
+      }
+
+      .dpad-btn:active,
+      .dpad-btn.pressed {
+        background: rgba(255, 255, 255, 0.35);
+        border-color: #00E5FF;
+        color: #00E5FF;
+        transform: scale(0.92);
+        box-shadow: 0 0 16px rgba(0, 229, 255, 0.6);
+      }
+
+      /* Action buttons container */
+      .action-container {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        position: fixed;
+        right: max(16px, env(safe-area-inset-right, 16px));
+        bottom: max(16px, env(safe-area-inset-bottom, 16px));
+        pointer-events: auto;
+        touch-action: none;
+      }
+
+      .action-btn {
+        width: var(--action-btn-size);
+        height: var(--action-btn-size);
+        background: rgba(18, 18, 18, 0.88);
+        border: 1.5px solid rgba(255, 255, 255, 0.7);
+        border-radius: 50%;
+        color: #FFFFFF;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        cursor: pointer;
+        outline: none;
+        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.6);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        transition: transform 0.08s ease, background 0.08s ease, border-color 0.08s ease;
+        user-select: none;
+        -webkit-user-select: none;
+        touch-action: none;
+      }
+
+      .action-btn:active,
+      .action-btn.pressed {
+        background: rgba(255, 255, 255, 0.35);
+        border-color: #00E5FF;
+        color: #00E5FF;
+        transform: scale(0.92);
+        box-shadow: 0 0 16px rgba(0, 229, 255, 0.6);
       }
     </style>
   </head>

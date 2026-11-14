@@ -1,5 +1,6 @@
 import type Phaser from 'phaser';
 import { PALETTE } from '../core/constants';
+import { KeyboardNavManager, FocusableItem } from './KeyboardNavManager';
 
 export interface GuideObjectEntry {
   readonly id: string;
@@ -688,11 +689,16 @@ export class ObjectGuideModal {
   private readonly itemsPerPage: number = 2;
   private activeCategory: string = 'ALL';
   private onCloseCallback: () => void;
+  private readonly focusItems: FocusableItem[] = [];
+  private readonly centerX: number;
+  private readonly centerY: number;
 
   constructor(scene: Phaser.Scene, width: number, height: number, onClose: () => void) {
     this.onCloseCallback = onClose;
+    this.centerX = width / 2;
+    this.centerY = height / 2;
 
-    this.container = scene.add.container(width / 2, height / 2);
+    this.container = scene.add.container(this.centerX, this.centerY);
     this.container.setDepth(150);
     this.container.setVisible(false);
 
@@ -757,11 +763,17 @@ export class ObjectGuideModal {
     // Bottom Navigation Bar
     const navY = modalH / 2 - 32;
 
-    this.createNavButton(scene, -140, navY, 80, 28, '← PREV', () => {
+    const prevAction = () => {
       if (this.currentPage > 0) {
         this.currentPage--;
         this.renderPage(scene, modalW);
       }
+    };
+    this.createNavButton(scene, -140, navY, 80, 28, '← PREV', prevAction);
+    this.focusItems.push({
+      id: 'guide-prev',
+      getBounds: () => ({ x: this.centerX - 140, y: this.centerY + navY, width: 80, height: 28 }),
+      onActivate: prevAction,
     });
 
     this.pageIndicatorText = scene.add
@@ -775,18 +787,31 @@ export class ObjectGuideModal {
       .setOrigin(0.5);
     this.container.add(this.pageIndicatorText);
 
-    this.createNavButton(scene, 140, navY, 80, 28, 'NEXT →', () => {
+    const nextAction = () => {
       const filtered = this.getFilteredObjects();
       const maxPages = Math.ceil(filtered.length / this.itemsPerPage);
       if (this.currentPage < maxPages - 1) {
         this.currentPage++;
         this.renderPage(scene, modalW);
       }
+    };
+    this.createNavButton(scene, 140, navY, 80, 28, 'NEXT →', nextAction);
+    this.focusItems.push({
+      id: 'guide-next',
+      getBounds: () => ({ x: this.centerX + 140, y: this.centerY + navY, width: 80, height: 28 }),
+      onActivate: nextAction,
     });
 
     // Mandatory upper-right '✕' close button
+    const closeX = modalW / 2 - 32;
+    const closeY = -modalH / 2 + 25;
+    const closeAction = () => {
+      this.hide();
+      this.onCloseCallback();
+    };
+
     const closeBtn = scene.add
-      .text(modalW / 2 - 32, -modalH / 2 + 25, '✕', {
+      .text(closeX, closeY, '✕', {
         fontFamily: 'system-ui, -apple-system, sans-serif',
         fontSize: '20px',
         color: '#AAAAAA',
@@ -796,11 +821,14 @@ export class ObjectGuideModal {
 
     closeBtn.on('pointerover', () => closeBtn.setColor('#FFFFFF'));
     closeBtn.on('pointerout', () => closeBtn.setColor('#AAAAAA'));
-    closeBtn.on('pointerdown', () => {
-      this.hide();
-      this.onCloseCallback();
-    });
+    closeBtn.on('pointerdown', closeAction);
     this.container.add(closeBtn);
+
+    this.focusItems.push({
+      id: 'guide-close',
+      getBounds: () => ({ x: this.centerX + closeX, y: this.centerY + closeY, width: 36, height: 36 }),
+      onActivate: closeAction,
+    });
 
     // Render initial page
     this.renderPage(scene, modalW);
@@ -1073,10 +1101,21 @@ export class ObjectGuideModal {
 
   public show(): void {
     this.container.setVisible(true);
+    KeyboardNavManager.getInstance().pushContext({
+      id: 'object-guide-modal',
+      items: this.focusItems,
+      selectedIndex: 0,
+      onEscape: () => {
+        this.hide();
+        this.onCloseCallback();
+      },
+      trapFocus: true,
+    });
   }
 
   public hide(): void {
     this.container.setVisible(false);
+    KeyboardNavManager.getInstance().popContext('object-guide-modal');
   }
 
   public isVisible(): boolean {
