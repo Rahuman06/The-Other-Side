@@ -13,7 +13,7 @@ export function runLevelValidation(): boolean {
 
   for (const level of ALL_LEVELS) {
     const start = performance.now();
-    const result = LevelSolver.solve(level);
+    const result = LevelSolver.solve(level, { maxDepth: 160 });
     const durationMs = (performance.now() - start).toFixed(1);
     results.push(result);
 
