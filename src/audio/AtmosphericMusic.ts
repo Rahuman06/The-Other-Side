@@ -97,22 +97,24 @@ export class AtmosphericMusic {
     switch (state) {
       case 'normal':
         this.filterNode.frequency.setTargetAtTime(380, now, 1.2);
-        this.pulseGain.gain.setTargetAtTime(0.04, now, 0.8);
+        this.pulseGain.gain.setTargetAtTime(0.0, now, 0.8);
         if (this.droneGain) this.droneGain.gain.setTargetAtTime(0.12, now, 1.0);
         break;
 
       case 'hazard_proximity':
         // Heightened alert: brighter filter and urgent heartbeat pulse
         this.filterNode.frequency.setTargetAtTime(650, now, 0.4);
-        this.pulseGain.gain.setTargetAtTime(0.12, now, 0.3);
+        this.pulseGain.gain.setTargetAtTime(0.14, now, 0.3);
         if (this.droneGain) this.droneGain.gain.setTargetAtTime(0.16, now, 0.5);
+        this.triggerPulseLoop(ctx);
         break;
 
       case 'bomb_countdown':
         // High stakes: accelerating tension, lower drone, loud pulse
         this.filterNode.frequency.setTargetAtTime(850, now, 0.2);
-        this.pulseGain.gain.setTargetAtTime(0.18, now, 0.2);
+        this.pulseGain.gain.setTargetAtTime(0.20, now, 0.2);
         if (this.droneGain) this.droneGain.gain.setTargetAtTime(0.06, now, 0.2);
+        this.triggerPulseLoop(ctx);
         break;
 
       case 'surprise':
@@ -299,31 +301,38 @@ export class AtmosphericMusic {
     const bus = this.realPanner ?? this.filterNode;
     if (!bus) return;
 
-    // Partials for acoustic string resonance: f0, 2f0, 3f0, 4.2f0
+    // Filter node to roll off harsh frequencies above 750 Hz for a warm, felted acoustic piano
+    const pianoFilter = ctx.createBiquadFilter();
+    pianoFilter.type = 'lowpass';
+    pianoFilter.frequency.setValueAtTime(750, now);
+    pianoFilter.Q.setValueAtTime(0.8, now);
+    pianoFilter.connect(bus);
+    if (this.delayNode) {
+      pianoFilter.connect(this.delayNode);
+    }
+    this.activeNodes.add(pianoFilter);
+
+    // Warm harmonic partials: fundamental + soft octave
     const partials = [
-      { mult: 1.0, gain: 0.12, decay: 2.8 },
-      { mult: 2.01, gain: 0.05, decay: 2.1 },
-      { mult: 3.02, gain: 0.025, decay: 1.5 },
-      { mult: 4.2, gain: 0.012, decay: 0.9 },
+      { mult: 1.0, type: 'sine' as OscillatorType, gain: 0.16, decay: 3.2 },
+      { mult: 2.0, type: 'triangle' as OscillatorType, gain: 0.05, decay: 2.4 },
+      { mult: 3.01, type: 'sine' as OscillatorType, gain: 0.018, decay: 1.4 },
     ];
 
-    partials.forEach(({ mult, gain: peakGain, decay }) => {
+    partials.forEach(({ mult, type, gain: peakGain, decay }) => {
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
 
-      osc.type = 'sine';
+      osc.type = type;
       osc.frequency.setValueAtTime(freq * mult, now);
 
-      // Sharp acoustic strike attack (5ms), followed by natural exponential ring
+      // Warm acoustic felt hammer attack (25ms soft ramp, no harsh click/beep)
       gain.gain.setValueAtTime(0.0001, now);
-      gain.gain.exponentialRampToValueAtTime(peakGain, now + 0.008);
+      gain.gain.linearRampToValueAtTime(peakGain, now + 0.025);
       gain.gain.exponentialRampToValueAtTime(0.0001, now + decay);
 
       osc.connect(gain);
-      gain.connect(bus);
-      if (this.delayNode) {
-        gain.connect(this.delayNode);
-      }
+      gain.connect(pianoFilter);
 
       osc.start(now);
       osc.stop(now + decay);
@@ -336,6 +345,15 @@ export class AtmosphericMusic {
         this.activeNodes.delete(gain);
       };
     });
+
+    window.setTimeout(() => {
+      try {
+        pianoFilter.disconnect();
+        this.activeNodes.delete(pianoFilter);
+      } catch {
+        // Disconnected
+      }
+    }, 3500);
   }
 
   // =========================================================================
@@ -386,19 +404,23 @@ export class AtmosphericMusic {
     // 3. Dimensional Whispering Texture
     this.spawnVoidTexture(ctx, this.textureGain!);
 
-    // 4. Binaural Tension Pulse / Heartbeat
-    const tickPulse = () => {
-      if (!this.isRunning || this.currentState === 'menu') return;
+    // If initial state is an alert state, start the pulse loop
+    if (this.currentState === 'hazard_proximity' || this.currentState === 'bomb_countdown') {
+      this.triggerPulseLoop(ctx);
+    }
+  }
 
-      const tempo = this.currentState === 'bomb_countdown' ? 450 : this.currentState === 'hazard_proximity' ? 650 : 1000;
-      this.synthesizePulseBeat(ctx);
+  private triggerPulseLoop(ctx: AudioContext): void {
+    if (!this.isRunning || this.currentState === 'menu') return;
+    if (this.currentState !== 'hazard_proximity' && this.currentState !== 'bomb_countdown') return;
 
-      const t = window.setTimeout(tickPulse, tempo);
-      this.timerIds.push(t);
-    };
+    this.synthesizePulseBeat(ctx);
 
-    const firstPulse = window.setTimeout(tickPulse, 500);
-    this.timerIds.push(firstPulse);
+    const tempo = this.currentState === 'bomb_countdown' ? 450 : 700;
+    const t = window.setTimeout(() => {
+      this.triggerPulseLoop(ctx);
+    }, tempo);
+    this.timerIds.push(t);
   }
 
   private synthesizePulseBeat(ctx: AudioContext): void {
@@ -406,26 +428,27 @@ export class AtmosphericMusic {
     const bus = this.pulseGain;
     if (!bus) return;
 
-    // Heartbeat acoustic dual-stroke: lub-dub
+    // Organic subterranean heartbeat thud (only active during tension/hazard)
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
 
     const isUrgent = this.currentState === 'bomb_countdown';
-    const freq = isUrgent ? 85 : 52;
+    const freq = isUrgent ? 90 : 65;
 
     osc.type = 'sine';
     osc.frequency.setValueAtTime(freq, now);
-    osc.frequency.exponentialRampToValueAtTime(32, now + 0.12);
+    osc.frequency.exponentialRampToValueAtTime(36, now + 0.18);
 
-    gain.gain.setValueAtTime(0.001, now);
-    gain.gain.linearRampToValueAtTime(isUrgent ? 0.22 : 0.08, now + 0.015);
-    gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.12);
+    // Soft rounded attack (40ms) and natural decay, preventing sharp electronic clicks on phone speakers
+    gain.gain.setValueAtTime(0.0001, now);
+    gain.gain.linearRampToValueAtTime(isUrgent ? 0.20 : 0.07, now + 0.04);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.22);
 
     osc.connect(gain);
     gain.connect(bus);
 
     osc.start(now);
-    osc.stop(now + 0.12);
+    osc.stop(now + 0.22);
 
     this.activeNodes.add(osc);
     this.activeNodes.add(gain);
@@ -437,24 +460,18 @@ export class AtmosphericMusic {
   }
 
   private spawnContinuousDrone(ctx: AudioContext, freqs: number[], type: OscillatorType, target: GainNode): void {
-    freqs.forEach((f) => {
+    freqs.forEach((f, idx) => {
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
 
       osc.type = type;
+      // Slight fixed micro-detune for lush chorus drift without CPU-intensive/clicking LFO nodes
+      const detuneOffset = (idx % 2 === 0 ? 1 : -1) * (2.5 + idx * 0.8);
       osc.frequency.setValueAtTime(f, ctx.currentTime);
-
-      // Subtle slow detune chorus drift
-      const detuneLfo = ctx.createOscillator();
-      const detuneGain = ctx.createGain();
-      detuneLfo.frequency.setValueAtTime(0.08 + Math.random() * 0.05, ctx.currentTime);
-      detuneGain.gain.setValueAtTime(3.5, ctx.currentTime);
-      detuneLfo.connect(detuneGain);
-      detuneGain.connect(osc.detune);
-      detuneLfo.start();
+      osc.detune.setValueAtTime(detuneOffset, ctx.currentTime);
 
       gain.gain.setValueAtTime(0.001, ctx.currentTime);
-      gain.gain.linearRampToValueAtTime(0.55 / freqs.length, ctx.currentTime + 1.5);
+      gain.gain.linearRampToValueAtTime(0.45 / freqs.length, ctx.currentTime + 1.5);
 
       osc.connect(gain);
       gain.connect(target);
@@ -463,19 +480,28 @@ export class AtmosphericMusic {
 
       this.activeNodes.add(osc);
       this.activeNodes.add(gain);
-      this.activeNodes.add(detuneLfo);
-      this.activeNodes.add(detuneGain);
     });
   }
 
   private spawnVoidTexture(ctx: AudioContext, target: GainNode): void {
-    // Generate 2 seconds of pink/white noise buffer
-    const bufSize = ctx.sampleRate * 2;
+    // Generate 3 seconds of smooth filtered noise with gentle Hann windowing at boundaries
+    const bufSize = ctx.sampleRate * 3;
     const buffer = ctx.createBuffer(1, bufSize, ctx.sampleRate);
     const data = buffer.getChannelData(0);
 
+    // Generate brown/pink noise (integrated random walk for soft organic wind)
+    let lastOut = 0.0;
     for (let i = 0; i < bufSize; i++) {
-      data[i] = (Math.random() * 2 - 1) * 0.06;
+      const white = (Math.random() * 2 - 1) * 0.04;
+      lastOut = (lastOut + 0.02 * white) / 1.02; // Soft brownian wind
+      // Smooth windowing at seam (first & last 2000 samples)
+      let seamGain = 1.0;
+      if (i < 2000) {
+        seamGain = i / 2000;
+      } else if (i > bufSize - 2000) {
+        seamGain = (bufSize - i) / 2000;
+      }
+      data[i] = lastOut * seamGain;
     }
 
     const noise = ctx.createBufferSource();
@@ -483,9 +509,9 @@ export class AtmosphericMusic {
     noise.loop = true;
 
     const bq = ctx.createBiquadFilter();
-    bq.type = 'bandpass';
-    bq.frequency.setValueAtTime(800, ctx.currentTime);
-    bq.Q.setValueAtTime(1.5, ctx.currentTime);
+    bq.type = 'lowpass';
+    bq.frequency.setValueAtTime(350, ctx.currentTime);
+    bq.Q.setValueAtTime(0.7, ctx.currentTime);
 
     noise.connect(bq);
     bq.connect(target);

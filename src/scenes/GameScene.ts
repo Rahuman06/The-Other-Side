@@ -156,12 +156,13 @@ export class GameScene extends Phaser.Scene {
     // 9. Controls Guide
     new ControlsGuide(this, width, height);
 
-    // 10. Touch Controls (In-Canvas Fallback)
+    // 10. Touch Controls (In-Canvas Fallback - hidden to eliminate duplicate buttons)
     this.touchControls = new TouchControls(this, width, height, {
       onDirection: (dir: MoveDirection) => this.handleDirectionInput(dir),
       onPause: () => this.togglePause(),
       onRestart: () => this.restartLevel(),
     });
+    this.touchControls.setVisible(false);
 
     // 11. Mobile Responsive DOM Controls Overlay
     const mobileControls = MobileControlsOverlay.getInstance();

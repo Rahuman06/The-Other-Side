@@ -83,11 +83,9 @@ export class TouchControls {
       () => this.callbacks.onDirection('down')
     );
 
-    // Default to visible if touch is supported or screen width <= 1024
-    const isTouch =
-      typeof window !== 'undefined' &&
-      ('ontouchstart' in window || navigator.maxTouchPoints > 0 || window.innerWidth <= 1024);
-    this.setVisible(isTouch);
+    // Default to false: MobileControlsOverlay is the primary HTML5 touch overlay.
+    // In-canvas touch controls remain available as an opt-in fallback via setVisible(true).
+    this.setVisible(false);
   }
 
   private createButton(

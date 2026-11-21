@@ -111,20 +111,20 @@ export class SoundEffects {
       const gain = ctx.createGain();
 
       if (isReal) {
-        // Crisp stone footstep: 240 Hz -> 140 Hz triangle (subtle & non-fatiguing)
+        // Crisp stone footstep: 260 Hz -> 150 Hz triangle with clear transient
         osc.type = 'triangle';
-        osc.frequency.setValueAtTime(240, now);
-        osc.frequency.exponentialRampToValueAtTime(140, now + 0.035);
+        osc.frequency.setValueAtTime(260, now);
+        osc.frequency.exponentialRampToValueAtTime(150, now + 0.038);
 
-        gain.gain.setValueAtTime(0.05, now);
-        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.035);
+        gain.gain.setValueAtTime(0.14, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.038);
       } else {
-        // Shadow subterranean thud: 110 Hz -> 55 Hz sine (subtle & non-fatiguing)
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(110, now);
-        osc.frequency.exponentialRampToValueAtTime(55, now + 0.05);
+        // Shadow subterranean thud: 160 Hz -> 75 Hz triangle with audible harmonic body on phone speakers
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(160, now);
+        osc.frequency.exponentialRampToValueAtTime(75, now + 0.05);
 
-        gain.gain.setValueAtTime(0.06, now);
+        gain.gain.setValueAtTime(0.15, now);
         gain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
       }
 
@@ -152,11 +152,12 @@ export class SoundEffects {
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
 
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(95, now);
-      osc.frequency.exponentialRampToValueAtTime(38, now + 0.09);
+      // Punchy tactile thud with harmonic body (180 Hz -> 65 Hz triangle)
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(180, now);
+      osc.frequency.exponentialRampToValueAtTime(65, now + 0.09);
 
-      gain.gain.setValueAtTime(0.16, now);
+      gain.gain.setValueAtTime(0.26, now);
       gain.gain.exponentialRampToValueAtTime(0.001, now + 0.09);
 
       osc.connect(gain);
@@ -187,10 +188,10 @@ export class SoundEffects {
       const osc1 = ctx.createOscillator();
       const gain1 = ctx.createGain();
       osc1.type = 'square';
-      osc1.frequency.setValueAtTime(620, now);
-      osc1.frequency.setValueAtTime(940, now + 0.03);
+      osc1.frequency.setValueAtTime(640, now);
+      osc1.frequency.setValueAtTime(960, now + 0.03);
 
-      gain1.gain.setValueAtTime(0.08, now);
+      gain1.gain.setValueAtTime(0.14, now);
       gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
 
       osc1.connect(gain1);
@@ -202,10 +203,10 @@ export class SoundEffects {
       const osc2 = ctx.createOscillator();
       const gain2 = ctx.createGain();
       osc2.type = 'sine';
-      osc2.frequency.setValueAtTime(180, now + 0.02);
-      osc2.frequency.exponentialRampToValueAtTime(70, now + 0.1);
+      osc2.frequency.setValueAtTime(200, now + 0.02);
+      osc2.frequency.exponentialRampToValueAtTime(75, now + 0.1);
 
-      gain2.gain.setValueAtTime(0.12, now + 0.02);
+      gain2.gain.setValueAtTime(0.22, now + 0.02);
       gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
 
       osc2.connect(gain2);
@@ -232,17 +233,17 @@ export class SoundEffects {
 
       if (pressed) {
         osc.type = 'triangle';
-        osc.frequency.setValueAtTime(140, now);
-        osc.frequency.exponentialRampToValueAtTime(65, now + 0.12);
+        osc.frequency.setValueAtTime(160, now);
+        osc.frequency.exponentialRampToValueAtTime(75, now + 0.12);
 
-        gain.gain.setValueAtTime(0.15, now);
+        gain.gain.setValueAtTime(0.22, now);
         gain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
       } else {
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(75, now);
-        osc.frequency.exponentialRampToValueAtTime(130, now + 0.09);
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(90, now);
+        osc.frequency.exponentialRampToValueAtTime(150, now + 0.09);
 
-        gain.gain.setValueAtTime(0.08, now);
+        gain.gain.setValueAtTime(0.14, now);
         gain.gain.exponentialRampToValueAtTime(0.001, now + 0.09);
       }
 
@@ -271,19 +272,19 @@ export class SoundEffects {
       if (open) {
         // Pneumatic sliding hiss
         osc.type = 'sawtooth';
-        osc.frequency.setValueAtTime(80, now);
-        osc.frequency.exponentialRampToValueAtTime(160, now + 0.22);
+        osc.frequency.setValueAtTime(90, now);
+        osc.frequency.exponentialRampToValueAtTime(180, now + 0.22);
 
         gain.gain.setValueAtTime(0.001, now);
-        gain.gain.linearRampToValueAtTime(0.1, now + 0.04);
+        gain.gain.linearRampToValueAtTime(0.18, now + 0.04);
         gain.gain.exponentialRampToValueAtTime(0.001, now + 0.22);
       } else {
         // Heavy steel slam
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(120, now);
-        osc.frequency.exponentialRampToValueAtTime(35, now + 0.28);
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(140, now);
+        osc.frequency.exponentialRampToValueAtTime(45, now + 0.28);
 
-        gain.gain.setValueAtTime(0.22, now);
+        gain.gain.setValueAtTime(0.32, now);
         gain.gain.exponentialRampToValueAtTime(0.001, now + 0.28);
       }
 
@@ -311,17 +312,17 @@ export class SoundEffects {
 
       if (type === 'active') {
         osc.type = 'sawtooth';
-        osc.frequency.setValueAtTime(120, now);
-        osc.frequency.exponentialRampToValueAtTime(380, now + 0.14);
+        osc.frequency.setValueAtTime(140, now);
+        osc.frequency.exponentialRampToValueAtTime(420, now + 0.14);
 
-        gain.gain.setValueAtTime(0.08, now);
+        gain.gain.setValueAtTime(0.16, now);
         gain.gain.exponentialRampToValueAtTime(0.001, now + 0.14);
       } else {
         osc.type = 'square';
         osc.frequency.setValueAtTime(880, now);
         osc.frequency.exponentialRampToValueAtTime(220, now + 0.08);
 
-        gain.gain.setValueAtTime(0.12, now);
+        gain.gain.setValueAtTime(0.20, now);
         gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
       }
 
@@ -350,16 +351,16 @@ export class SoundEffects {
       if (type === 'whir') {
         osc.type = 'sawtooth';
         osc.frequency.setValueAtTime(280, now);
-        osc.frequency.setValueAtTime(340, now + 0.06);
+        osc.frequency.setValueAtTime(360, now + 0.06);
 
-        gain.gain.setValueAtTime(0.06, now);
+        gain.gain.setValueAtTime(0.14, now);
         gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
       } else {
         osc.type = 'sawtooth';
         osc.frequency.setValueAtTime(480, now);
-        osc.frequency.exponentialRampToValueAtTime(110, now + 0.2);
+        osc.frequency.exponentialRampToValueAtTime(120, now + 0.2);
 
-        gain.gain.setValueAtTime(0.18, now);
+        gain.gain.setValueAtTime(0.26, now);
         gain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
       }
 
@@ -391,7 +392,7 @@ export class SoundEffects {
       osc.frequency.setValueAtTime(baseFreq, now);
       osc.frequency.exponentialRampToValueAtTime(baseFreq * 1.5, now + 0.04);
 
-      gain.gain.setValueAtTime(0.12, now);
+      gain.gain.setValueAtTime(0.18, now);
       gain.gain.exponentialRampToValueAtTime(0.001, now + 0.04);
 
       osc.connect(gain);
@@ -404,7 +405,7 @@ export class SoundEffects {
   }
 
   /**
-   * Bomb Explosion: Massive 42 Hz sub-bass drop and concussive shockwave
+   * Bomb Explosion: Concussive shockwave drop and shrapnel blast
    */
   public playBombExplosion(): void {
     const ab = this.getContextAndBus();
@@ -413,14 +414,14 @@ export class SoundEffects {
     const now = ctx.currentTime;
 
     try {
-      // 1. Sub-bass shockwave drop (42 Hz -> 20 Hz)
+      // 1. Sub-bass shockwave drop (65 Hz -> 26 Hz)
       const subOsc = ctx.createOscillator();
       const subGain = ctx.createGain();
       subOsc.type = 'sine';
-      subOsc.frequency.setValueAtTime(55, now);
-      subOsc.frequency.exponentialRampToValueAtTime(22, now + 0.55);
+      subOsc.frequency.setValueAtTime(65, now);
+      subOsc.frequency.exponentialRampToValueAtTime(26, now + 0.55);
 
-      subGain.gain.setValueAtTime(0.28, now);
+      subGain.gain.setValueAtTime(0.35, now);
       subGain.gain.exponentialRampToValueAtTime(0.001, now + 0.55);
 
       subOsc.connect(subGain);
@@ -445,7 +446,7 @@ export class SoundEffects {
       filter.frequency.exponentialRampToValueAtTime(160, now + 0.45);
 
       const noiseGain = ctx.createGain();
-      noiseGain.gain.setValueAtTime(0.24, now);
+      noiseGain.gain.setValueAtTime(0.30, now);
       noiseGain.gain.exponentialRampToValueAtTime(0.001, now + 0.45);
 
       noise.connect(filter);
@@ -477,7 +478,7 @@ export class SoundEffects {
       osc.frequency.exponentialRampToValueAtTime(140, now + 0.28);
 
       gain.gain.setValueAtTime(0.001, now);
-      gain.gain.linearRampToValueAtTime(0.15, now + 0.04);
+      gain.gain.linearRampToValueAtTime(0.22, now + 0.04);
       gain.gain.exponentialRampToValueAtTime(0.001, now + 0.28);
 
       osc.connect(gain);
@@ -507,7 +508,7 @@ export class SoundEffects {
         osc.type = 'sine';
         osc.frequency.setValueAtTime(f, now + i * 0.025);
 
-        gain.gain.setValueAtTime(0.06, now + i * 0.025);
+        gain.gain.setValueAtTime(0.10, now + i * 0.025);
         gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.025 + 0.16);
 
         osc.connect(gain);
@@ -538,7 +539,7 @@ export class SoundEffects {
       osc.frequency.exponentialRampToValueAtTime(260, now + 0.2);
 
       gain.gain.setValueAtTime(0.001, now);
-      gain.gain.linearRampToValueAtTime(0.14, now + 0.05);
+      gain.gain.linearRampToValueAtTime(0.20, now + 0.05);
       gain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
 
       osc.connect(gain);
@@ -568,7 +569,7 @@ export class SoundEffects {
         osc.type = 'sine';
         osc.frequency.setValueAtTime(f, now + idx * 0.035);
 
-        gain.gain.setValueAtTime(0.08, now + idx * 0.035);
+        gain.gain.setValueAtTime(0.14, now + idx * 0.035);
         gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.035 + 0.25);
 
         osc.connect(gain);
@@ -598,7 +599,7 @@ export class SoundEffects {
       osc.frequency.setValueAtTime(280 + stage * 60, now);
       osc.frequency.exponentialRampToValueAtTime(60, now + 0.16);
 
-      gain.gain.setValueAtTime(0.15, now);
+      gain.gain.setValueAtTime(0.22, now);
       gain.gain.exponentialRampToValueAtTime(0.001, now + 0.16);
 
       osc.connect(gain);
@@ -624,11 +625,11 @@ export class SoundEffects {
       const gain = ctx.createGain();
 
       osc.type = 'triangle';
-      osc.frequency.setValueAtTime(65, now);
-      osc.frequency.setValueAtTime(75, now + 0.1);
-      osc.frequency.exponentialRampToValueAtTime(45, now + 0.25);
+      osc.frequency.setValueAtTime(75, now);
+      osc.frequency.setValueAtTime(95, now + 0.1);
+      osc.frequency.exponentialRampToValueAtTime(55, now + 0.25);
 
-      gain.gain.setValueAtTime(0.14, now);
+      gain.gain.setValueAtTime(0.22, now);
       gain.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
 
       osc.connect(gain);
@@ -658,7 +659,7 @@ export class SoundEffects {
         osc.type = 'sine';
         osc.frequency.setValueAtTime(freq, now + idx * 0.06);
 
-        gain.gain.setValueAtTime(0.1, now + idx * 0.06);
+        gain.gain.setValueAtTime(0.18, now + idx * 0.06);
         gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.06 + 0.22);
 
         osc.connect(gain);
@@ -690,7 +691,7 @@ export class SoundEffects {
         osc.type = 'sine';
         osc.frequency.setValueAtTime(f, now + idx * 0.04);
 
-        gain.gain.setValueAtTime(0.08, now + idx * 0.04);
+        gain.gain.setValueAtTime(0.16, now + idx * 0.04);
         gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.04 + 0.24);
 
         osc.connect(gain);
@@ -718,10 +719,10 @@ export class SoundEffects {
       const gain = ctx.createGain();
 
       osc.type = 'sawtooth';
-      osc.frequency.setValueAtTime(190, now);
-      osc.frequency.exponentialRampToValueAtTime(45, now + 0.26);
+      osc.frequency.setValueAtTime(220, now);
+      osc.frequency.exponentialRampToValueAtTime(55, now + 0.26);
 
-      gain.gain.setValueAtTime(0.18, now);
+      gain.gain.setValueAtTime(0.26, now);
       gain.gain.exponentialRampToValueAtTime(0.001, now + 0.26);
 
       osc.connect(gain);
@@ -748,11 +749,11 @@ export class SoundEffects {
       const gain = ctx.createGain();
 
       osc.type = 'sine';
-      osc.frequency.setValueAtTime(80, now);
-      osc.frequency.exponentialRampToValueAtTime(320, now + 0.22);
+      osc.frequency.setValueAtTime(95, now);
+      osc.frequency.exponentialRampToValueAtTime(360, now + 0.22);
 
       gain.gain.setValueAtTime(0.001, now);
-      gain.gain.linearRampToValueAtTime(0.14, now + 0.16);
+      gain.gain.linearRampToValueAtTime(0.22, now + 0.16);
       gain.gain.exponentialRampToValueAtTime(0.001, now + 0.24);
 
       osc.connect(gain);
@@ -783,7 +784,7 @@ export class SoundEffects {
         osc.type = 'sine';
         osc.frequency.setValueAtTime(freq, now + idx * 0.08);
 
-        gain.gain.setValueAtTime(0.14, now + idx * 0.08);
+        gain.gain.setValueAtTime(0.20, now + idx * 0.08);
         gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.08 + 0.4);
 
         osc.connect(gain);
@@ -1057,7 +1058,7 @@ export class SoundEffects {
       osc.frequency.setValueAtTime(1200, now);
       osc.frequency.exponentialRampToValueAtTime(800, now + 0.015);
 
-      gain.gain.setValueAtTime(0.025, now);
+      gain.gain.setValueAtTime(0.045, now);
       gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.015);
 
       osc.connect(gain);
@@ -1086,7 +1087,7 @@ export class SoundEffects {
       osc.frequency.setValueAtTime(560, now);
       osc.frequency.exponentialRampToValueAtTime(260, now + 0.025);
 
-      gain.gain.setValueAtTime(0.07, now);
+      gain.gain.setValueAtTime(0.12, now);
       gain.gain.exponentialRampToValueAtTime(0.001, now + 0.025);
 
       osc.connect(gain);
@@ -1116,7 +1117,7 @@ export class SoundEffects {
         osc.type = 'sine';
         osc.frequency.setValueAtTime(f, now + idx * 0.03);
 
-        gain.gain.setValueAtTime(0.06, now + idx * 0.03);
+        gain.gain.setValueAtTime(0.10, now + idx * 0.03);
         gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.03 + 0.06);
 
         osc.connect(gain);
@@ -1147,7 +1148,7 @@ export class SoundEffects {
       osc.frequency.exponentialRampToValueAtTime(520, now + 0.1);
 
       gain.gain.setValueAtTime(0.001, now);
-      gain.gain.linearRampToValueAtTime(0.06, now + 0.03);
+      gain.gain.linearRampToValueAtTime(0.10, now + 0.03);
       gain.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
 
       osc.connect(gain);
@@ -1176,7 +1177,7 @@ export class SoundEffects {
       osc.frequency.setValueAtTime(480, now);
       osc.frequency.exponentialRampToValueAtTime(200, now + 0.08);
 
-      gain.gain.setValueAtTime(0.06, now);
+      gain.gain.setValueAtTime(0.10, now);
       gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
 
       osc.connect(gain);
@@ -1205,7 +1206,7 @@ export class SoundEffects {
       osc.frequency.setValueAtTime(320, now);
       osc.frequency.exponentialRampToValueAtTime(180, now + 0.12);
 
-      gain.gain.setValueAtTime(0.07, now);
+      gain.gain.setValueAtTime(0.12, now);
       gain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
 
       osc.connect(gain);
@@ -1234,7 +1235,7 @@ export class SoundEffects {
       osc.frequency.setValueAtTime(240, now);
       osc.frequency.exponentialRampToValueAtTime(480, now + 0.08);
 
-      gain.gain.setValueAtTime(0.07, now);
+      gain.gain.setValueAtTime(0.12, now);
       gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
 
       osc.connect(gain);
@@ -1263,7 +1264,7 @@ export class SoundEffects {
       osc.frequency.setValueAtTime(880, now);
       osc.frequency.exponentialRampToValueAtTime(440, now + 0.018);
 
-      gain.gain.setValueAtTime(0.04, now);
+      gain.gain.setValueAtTime(0.07, now);
       gain.gain.exponentialRampToValueAtTime(0.001, now + 0.018);
 
       osc.connect(gain);
@@ -1293,7 +1294,7 @@ export class SoundEffects {
         osc.type = 'sine';
         osc.frequency.setValueAtTime(f, now + idx * 0.04);
 
-        gain.gain.setValueAtTime(0.08, now + idx * 0.04);
+        gain.gain.setValueAtTime(0.14, now + idx * 0.04);
         gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.04 + 0.14);
 
         osc.connect(gain);
@@ -1323,7 +1324,7 @@ export class SoundEffects {
       osc.frequency.setValueAtTime(110, now);
       osc.frequency.setValueAtTime(82, now + 0.04);
 
-      gain.gain.setValueAtTime(0.07, now);
+      gain.gain.setValueAtTime(0.12, now);
       gain.gain.exponentialRampToValueAtTime(0.001, now + 0.09);
 
       osc.connect(gain);
@@ -1353,7 +1354,7 @@ export class SoundEffects {
         osc.type = 'sine';
         osc.frequency.setValueAtTime(f, now + idx * 0.035);
 
-        gain.gain.setValueAtTime(0.09, now + idx * 0.035);
+        gain.gain.setValueAtTime(0.16, now + idx * 0.035);
         gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.035 + 0.32);
 
         osc.connect(gain);
