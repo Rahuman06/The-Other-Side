@@ -3,6 +3,7 @@ import { PALETTE } from '../core/constants';
 import { KeyboardNavManager, FocusableItem } from './KeyboardNavManager';
 import { AudioManager } from '../audio/AudioManager';
 import { BackdropRenderer } from '../rendering/BackdropRenderer';
+import { MobileControlsOverlay } from './MobileControlsOverlay';
 
 export interface GuideObjectEntry {
   readonly id: string;
@@ -717,6 +718,12 @@ export class ObjectGuideModal {
       .zone(0, 0, width, height)
       .setOrigin(0.5)
       .setInteractive();
+    backdropHit.on('pointerdown', (_pointer: Phaser.Input.Pointer, _lx: number, _ly: number, event: Phaser.Types.Input.EventData) => {
+      if (event && event.stopPropagation) event.stopPropagation();
+    });
+    backdropHit.on('pointerup', (_pointer: Phaser.Input.Pointer, _lx: number, _ly: number, event: Phaser.Types.Input.EventData) => {
+      if (event && event.stopPropagation) event.stopPropagation();
+    });
     this.container.add(backdropHit);
 
     // Modal background box
@@ -819,17 +826,25 @@ export class ObjectGuideModal {
         fontSize: '20px',
         color: '#AAAAAA',
       })
+      .setOrigin(0.5);
+
+    const closeHit = scene.add
+      .zone(closeX, closeY, 48, 48)
       .setOrigin(0.5)
       .setInteractive({ useHandCursor: true });
 
-    closeBtn.on('pointerover', () => closeBtn.setColor('#FFFFFF'));
-    closeBtn.on('pointerout', () => closeBtn.setColor('#AAAAAA'));
-    closeBtn.on('pointerdown', closeAction);
+    closeHit.on('pointerover', () => closeBtn.setColor('#FFFFFF'));
+    closeHit.on('pointerout', () => closeBtn.setColor('#AAAAAA'));
+    closeHit.on('pointerdown', (_pointer: Phaser.Input.Pointer, _lx: number, _ly: number, event: Phaser.Types.Input.EventData) => {
+      if (event && event.stopPropagation) event.stopPropagation();
+      closeAction();
+    });
     this.container.add(closeBtn);
+    this.container.add(closeHit);
 
     this.focusItems.push({
       id: 'guide-close',
-      getBounds: () => ({ x: this.centerX + closeX, y: this.centerY + closeY, width: 36, height: 36 }),
+      getBounds: () => ({ x: this.centerX + closeX, y: this.centerY + closeY, width: 48, height: 48 }),
       onActivate: closeAction,
     });
 
@@ -857,11 +872,12 @@ export class ObjectGuideModal {
         .setOrigin(0.5);
 
       const hit = scene.add
-        .zone(x, y, tabW - 6, 22)
+        .zone(x, y, tabW - 6, 48)
         .setOrigin(0.5)
         .setInteractive({ useHandCursor: true });
 
-      hit.on('pointerdown', () => {
+      hit.on('pointerdown', (_pointer: Phaser.Input.Pointer, _lx: number, _ly: number, event: Phaser.Types.Input.EventData) => {
+        if (event && event.stopPropagation) event.stopPropagation();
         AudioManager.getInstance().sfx.playUiClick();
         this.activeCategory = cat;
         this.currentPage = 0;
@@ -1085,7 +1101,7 @@ export class ObjectGuideModal {
     this.container.add(txt);
 
     const hit = scene.add
-      .zone(x, y, w, h)
+      .zone(x, y, Math.max(48, w), Math.max(48, h))
       .setOrigin(0.5)
       .setInteractive({ useHandCursor: true });
 
@@ -1099,7 +1115,8 @@ export class ObjectGuideModal {
       txt.setColor('#CCCCCC');
     });
 
-    hit.on('pointerdown', () => {
+    hit.on('pointerdown', (_pointer: Phaser.Input.Pointer, _lx: number, _ly: number, event: Phaser.Types.Input.EventData) => {
+      if (event && event.stopPropagation) event.stopPropagation();
       AudioManager.getInstance().sfx.playUiClick();
       onClick();
     });
@@ -1107,6 +1124,7 @@ export class ObjectGuideModal {
   }
 
   public show(): void {
+    MobileControlsOverlay.getInstance().setVisible(false);
     BackdropRenderer.setDimmed(true);
     this.container.setVisible(true);
     KeyboardNavManager.getInstance().pushContext({

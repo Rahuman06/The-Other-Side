@@ -24,6 +24,8 @@ export class Header {
   private levelLabelText!: Phaser.GameObjects.Text;
   private chapterLabelText!: Phaser.GameObjects.Text;
   private objectiveText!: Phaser.GameObjects.Text;
+  private buttonHits: Phaser.GameObjects.Zone[] = [];
+  private isInteractiveEnabled = true;
 
   constructor(
     scene: Phaser.Scene,
@@ -203,15 +205,22 @@ export class Header {
     this.container.add(label);
 
     const hit = scene.add
-      .zone(x + w / 2, y + h / 2, w, h)
+      .zone(x + w / 2, y + h / 2, Math.max(48, w), Math.max(48, h))
       .setOrigin(0.5)
       .setInteractive({ useHandCursor: true });
 
+    let isProcessing = false;
     hit.on('pointerdown', () => {
+      if (!this.isInteractiveEnabled || isProcessing) return;
+      isProcessing = true;
       AudioManager.getInstance().sfx.playUiClick();
       onClick();
+      setTimeout(() => {
+        isProcessing = false;
+      }, 300);
     });
     hit.on('pointerover', () => {
+      if (!this.isInteractiveEnabled) return;
       label.setColor('#CCCCCC');
     });
     hit.on('pointerout', () => {
@@ -219,7 +228,19 @@ export class Header {
     });
 
     this.container.add(hit);
+    this.buttonHits.push(hit);
     return { border: g, label };
+  }
+
+  public setHeaderInteractive(enabled: boolean): void {
+    this.isInteractiveEnabled = enabled;
+    for (const hit of this.buttonHits) {
+      if (enabled) {
+        hit.setInteractive({ useHandCursor: true });
+      } else {
+        hit.disableInteractive();
+      }
+    }
   }
 
   public setPauseText(label: string): void {

@@ -30,6 +30,12 @@ export class MenuScene extends Phaser.Scene {
   private confirmResetItems: FocusableItem[] = [];
   private menuKeyDownListener: ((e: KeyboardEvent) => void) | null = null;
 
+  // Modal Hit Zone Isolation Tracking
+  private mainMenuHitZones: Phaser.GameObjects.Zone[] = [];
+  private levelSelectHitZones: Phaser.GameObjects.Zone[] = [];
+  private settingsHitZones: Phaser.GameObjects.Zone[] = [];
+  private confirmResetHitZones: Phaser.GameObjects.Zone[] = [];
+
   // Background Mirroring VFX
   private ambientGraphics!: Phaser.GameObjects.Graphics;
   private ambientParticles: Array<{
@@ -100,7 +106,12 @@ export class MenuScene extends Phaser.Scene {
       });
     }
 
-    // 2. Initialize View Containers
+    // 2. Initialize View Containers & Hit Zone Registries
+    this.mainMenuHitZones = [];
+    this.levelSelectHitZones = [];
+    this.settingsHitZones = [];
+    this.confirmResetHitZones = [];
+
     this.mainMenuContainer = this.add.container(0, 0);
     this.levelSelectContainer = this.add.container(0, 0);
     this.levelSelectContainer.setVisible(false);
@@ -113,6 +124,13 @@ export class MenuScene extends Phaser.Scene {
 
     this.objectGuideModal = new ObjectGuideModal(this, width, height, () => {
       this.soundEffects.playMenuClose();
+      if (this.settingsModal.visible) {
+        this.setZoneListInteractive(this.settingsHitZones, true);
+      } else if (this.levelSelectContainer.visible) {
+        this.setZoneListInteractive(this.levelSelectHitZones, true);
+      } else {
+        this.setZoneListInteractive(this.mainMenuHitZones, true);
+      }
     });
 
     // Ensure mobile overlay is hidden on menus
@@ -260,6 +278,9 @@ export class MenuScene extends Phaser.Scene {
           btnH,
           'OBJECT GUIDE',
           () => {
+            this.setZoneListInteractive(this.mainMenuHitZones, false);
+            this.setZoneListInteractive(this.levelSelectHitZones, false);
+            this.setZoneListInteractive(this.settingsHitZones, false);
             this.soundEffects.playMenuOpen();
             this.objectGuideModal.show();
           },
@@ -354,6 +375,9 @@ export class MenuScene extends Phaser.Scene {
           btnH,
           'OBJECT GUIDE',
           () => {
+            this.setZoneListInteractive(this.mainMenuHitZones, false);
+            this.setZoneListInteractive(this.levelSelectHitZones, false);
+            this.setZoneListInteractive(this.settingsHitZones, false);
             this.soundEffects.playMenuOpen();
             this.objectGuideModal.show();
           },
@@ -410,6 +434,18 @@ export class MenuScene extends Phaser.Scene {
     this.mainMenuContainer.add(footer);
   }
 
+  private setZoneListInteractive(zones: Phaser.GameObjects.Zone[], interactive: boolean): void {
+    for (const zone of zones) {
+      if (zone && zone.active) {
+        if (interactive) {
+          zone.setInteractive({ useHandCursor: true });
+        } else {
+          zone.disableInteractive();
+        }
+      }
+    }
+  }
+
   private createMenuButton(
     container: Phaser.GameObjects.Container,
     id: string,
@@ -447,7 +483,7 @@ export class MenuScene extends Phaser.Scene {
     container.add(txt);
 
     const hit = this.add
-      .zone(x, y, w, h)
+      .zone(x, y, Math.max(48, w), Math.max(48, h))
       .setOrigin(0.5)
       .setInteractive({ useHandCursor: true });
 
@@ -463,12 +499,33 @@ export class MenuScene extends Phaser.Scene {
       txt.setColor(isPrimary ? '#FFFFFF' : '#CCCCCC');
     });
 
-    hit.on('pointerdown', () => {
+    let isProcessing = false;
+    const trigger = () => {
+      if (isProcessing) return;
+      isProcessing = true;
       this.soundEffects.playUiClick();
       onClick();
+      setTimeout(() => {
+        isProcessing = false;
+      }, 300);
+    };
+
+    hit.on('pointerdown', (_pointer: Phaser.Input.Pointer, _lx: number, _ly: number, event: Phaser.Types.Input.EventData) => {
+      if (event && event.stopPropagation) event.stopPropagation();
+      trigger();
     });
 
     container.add(hit);
+
+    if (container === this.mainMenuContainer) {
+      this.mainMenuHitZones.push(hit);
+    } else if (container === this.levelSelectContainer) {
+      this.levelSelectHitZones.push(hit);
+    } else if (container === this.settingsModal) {
+      this.settingsHitZones.push(hit);
+    } else if (container === this.confirmResetModal) {
+      this.confirmResetHitZones.push(hit);
+    }
 
     return {
       id,
@@ -478,16 +535,15 @@ export class MenuScene extends Phaser.Scene {
         width: w,
         height: h,
       }),
-      onActivate: () => {
-        this.soundEffects.playUiClick();
-        onClick();
-      },
+      onActivate: trigger,
     };
   }
 
   private showLevelSelect(): void {
     this.soundEffects.playMenuOpen();
+    this.setZoneListInteractive(this.mainMenuHitZones, false);
     this.mainMenuContainer.setVisible(false);
+    this.setZoneListInteractive(this.levelSelectHitZones, true);
     this.levelSelectContainer.setVisible(true);
     KeyboardNavManager.getInstance().pushContext({
       id: 'level-select',
@@ -501,7 +557,9 @@ export class MenuScene extends Phaser.Scene {
 
   private showMainMenu(): void {
     this.soundEffects.playMenuClose();
+    this.setZoneListInteractive(this.levelSelectHitZones, false);
     this.levelSelectContainer.setVisible(false);
+    this.setZoneListInteractive(this.mainMenuHitZones, true);
     this.mainMenuContainer.setVisible(true);
     KeyboardNavManager.getInstance().pushContext({
       id: 'main-menu',
@@ -514,6 +572,22 @@ export class MenuScene extends Phaser.Scene {
 
   private createLevelSelectionGrid(width: number, height: number): void {
     const halfW = width / 2;
+
+    // Full-screen interactive blocking backdrop for level selection
+    const levelBackdrop = this.add.graphics();
+    levelBackdrop.fillStyle(0x000000, 0.5);
+    levelBackdrop.fillRect(0, 0, width, height);
+    levelBackdrop.setInteractive(
+      new Phaser.Geom.Rectangle(0, 0, width, height),
+      Phaser.Geom.Rectangle.Contains
+    );
+    levelBackdrop.on('pointerdown', (_pointer: Phaser.Input.Pointer, _lx: number, _ly: number, event: Phaser.Types.Input.EventData) => {
+      if (event && event.stopPropagation) event.stopPropagation();
+    });
+    levelBackdrop.on('pointerup', (_pointer: Phaser.Input.Pointer, _lx: number, _ly: number, event: Phaser.Types.Input.EventData) => {
+      if (event && event.stopPropagation) event.stopPropagation();
+    });
+    this.levelSelectContainer.add(levelBackdrop);
 
     // Header: Split Title "LEVEL" (black on white) | "SELECTION" (white on black)
     const titleLeft = this.add
@@ -632,7 +706,7 @@ export class MenuScene extends Phaser.Scene {
       this.levelSelectContainer.add(subTxt);
 
       const hit = this.add
-        .zone(x, y, cellW, cellH)
+        .zone(x, y, Math.max(48, cellW), Math.max(48, cellH))
         .setOrigin(0.5)
         .setInteractive({ useHandCursor: isUnlocked });
 
@@ -649,16 +723,24 @@ export class MenuScene extends Phaser.Scene {
           g.strokeRoundedRect(x - cellW / 2, y - cellH / 2, cellW, cellH, 6);
         });
 
-        hit.on('pointerdown', () => {
+        let isCardProcessing = false;
+        hit.on('pointerdown', (_pointer: Phaser.Input.Pointer, _lx: number, _ly: number, event: Phaser.Types.Input.EventData) => {
+          if (event && event.stopPropagation) event.stopPropagation();
+          if (isCardProcessing) return;
+          isCardProcessing = true;
           this.soundEffects.playLevelSelect();
           this.startLevel(lvl.id);
+          setTimeout(() => {
+            isCardProcessing = false;
+          }, 350);
         });
       } else {
         hit.on('pointerover', () => {
           KeyboardNavManager.getInstance().setFocusById(`level-card-${lvl.id}`);
         });
 
-        hit.on('pointerdown', () => {
+        hit.on('pointerdown', (_pointer: Phaser.Input.Pointer, _lx: number, _ly: number, event: Phaser.Types.Input.EventData) => {
+          if (event && event.stopPropagation) event.stopPropagation();
           this.soundEffects.playLockedError();
           // Visual denial pulse: flash red outline
           g.lineStyle(2, 0xff3333, 1);
@@ -671,6 +753,7 @@ export class MenuScene extends Phaser.Scene {
       }
 
       this.levelSelectContainer.add(hit);
+      this.levelSelectHitZones.push(hit);
 
       this.levelSelectItems.push({
         id: `level-card-${lvl.id}`,
@@ -712,6 +795,9 @@ export class MenuScene extends Phaser.Scene {
   private openSettingsModal(): void {
     BackdropRenderer.setDimmed(true);
     this.soundEffects.playMenuOpen();
+    this.setZoneListInteractive(this.mainMenuHitZones, false);
+    this.setZoneListInteractive(this.levelSelectHitZones, false);
+    this.setZoneListInteractive(this.settingsHitZones, true);
     this.settingsModal.setVisible(true);
     KeyboardNavManager.getInstance().pushContext({
       id: 'menu-settings',
@@ -725,13 +811,21 @@ export class MenuScene extends Phaser.Scene {
   private closeSettingsModal(): void {
     BackdropRenderer.setDimmed(false);
     this.soundEffects.playMenuClose();
+    this.setZoneListInteractive(this.settingsHitZones, false);
     this.settingsModal.setVisible(false);
     KeyboardNavManager.getInstance().popContext('menu-settings');
+    if (this.levelSelectContainer.visible) {
+      this.setZoneListInteractive(this.levelSelectHitZones, true);
+    } else {
+      this.setZoneListInteractive(this.mainMenuHitZones, true);
+    }
   }
 
   private openConfirmResetModal(): void {
     BackdropRenderer.setDimmed(true);
     this.soundEffects.playMenuOpen();
+    this.setZoneListInteractive(this.settingsHitZones, false);
+    this.setZoneListInteractive(this.confirmResetHitZones, true);
     this.confirmResetModal.setVisible(true);
     KeyboardNavManager.getInstance().pushContext({
       id: 'menu-confirm-reset',
@@ -745,8 +839,10 @@ export class MenuScene extends Phaser.Scene {
   private closeConfirmResetModal(): void {
     BackdropRenderer.setDimmed(false);
     this.soundEffects.playMenuClose();
+    this.setZoneListInteractive(this.confirmResetHitZones, false);
     this.confirmResetModal.setVisible(false);
     KeyboardNavManager.getInstance().popContext('menu-confirm-reset');
+    this.setZoneListInteractive(this.settingsHitZones, true);
   }
 
   private createSettingsModal(width: number, height: number): void {
@@ -760,8 +856,18 @@ export class MenuScene extends Phaser.Scene {
 
     // Backdrop
     const backdrop = this.add.graphics();
-    backdrop.fillStyle(0x000000, 0.7);
+    backdrop.fillStyle(0x000000, 0.75);
     backdrop.fillRect(-width / 2, -height / 2, width, height);
+    backdrop.setInteractive(
+      new Phaser.Geom.Rectangle(-width / 2, -height / 2, width, height),
+      Phaser.Geom.Rectangle.Contains
+    );
+    backdrop.on('pointerdown', (_pointer: Phaser.Input.Pointer, _lx: number, _ly: number, event: Phaser.Types.Input.EventData) => {
+      if (event && event.stopPropagation) event.stopPropagation();
+    });
+    backdrop.on('pointerup', (_pointer: Phaser.Input.Pointer, _lx: number, _ly: number, event: Phaser.Types.Input.EventData) => {
+      if (event && event.stopPropagation) event.stopPropagation();
+    });
     this.settingsModal.add(backdrop);
 
     // Box
@@ -1032,8 +1138,18 @@ export class MenuScene extends Phaser.Scene {
     this.confirmResetItems = [];
 
     const backdrop = this.add.graphics();
-    backdrop.fillStyle(0x000000, 0.8);
+    backdrop.fillStyle(0x000000, 0.85);
     backdrop.fillRect(-width / 2, -height / 2, width, height);
+    backdrop.setInteractive(
+      new Phaser.Geom.Rectangle(-width / 2, -height / 2, width, height),
+      Phaser.Geom.Rectangle.Contains
+    );
+    backdrop.on('pointerdown', (_pointer: Phaser.Input.Pointer, _lx: number, _ly: number, event: Phaser.Types.Input.EventData) => {
+      if (event && event.stopPropagation) event.stopPropagation();
+    });
+    backdrop.on('pointerup', (_pointer: Phaser.Input.Pointer, _lx: number, _ly: number, event: Phaser.Types.Input.EventData) => {
+      if (event && event.stopPropagation) event.stopPropagation();
+    });
     this.confirmResetModal.add(backdrop);
 
     const box = this.add.graphics();

@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { KeyboardNavManager, FocusableItem } from './KeyboardNavManager';
 import { AudioManager } from '../audio/AudioManager';
 import { BackdropRenderer } from '../rendering/BackdropRenderer';
+import { MobileControlsOverlay } from './MobileControlsOverlay';
 
 export interface WinModalCallbacks {
   onNextLevel: () => void;
@@ -40,6 +41,12 @@ export class WinModal {
       new Phaser.Geom.Rectangle(-width / 2, -height / 2, width, height),
       Phaser.Geom.Rectangle.Contains
     );
+    backdrop.on('pointerdown', (_pointer: Phaser.Input.Pointer, _lx: number, _ly: number, event: Phaser.Types.Input.EventData) => {
+      if (event && event.stopPropagation) event.stopPropagation();
+    });
+    backdrop.on('pointerup', (_pointer: Phaser.Input.Pointer, _lx: number, _ly: number, event: Phaser.Types.Input.EventData) => {
+      if (event && event.stopPropagation) event.stopPropagation();
+    });
     this.container.add(backdrop);
 
     // Box
@@ -201,7 +208,7 @@ export class WinModal {
     this.container.add(txt);
 
     const hit = scene.add
-      .zone(x, y, w, h)
+      .zone(x, y, Math.max(48, w), Math.max(48, h))
       .setOrigin(0.5)
       .setInteractive({ useHandCursor: true });
 
@@ -216,12 +223,21 @@ export class WinModal {
       txt.setColor(textCol);
     });
 
+    let isProcessing = false;
     const triggerClick = () => {
+      if (isProcessing) return;
+      isProcessing = true;
       AudioManager.getInstance().sfx.playUiClick();
       onClick();
+      setTimeout(() => {
+        isProcessing = false;
+      }, 300);
     };
 
-    hit.on('pointerdown', triggerClick);
+    hit.on('pointerdown', (_pointer: Phaser.Input.Pointer, _lx: number, _ly: number, event: Phaser.Types.Input.EventData) => {
+      if (event && event.stopPropagation) event.stopPropagation();
+      triggerClick();
+    });
 
     this.container.add(hit);
 
@@ -240,6 +256,7 @@ export class WinModal {
   }
 
   public show(moves: number, bestMoves: number, isLastLevel: boolean = false): void {
+    MobileControlsOverlay.getInstance().setVisible(false);
     BackdropRenderer.setDimmed(true);
     this.movesText.setText(`MOVES: ${moves}`);
     this.bestMovesText.setText(`BEST: ${bestMoves}`);
