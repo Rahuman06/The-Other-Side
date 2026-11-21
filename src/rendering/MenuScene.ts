@@ -9,6 +9,7 @@ import { PALETTE } from '../core/constants';
 import { ObjectGuideModal } from '../ui/ObjectGuideModal';
 import { KeyboardNavManager, FocusableItem } from '../ui/KeyboardNavManager';
 import { MobileControlsOverlay } from '../ui/MobileControlsOverlay';
+import { BackdropRenderer } from './BackdropRenderer';
 
 export class MenuScene extends Phaser.Scene {
   private levelManager!: LevelManager;
@@ -703,6 +704,7 @@ export class MenuScene extends Phaser.Scene {
   }
 
   private openSettingsModal(): void {
+    BackdropRenderer.setDimmed(true);
     this.soundEffects.playMenuOpen();
     this.settingsModal.setVisible(true);
     KeyboardNavManager.getInstance().pushContext({
@@ -715,12 +717,14 @@ export class MenuScene extends Phaser.Scene {
   }
 
   private closeSettingsModal(): void {
+    BackdropRenderer.setDimmed(false);
     this.soundEffects.playMenuClose();
     this.settingsModal.setVisible(false);
     KeyboardNavManager.getInstance().popContext('menu-settings');
   }
 
   private openConfirmResetModal(): void {
+    BackdropRenderer.setDimmed(true);
     this.soundEffects.playMenuOpen();
     this.confirmResetModal.setVisible(true);
     KeyboardNavManager.getInstance().pushContext({
@@ -733,6 +737,7 @@ export class MenuScene extends Phaser.Scene {
   }
 
   private closeConfirmResetModal(): void {
+    BackdropRenderer.setDimmed(false);
     this.soundEffects.playMenuClose();
     this.confirmResetModal.setVisible(false);
     KeyboardNavManager.getInstance().popContext('menu-confirm-reset');

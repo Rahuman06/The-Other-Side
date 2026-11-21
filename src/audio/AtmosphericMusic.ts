@@ -40,6 +40,7 @@ export class AtmosphericMusic {
   private pulseGain: GainNode | null = null;
   private textureGain: GainNode | null = null;
   private filterNode: BiquadFilterNode | null = null;
+  private rumbleFilter: BiquadFilterNode | null = null;
   private delayNode: DelayNode | null = null;
   private delayFeedback: GainNode | null = null;
   private realPanner: StereoPannerNode | null = null;
@@ -189,6 +190,7 @@ export class AtmosphericMusic {
     this.pulseGain = null;
     this.textureGain = null;
     this.filterNode = null;
+    this.rumbleFilter = null;
     this.delayNode = null;
     this.delayFeedback = null;
     this.realPanner = null;
@@ -196,24 +198,34 @@ export class AtmosphericMusic {
   }
 
   private setupAudioGraph(ctx: AudioContext, bus: GainNode): void {
-    // Dynamic resonant filter
+    // Dynamic resonant filter with smooth Butterworth Q (0.707) to eliminate harsh resonant spikes
     this.filterNode = ctx.createBiquadFilter();
     this.filterNode.type = 'lowpass';
-    this.filterNode.frequency.setValueAtTime(400, ctx.currentTime);
-    this.filterNode.Q.setValueAtTime(2.5, ctx.currentTime);
-    this.filterNode.connect(bus);
-    this.activeNodes.add(this.filterNode);
+    this.filterNode.frequency.setValueAtTime(450, ctx.currentTime);
+    this.filterNode.Q.setValueAtTime(0.707, ctx.currentTime);
 
-    // Two-world stereo panning (Real World = slightly left -0.22, Shadow World = slightly right +0.22)
+    // Mobile speaker acoustic mastering: Highpass filter at 90 Hz cuts sub-bass rumble
+    // that over-excursions tiny smartphone speaker diaphragms and causes digital buzzing/distortion
+    this.rumbleFilter = ctx.createBiquadFilter();
+    this.rumbleFilter.type = 'highpass';
+    this.rumbleFilter.frequency.setValueAtTime(90, ctx.currentTime);
+    this.rumbleFilter.Q.setValueAtTime(0.707, ctx.currentTime);
+
+    this.filterNode.connect(this.rumbleFilter);
+    this.rumbleFilter.connect(bus);
+    this.activeNodes.add(this.filterNode);
+    this.activeNodes.add(this.rumbleFilter);
+
+    // Two-world stereo panning (Real World = slightly left -0.15, Shadow World = slightly right +0.15)
     if (typeof ctx.createStereoPanner === 'function') {
       try {
         this.realPanner = ctx.createStereoPanner();
-        this.realPanner.pan.setValueAtTime(-0.22, ctx.currentTime);
+        this.realPanner.pan.setValueAtTime(-0.15, ctx.currentTime);
         this.realPanner.connect(this.filterNode);
         this.activeNodes.add(this.realPanner);
 
         this.shadowPanner = ctx.createStereoPanner();
-        this.shadowPanner.pan.setValueAtTime(0.22, ctx.currentTime);
+        this.shadowPanner.pan.setValueAtTime(0.15, ctx.currentTime);
         this.shadowPanner.connect(this.filterNode);
         this.activeNodes.add(this.shadowPanner);
       } catch {
@@ -222,17 +234,25 @@ export class AtmosphericMusic {
       }
     }
 
-    // Subtle feedback delay line for space and depth
+    // Feedback delay line with acoustic damping lowpass filter (prevents metallic ringing on mobile speakers)
     this.delayNode = ctx.createDelay();
     this.delayNode.delayTime.setValueAtTime(0.42, ctx.currentTime);
+
+    const delayDamping = ctx.createBiquadFilter();
+    delayDamping.type = 'lowpass';
+    delayDamping.frequency.setValueAtTime(1400, ctx.currentTime);
+    delayDamping.Q.setValueAtTime(0.707, ctx.currentTime);
 
     this.delayFeedback = ctx.createGain();
     this.delayFeedback.gain.setValueAtTime(0.18, ctx.currentTime);
 
-    this.delayNode.connect(this.delayFeedback);
+    this.delayNode.connect(delayDamping);
+    delayDamping.connect(this.delayFeedback);
     this.delayFeedback.connect(this.delayNode);
-    this.delayNode.connect(bus);
+    this.delayNode.connect(this.rumbleFilter);
+
     this.activeNodes.add(this.delayNode);
+    this.activeNodes.add(delayDamping);
     this.activeNodes.add(this.delayFeedback);
 
     // Sub-bus gains: Real World harmonic pad vs Shadow World subterranean drone
@@ -253,7 +273,7 @@ export class AtmosphericMusic {
 
     this.textureGain = ctx.createGain();
     this.textureGain.gain.setValueAtTime(0.012, ctx.currentTime);
-    this.textureGain.connect(this.shadowPanner ?? bus);
+    this.textureGain.connect(this.shadowPanner ?? this.filterNode);
     this.activeNodes.add(this.textureGain);
   }
 
@@ -262,13 +282,13 @@ export class AtmosphericMusic {
   // =========================================================================
 
   private startMenuMusic(ctx: AudioContext): void {
-    // 1. Deep Sub-Bass Foundation (43.65 Hz / F0 & 55 Hz / A0)
-    this.spawnContinuousDrone(ctx, [43.65, 65.41], 'sine', this.droneGain!);
+    // 1. Warm Foundation Drone (73.42 Hz / D2 & 110.0 Hz / A2) — Perfectly calibrated for mobile speakers
+    this.spawnContinuousDrone(ctx, [73.42, 110.0], 'sine', this.droneGain!);
 
-    // 2. Dissonant Atmospheric Pad (D minor 9th / F tritone: 146.83, 174.61, 207.65)
-    this.spawnContinuousDrone(ctx, [146.83, 174.61, 207.65], 'triangle', this.padGain!);
+    // 2. Dissonant Atmospheric Pad (D minor 9th: 146.83, 174.61, 220.0)
+    this.spawnContinuousDrone(ctx, [146.83, 174.61, 220.0], 'triangle', this.padGain!);
 
-    // 3. Ethereal Void Texture (Filtered White Noise Whisper)
+    // 3. Ethereal Void Texture (Filtered harmonic whispers, zero noise)
     this.spawnVoidTexture(ctx, this.textureGain!);
 
     // 4. Procedural Minimal Piano Note Sequencer
@@ -363,28 +383,28 @@ export class AtmosphericMusic {
   private startGameplayMusic(ctx: AudioContext, chapter: ChapterName): void {
     const chapterRoots: Record<ChapterName, { base: number[]; pad: number[]; filterFreq: number }> = {
       'THE BEGINNING': {
-        base: [36.71, 73.42], // D1 / D2
+        base: [73.42, 110.0], // D2 / A2 (Clean, audible foundation on mobile speakers)
         pad: [146.83, 174.61, 220.0], // D minor
-        filterFreq: 350,
+        filterFreq: 400,
       },
       'THE CONNECTION': {
-        base: [49.0, 65.41], // G1 / C2 (diminished tension)
+        base: [98.0, 130.81], // G2 / C3 (Diminished harmonic tension)
         pad: [196.0, 233.08, 293.66], // G minor
-        filterFreq: 420,
+        filterFreq: 440,
       },
       'THE SEPARATION': {
-        base: [43.65, 87.31], // F1 / F2 (dissonant razor-sharp)
-        pad: [174.61, 220.0, 246.94], // F minor + sharp 4th (B)
-        filterFreq: 520,
+        base: [87.31, 130.81], // F2 / C3 (Dissonant razor-sharp)
+        pad: [174.61, 220.0, 261.63], // F minor
+        filterFreq: 500,
       },
       'THE REFLECTION': {
-        base: [55.0, 110.0], // A1 / A2 (optical crystalline)
-        pad: [220.0, 261.63, 329.63, 493.88], // A minor 9th
-        filterFreq: 600,
+        base: [110.0, 164.81], // A2 / E3 (Crystalline depth)
+        pad: [220.0, 261.63, 329.63], // A minor 9th
+        filterFreq: 560,
       },
       'THE TRUTH': {
-        base: [36.71, 55.0, 73.42], // D1 / A1 / D2 monumental
-        pad: [146.83, 185.0, 220.0, 293.66], // Suspended tension
+        base: [73.42, 110.0, 146.83], // D2 / A2 / D3 monumental
+        pad: [146.83, 185.0, 220.0], // Suspended tension
         filterFreq: 480,
       },
     };
@@ -428,20 +448,20 @@ export class AtmosphericMusic {
     const bus = this.pulseGain;
     if (!bus) return;
 
-    // Organic subterranean heartbeat thud (only active during tension/hazard)
+    // Organic subterranean heartbeat thud (clean low-mid profile for mobile speakers)
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
 
     const isUrgent = this.currentState === 'bomb_countdown';
-    const freq = isUrgent ? 90 : 65;
+    const freq = isUrgent ? 115 : 90;
 
     osc.type = 'sine';
     osc.frequency.setValueAtTime(freq, now);
-    osc.frequency.exponentialRampToValueAtTime(36, now + 0.18);
+    osc.frequency.exponentialRampToValueAtTime(55, now + 0.18);
 
     // Soft rounded attack (40ms) and natural decay, preventing sharp electronic clicks on phone speakers
     gain.gain.setValueAtTime(0.0001, now);
-    gain.gain.linearRampToValueAtTime(isUrgent ? 0.20 : 0.07, now + 0.04);
+    gain.gain.linearRampToValueAtTime(isUrgent ? 0.18 : 0.06, now + 0.04);
     gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.22);
 
     osc.connect(gain);
@@ -466,12 +486,12 @@ export class AtmosphericMusic {
 
       osc.type = type;
       // Slight fixed micro-detune for lush chorus drift without CPU-intensive/clicking LFO nodes
-      const detuneOffset = (idx % 2 === 0 ? 1 : -1) * (2.5 + idx * 0.8);
+      const detuneOffset = (idx % 2 === 0 ? 1 : -1) * (1.5 + idx * 0.5);
       osc.frequency.setValueAtTime(f, ctx.currentTime);
       osc.detune.setValueAtTime(detuneOffset, ctx.currentTime);
 
-      gain.gain.setValueAtTime(0.001, ctx.currentTime);
-      gain.gain.linearRampToValueAtTime(0.45 / freqs.length, ctx.currentTime + 1.5);
+      gain.gain.setValueAtTime(0.0001, ctx.currentTime);
+      gain.gain.linearRampToValueAtTime(0.35 / freqs.length, ctx.currentTime + 1.2);
 
       osc.connect(gain);
       gain.connect(target);
@@ -495,12 +515,12 @@ export class AtmosphericMusic {
 
       // Ultra-soft ambient bed: silky smooth fade-in without any hiss or digital noise
       gain.gain.setValueAtTime(0.0001, ctx.currentTime);
-      gain.gain.linearRampToValueAtTime(0.015 / freqs.length, ctx.currentTime + 2.0);
+      gain.gain.linearRampToValueAtTime(0.012 / freqs.length, ctx.currentTime + 2.0);
 
       const filter = ctx.createBiquadFilter();
       filter.type = 'lowpass';
-      filter.frequency.setValueAtTime(500, ctx.currentTime);
-      filter.Q.setValueAtTime(0.7, ctx.currentTime);
+      filter.frequency.setValueAtTime(450, ctx.currentTime);
+      filter.Q.setValueAtTime(0.707, ctx.currentTime);
 
       osc.connect(gain);
       gain.connect(filter);

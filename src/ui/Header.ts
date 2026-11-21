@@ -133,18 +133,6 @@ export class Header {
       .setOrigin(0, 0);
     this.container.add(shadowLabel);
 
-    // Live move counter
-    this.movesText = scene.add
-      .text(halfW + 180, 34, `MOVES: ${config.moves ?? 0}`, {
-        fontFamily: 'system-ui, -apple-system, sans-serif',
-        fontSize: '13px',
-        fontStyle: 'bold',
-        color: PALETTE.shadow.text,
-        letterSpacing: 1,
-      })
-      .setOrigin(0, 0.5);
-    this.container.add(this.movesText);
-
     // Right action buttons: RESTART & PAUSE (Prominent, accessible touch targets)
     const btnW = 96;
     const btnH = 38;
@@ -152,6 +140,19 @@ export class Header {
 
     // Restart button
     const restartBtnX = width - 40 - btnW * 2 - 12;
+
+    // Live move counter — anchored safely to the left of the Restart button with guaranteed spacing
+    this.movesText = scene.add
+      .text(restartBtnX - 24, 34, `MOVES: ${config.moves ?? 0}`, {
+        fontFamily: 'system-ui, -apple-system, sans-serif',
+        fontSize: '13px',
+        fontStyle: 'bold',
+        color: PALETTE.shadow.text,
+        letterSpacing: 1,
+      })
+      .setOrigin(1, 0.5);
+    this.container.add(this.movesText);
+
     this.createHeaderButton(
       scene,
       restartBtnX,

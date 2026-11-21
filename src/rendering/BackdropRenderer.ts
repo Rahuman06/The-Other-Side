@@ -6,27 +6,18 @@
  *
  * The gameplay canvas (1280x720) sits centered in front of this backdrop, while the outer
  * screen edges seamlessly extend the two worlds:
- *  - Left half: Real World (pure #FFFFFF, subtle architectural floor grid, soft dust particles).
- *  - Right half: Shadow World (deep noir #101010, subtle floor grid, luminous cyan/white embers).
- *  - Center line: Exact 1px divider aligned with the game's central partition.
+ *  - Left half: Real World (pure #FFFFFF matching PALETTE.real.background).
+ *  - Right half: Shadow World (deep noir #101010 matching PALETTE.shadow.background).
+ *  - Center line: Exact 1px divider aligned with the game's central partition (#333333).
+ *
+ * Zero artificial grids, zero foreign particles, zero visible seams — completely indistinguishable
+ * from the game canvas.
  */
 
 export interface DualWorldThemeState {
   leftBrightness: number; // 0.0 (black) to 1.0 (pure white #FFFFFF)
   rightBrightness: number; // 0.0 (black) to 1.0 (shadow dark #101010)
   dividerAlpha: number; // 0.0 to 1.0
-}
-
-interface Particle {
-  x: number; // 0.0 to 1.0 relative to canvas width
-  y: number; // 0.0 to 1.0 relative to canvas height
-  vx: number;
-  vy: number;
-  baseRadius: number;
-  alpha: number;
-  phase: number;
-  isRealSide: boolean;
-  colorType: 'dust' | 'cyan' | 'white';
 }
 
 export class BackdropRenderer {
@@ -42,11 +33,7 @@ export class BackdropRenderer {
     dividerAlpha: 0.7,
   };
 
-  private particles: Particle[] = [];
-  private isReducedMotion: boolean = false;
-  private lastTime: number = 0;
   private isDimmed: boolean = false;
-  private currentDimAlpha: number = 0;
 
   private constructor() {}
 
@@ -95,14 +82,6 @@ export class BackdropRenderer {
     this.ctx = this.canvas.getContext('2d', { alpha: false });
     if (!this.ctx) return;
 
-    // Check system reduced motion
-    const motionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
-    this.isReducedMotion = motionQuery.matches;
-    motionQuery.addEventListener('change', (e) => {
-      this.isReducedMotion = e.matches;
-    });
-
-    this.initParticles();
     this.handleResize();
 
     window.addEventListener('resize', () => this.handleResize(), { passive: true });
@@ -112,7 +91,6 @@ export class BackdropRenderer {
     }
 
     this.isRunning = true;
-    this.lastTime = performance.now();
     this.loop = this.loop.bind(this);
     this.animFrameId = requestAnimationFrame(this.loop);
   }
@@ -121,7 +99,6 @@ export class BackdropRenderer {
     if (!this.canvas || !this.ctx) return;
     const w = window.innerWidth || document.documentElement.clientWidth || 1280;
     const h = window.innerHeight || document.documentElement.clientHeight || 720;
-    // Cap pixel ratio at 1.5 to save mobile battery while staying sharp
     const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
 
     this.canvas.width = Math.floor(w * dpr);
@@ -130,46 +107,13 @@ export class BackdropRenderer {
     this.canvas.style.height = `${h}px`;
   }
 
-  private initParticles(): void {
-    this.particles = [];
-    const count = 32;
-
-    for (let i = 0; i < count; i++) {
-      const isRealSide = i < count / 2;
-      const x = isRealSide
-        ? Math.random() * 0.48 // left half
-        : 0.52 + Math.random() * 0.48; // right half
-
-      const colorType: 'dust' | 'cyan' | 'white' = isRealSide
-        ? 'dust'
-        : Math.random() < 0.6
-        ? 'cyan'
-        : 'white';
-
-      this.particles.push({
-        x,
-        y: Math.random(),
-        vx: (Math.random() - 0.5) * 0.00015,
-        vy: -0.0002 - Math.random() * 0.0003, // gently drifting upward
-        baseRadius: 1.2 + Math.random() * 1.8,
-        alpha: 0.15 + Math.random() * 0.25,
-        phase: Math.random() * Math.PI * 2,
-        isRealSide,
-        colorType,
-      });
-    }
-  }
-
-  private loop(now: number): void {
+  private loop(): void {
     if (!this.isRunning) return;
-    const dt = Math.min(now - this.lastTime, 100);
-    this.lastTime = now;
-
-    this.render(now, dt);
+    this.render();
     this.animFrameId = requestAnimationFrame(this.loop);
   }
 
-  private render(now: number, dt: number): void {
+  private render(): void {
     const ctx = this.ctx;
     const canvas = this.canvas;
     if (!ctx || !canvas) return;
@@ -180,110 +124,28 @@ export class BackdropRenderer {
 
     const { leftBrightness, rightBrightness, dividerAlpha } = this.themeState;
 
-    // Smooth dimming transition for modals
-    const targetDim = this.isDimmed ? 0.75 : 0.0;
-    this.currentDimAlpha += (targetDim - this.currentDimAlpha) * Math.min(1, dt * 0.01);
+    // Instant synchronous dimming matching Phaser modal backdrop (0.75 alpha dark tint)
+    const dimFactor = this.isDimmed ? 0.25 : 1.0;
 
-    // 1. Draw Left World (Real World)
-    const leftVal = Math.round(255 * leftBrightness);
+    // 1. Draw Left World (Real World) — Pure #FFFFFF (255, 255, 255)
+    const leftVal = Math.round(255 * leftBrightness * dimFactor);
     ctx.fillStyle = `rgb(${leftVal}, ${leftVal}, ${leftVal})`;
     ctx.fillRect(0, 0, halfW, h);
 
-    // 2. Draw Right World (Shadow World)
-    // Interpolates from black (0) to #101010 (16, 16, 16)
-    const rightVal = Math.round(16 * rightBrightness);
+    // 2. Draw Right World (Shadow World) — Pure #101010 (16, 16, 16)
+    const rightVal = Math.round(16 * rightBrightness * dimFactor);
     ctx.fillStyle = `rgb(${rightVal}, ${rightVal}, ${rightVal})`;
     ctx.fillRect(halfW, 0, w - halfW, h);
 
-    // 3. Subtle floor grid pattern (extending in-game floor tiles to screen edges)
-    const gridSize = Math.floor(64 * (w / (window.innerWidth || 1)));
-    ctx.lineWidth = 1;
-
-    // Left floor grid
-    if (leftBrightness > 0.1) {
-      ctx.strokeStyle = `rgba(0, 0, 0, ${0.035 * leftBrightness})`;
-      ctx.beginPath();
-      for (let x = halfW % gridSize; x < halfW; x += gridSize) {
-        ctx.moveTo(x, 0);
-        ctx.lineTo(x, h);
-      }
-      for (let y = 0; y < h; y += gridSize) {
-        ctx.moveTo(0, y);
-        ctx.lineTo(halfW, y);
-      }
-      ctx.stroke();
-    }
-
-    // Right floor grid
-    if (rightBrightness > 0.1) {
-      ctx.strokeStyle = `rgba(255, 255, 255, ${0.035 * rightBrightness})`;
-      ctx.beginPath();
-      for (let x = halfW; x < w; x += gridSize) {
-        ctx.moveTo(x, 0);
-        ctx.lineTo(x, h);
-      }
-      for (let y = 0; y < h; y += gridSize) {
-        ctx.moveTo(halfW, y);
-        ctx.lineTo(w, y);
-      }
-      ctx.stroke();
-    }
-
-    // 4. Center Divider Line
+    // 3. Center Divider Line — Exact 1px #333333 at 0.7 alpha matching in-game divider
     if (dividerAlpha > 0.01) {
-      ctx.strokeStyle = `rgba(100, 100, 100, ${0.7 * dividerAlpha})`;
-      ctx.lineWidth = Math.max(1, Math.round(1 * (w / (window.innerWidth || 1))));
+      const alpha = 0.7 * dividerAlpha * dimFactor;
+      ctx.strokeStyle = `rgba(51, 51, 51, ${alpha.toFixed(3)})`;
+      ctx.lineWidth = Math.max(1, Math.round(1 * (window.devicePixelRatio || 1)));
       ctx.beginPath();
       ctx.moveTo(halfW, 0);
       ctx.lineTo(halfW, h);
       ctx.stroke();
-    }
-
-    // 5. Ambient Particles (Floating gently in the outer margins)
-    if (!this.isReducedMotion) {
-      for (let i = 0; i < this.particles.length; i++) {
-        const p = this.particles[i];
-
-        // Update position
-        p.y += p.vy * (dt / 16.6);
-        p.x += p.vx * (dt / 16.6) + Math.sin(now * 0.001 + p.phase) * 0.00008;
-
-        // Wrap around
-        if (p.y < -0.05) {
-          p.y = 1.05;
-          p.x = p.isRealSide
-            ? Math.random() * 0.48
-            : 0.52 + Math.random() * 0.48;
-        }
-
-        const px = p.x * w;
-        const py = p.y * h;
-
-        // Draw particle
-        if (p.isRealSide && leftBrightness > 0.1) {
-          const a = p.alpha * leftBrightness;
-          ctx.fillStyle = `rgba(20, 20, 20, ${a})`;
-          ctx.beginPath();
-          ctx.arc(px, py, p.baseRadius, 0, Math.PI * 2);
-          ctx.fill();
-        } else if (!p.isRealSide && rightBrightness > 0.1) {
-          const a = p.alpha * rightBrightness;
-          if (p.colorType === 'cyan') {
-            ctx.fillStyle = `rgba(0, 229, 255, ${a * 1.2})`;
-          } else {
-            ctx.fillStyle = `rgba(255, 255, 255, ${a})`;
-          }
-          ctx.beginPath();
-          ctx.arc(px, py, p.baseRadius, 0, Math.PI * 2);
-          ctx.fill();
-        }
-      }
-    }
-
-    // 6. Modal Dimming Overlay (matches in-game modal backdrop)
-    if (this.currentDimAlpha > 0.005) {
-      ctx.fillStyle = `rgba(0, 0, 0, ${this.currentDimAlpha.toFixed(3)})`;
-      ctx.fillRect(0, 0, w, h);
     }
   }
 
