@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { KeyboardNavManager, FocusableItem } from './KeyboardNavManager';
+import { AudioManager } from '../audio/AudioManager';
 
 export interface PauseModalCallbacks {
   onResume: () => void;
@@ -151,7 +152,12 @@ export class PauseModal {
       txt.setColor(textCol);
     });
 
-    hit.on('pointerdown', onClick);
+    const triggerClick = () => {
+      AudioManager.getInstance().sfx.playUiClick();
+      onClick();
+    };
+
+    hit.on('pointerdown', triggerClick);
 
     this.container.add(hit);
 
@@ -163,7 +169,7 @@ export class PauseModal {
         width: w,
         height: h,
       }),
-      onActivate: onClick,
+      onActivate: triggerClick,
     });
   }
 

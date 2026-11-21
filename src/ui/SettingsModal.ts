@@ -254,7 +254,12 @@ export class SettingsModal {
       txt.setColor(textCol);
     });
 
-    hit.on('pointerdown', onClick);
+    const triggerClick = () => {
+      AudioManager.getInstance().sfx.playUiClick();
+      onClick();
+    };
+
+    hit.on('pointerdown', triggerClick);
     this.container.add(hit);
 
     this.focusItems.push({
@@ -265,7 +270,7 @@ export class SettingsModal {
         width: w,
         height: h,
       }),
-      onActivate: onClick,
+      onActivate: triggerClick,
     });
   }
 

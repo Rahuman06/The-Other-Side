@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { PALETTE } from '../core/constants';
+import { AudioManager } from '../audio/AudioManager';
 
 export interface HeaderCallbacks {
   onPause: () => void;
@@ -205,7 +206,10 @@ export class Header {
       .setOrigin(0.5)
       .setInteractive({ useHandCursor: true });
 
-    hit.on('pointerdown', onClick);
+    hit.on('pointerdown', () => {
+      AudioManager.getInstance().sfx.playUiClick();
+      onClick();
+    });
     hit.on('pointerover', () => {
       label.setColor('#CCCCCC');
     });

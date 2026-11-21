@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { KeyboardNavManager, FocusableItem } from './KeyboardNavManager';
+import { AudioManager } from '../audio/AudioManager';
 
 export interface WinModalCallbacks {
   onNextLevel: () => void;
@@ -214,7 +215,12 @@ export class WinModal {
       txt.setColor(textCol);
     });
 
-    hit.on('pointerdown', onClick);
+    const triggerClick = () => {
+      AudioManager.getInstance().sfx.playUiClick();
+      onClick();
+    };
+
+    hit.on('pointerdown', triggerClick);
 
     this.container.add(hit);
 
@@ -226,7 +232,7 @@ export class WinModal {
         width: w,
         height: h,
       }),
-      onActivate: onClick,
+      onActivate: triggerClick,
     });
 
     return { label: txt };

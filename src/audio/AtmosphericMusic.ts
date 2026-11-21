@@ -484,41 +484,34 @@ export class AtmosphericMusic {
   }
 
   private spawnVoidTexture(ctx: AudioContext, target: GainNode): void {
-    // Generate 3 seconds of smooth filtered noise with gentle Hann windowing at boundaries
-    const bufSize = ctx.sampleRate * 3;
-    const buffer = ctx.createBuffer(1, bufSize, ctx.sampleRate);
-    const data = buffer.getChannelData(0);
+    // Pure, crystal-clear harmonic shimmer pad (Zero random noise/hiss for pristine mobile speaker playback)
+    const freqs = [440.0, 554.37, 659.25]; // A4, C#5, E5 ethereal triad
+    freqs.forEach((f) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
 
-    // Generate brown/pink noise (integrated random walk for soft organic wind)
-    let lastOut = 0.0;
-    for (let i = 0; i < bufSize; i++) {
-      const white = (Math.random() * 2 - 1) * 0.04;
-      lastOut = (lastOut + 0.02 * white) / 1.02; // Soft brownian wind
-      // Smooth windowing at seam (first & last 2000 samples)
-      let seamGain = 1.0;
-      if (i < 2000) {
-        seamGain = i / 2000;
-      } else if (i > bufSize - 2000) {
-        seamGain = (bufSize - i) / 2000;
-      }
-      data[i] = lastOut * seamGain;
-    }
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(f, ctx.currentTime);
 
-    const noise = ctx.createBufferSource();
-    noise.buffer = buffer;
-    noise.loop = true;
+      // Ultra-soft ambient bed: silky smooth fade-in without any hiss or digital noise
+      gain.gain.setValueAtTime(0.0001, ctx.currentTime);
+      gain.gain.linearRampToValueAtTime(0.015 / freqs.length, ctx.currentTime + 2.0);
 
-    const bq = ctx.createBiquadFilter();
-    bq.type = 'lowpass';
-    bq.frequency.setValueAtTime(350, ctx.currentTime);
-    bq.Q.setValueAtTime(0.7, ctx.currentTime);
+      const filter = ctx.createBiquadFilter();
+      filter.type = 'lowpass';
+      filter.frequency.setValueAtTime(500, ctx.currentTime);
+      filter.Q.setValueAtTime(0.7, ctx.currentTime);
 
-    noise.connect(bq);
-    bq.connect(target);
-    noise.start();
+      osc.connect(gain);
+      gain.connect(filter);
+      filter.connect(target);
 
-    this.activeNodes.add(noise);
-    this.activeNodes.add(bq);
+      osc.start();
+
+      this.activeNodes.add(osc);
+      this.activeNodes.add(gain);
+      this.activeNodes.add(filter);
+    });
   }
 
   // =========================================================================

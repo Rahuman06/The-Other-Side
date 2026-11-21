@@ -1,6 +1,7 @@
 import type Phaser from 'phaser';
 import { PALETTE } from '../core/constants';
 import { KeyboardNavManager, FocusableItem } from './KeyboardNavManager';
+import { AudioManager } from '../audio/AudioManager';
 
 export interface GuideObjectEntry {
   readonly id: string;
@@ -806,6 +807,7 @@ export class ObjectGuideModal {
     const closeX = modalW / 2 - 32;
     const closeY = -modalH / 2 + 25;
     const closeAction = () => {
+      AudioManager.getInstance().sfx.playMenuClose();
       this.hide();
       this.onCloseCallback();
     };
@@ -859,6 +861,7 @@ export class ObjectGuideModal {
         .setInteractive({ useHandCursor: true });
 
       hit.on('pointerdown', () => {
+        AudioManager.getInstance().sfx.playUiClick();
         this.activeCategory = cat;
         this.currentPage = 0;
         this.createCategoryTabs(scene, modalW, y);
@@ -1095,7 +1098,10 @@ export class ObjectGuideModal {
       txt.setColor('#CCCCCC');
     });
 
-    hit.on('pointerdown', onClick);
+    hit.on('pointerdown', () => {
+      AudioManager.getInstance().sfx.playUiClick();
+      onClick();
+    });
     this.container.add(hit);
   }
 

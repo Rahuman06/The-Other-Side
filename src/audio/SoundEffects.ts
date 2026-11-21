@@ -91,8 +91,8 @@ export class SoundEffects {
   // =========================================================================
 
   /**
-   * Character Footstep: Tactile, differentiated footstep
-   * Real World = crisp high-frequency click; Shadow World = deep resonant subterranean thud
+   * Character Footstep: Tactile, highly audible footstep engineered for mobile speakers without headphones
+   * Real World = crisp high-mid stone/tile tap (920 Hz -> 450 Hz); Shadow World = punchy metallic resonance (640 Hz -> 280 Hz)
    */
   public playStep(isReal: boolean = true): void {
     const timeNow = Date.now();
@@ -107,40 +107,67 @@ export class SoundEffects {
     const now = ctx.currentTime;
 
     try {
+      // 1. Primary tactile step oscillator (tuned into peak 300Hz-1200Hz phone speaker projection)
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
 
+      // 2. High-frequency acoustic transient for distinct tap definition
+      const snapOsc = ctx.createOscillator();
+      const snapGain = ctx.createGain();
+
       if (isReal) {
-        // Crisp stone footstep: 260 Hz -> 150 Hz triangle with clear transient
+        // Crisp stone footstep: 920 Hz -> 420 Hz with tactile 1600 Hz contact click
         osc.type = 'triangle';
-        osc.frequency.setValueAtTime(260, now);
-        osc.frequency.exponentialRampToValueAtTime(150, now + 0.038);
+        osc.frequency.setValueAtTime(920, now);
+        osc.frequency.exponentialRampToValueAtTime(420, now + 0.045);
 
-        gain.gain.setValueAtTime(0.14, now);
-        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.038);
+        gain.gain.setValueAtTime(0.42, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.045);
+
+        snapOsc.type = 'sine';
+        snapOsc.frequency.setValueAtTime(1600, now);
+        snapOsc.frequency.exponentialRampToValueAtTime(750, now + 0.018);
+
+        snapGain.gain.setValueAtTime(0.25, now);
+        snapGain.gain.exponentialRampToValueAtTime(0.001, now + 0.018);
       } else {
-        // Shadow subterranean thud: 160 Hz -> 75 Hz triangle with audible harmonic body on phone speakers
+        // Shadow subterranean step: 640 Hz -> 260 Hz with metallic 1100 Hz ring
         osc.type = 'triangle';
-        osc.frequency.setValueAtTime(160, now);
-        osc.frequency.exponentialRampToValueAtTime(75, now + 0.05);
+        osc.frequency.setValueAtTime(640, now);
+        osc.frequency.exponentialRampToValueAtTime(260, now + 0.055);
 
-        gain.gain.setValueAtTime(0.15, now);
-        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
+        gain.gain.setValueAtTime(0.45, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.055);
+
+        snapOsc.type = 'triangle';
+        snapOsc.frequency.setValueAtTime(1100, now);
+        snapOsc.frequency.exponentialRampToValueAtTime(480, now + 0.022);
+
+        snapGain.gain.setValueAtTime(0.22, now);
+        snapGain.gain.exponentialRampToValueAtTime(0.001, now + 0.022);
       }
 
       osc.connect(gain);
       gain.connect(bus);
 
+      snapOsc.connect(snapGain);
+      snapGain.connect(bus);
+
       this.trackVoice(osc, 0.06);
+      this.trackVoice(snapOsc, 0.03);
+
       osc.start(now);
       osc.stop(now + 0.06);
+
+      snapOsc.start(now);
+      snapOsc.stop(now + 0.03);
     } catch (err) {
       console.debug('[SoundEffects] playStep error:', err);
     }
   }
 
   /**
-   * Wall Bump: Heavy low-frequency elastic thud
+   * Wall Bump: Punchy, tactile barrier collision with rich harmonics audible on mobile speakers
    */
   public playBump(): void {
     const ab = this.getContextAndBus();
@@ -152,19 +179,38 @@ export class SoundEffects {
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
 
-      // Punchy tactile thud with harmonic body (180 Hz -> 65 Hz triangle)
-      osc.type = 'triangle';
-      osc.frequency.setValueAtTime(180, now);
-      osc.frequency.exponentialRampToValueAtTime(65, now + 0.09);
+      const snap = ctx.createOscillator();
+      const snapGain = ctx.createGain();
 
-      gain.gain.setValueAtTime(0.26, now);
-      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.09);
+      // Punchy tactile thud with harmonic body (360 Hz -> 150 Hz triangle + 680 Hz transient)
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(360, now);
+      osc.frequency.exponentialRampToValueAtTime(150, now + 0.08);
+
+      gain.gain.setValueAtTime(0.44, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+
+      snap.type = 'sine';
+      snap.frequency.setValueAtTime(680, now);
+      snap.frequency.exponentialRampToValueAtTime(280, now + 0.025);
+
+      snapGain.gain.setValueAtTime(0.28, now);
+      snapGain.gain.exponentialRampToValueAtTime(0.001, now + 0.025);
 
       osc.connect(gain);
       gain.connect(bus);
 
+      snap.connect(snapGain);
+      snapGain.connect(bus);
+
+      this.trackVoice(osc, 0.09);
+      this.trackVoice(snap, 0.03);
+
       osc.start(now);
       osc.stop(now + 0.09);
+
+      snap.start(now);
+      snap.stop(now + 0.03);
     } catch (err) {
       console.debug('[SoundEffects] playBump error:', err);
     }
@@ -184,35 +230,35 @@ export class SoundEffects {
     const now = ctx.currentTime;
 
     try {
-      // 1. High metallic click
+      // 1. High metallic click (920 Hz -> 1400 Hz)
       const osc1 = ctx.createOscillator();
       const gain1 = ctx.createGain();
-      osc1.type = 'square';
-      osc1.frequency.setValueAtTime(640, now);
-      osc1.frequency.setValueAtTime(960, now + 0.03);
+      osc1.type = 'triangle';
+      osc1.frequency.setValueAtTime(920, now);
+      osc1.frequency.setValueAtTime(1400, now + 0.025);
 
-      gain1.gain.setValueAtTime(0.14, now);
-      gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+      gain1.gain.setValueAtTime(0.35, now);
+      gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.06);
 
       osc1.connect(gain1);
       gain1.connect(bus);
       osc1.start(now);
-      osc1.stop(now + 0.08);
+      osc1.stop(now + 0.06);
 
-      // 2. Low mechanical latch thunk
+      // 2. Audible mechanical latch thunk (320 Hz -> 160 Hz)
       const osc2 = ctx.createOscillator();
       const gain2 = ctx.createGain();
-      osc2.type = 'sine';
-      osc2.frequency.setValueAtTime(200, now + 0.02);
-      osc2.frequency.exponentialRampToValueAtTime(75, now + 0.1);
+      osc2.type = 'triangle';
+      osc2.frequency.setValueAtTime(320, now + 0.015);
+      osc2.frequency.exponentialRampToValueAtTime(160, now + 0.08);
 
-      gain2.gain.setValueAtTime(0.22, now + 0.02);
-      gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
+      gain2.gain.setValueAtTime(0.38, now + 0.015);
+      gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
 
       osc2.connect(gain2);
       gain2.connect(bus);
-      osc2.start(now + 0.02);
-      osc2.stop(now + 0.1);
+      osc2.start(now + 0.015);
+      osc2.stop(now + 0.08);
     } catch (err) {
       console.debug('[SoundEffects] playSwitch error:', err);
     }
@@ -233,24 +279,24 @@ export class SoundEffects {
 
       if (pressed) {
         osc.type = 'triangle';
-        osc.frequency.setValueAtTime(160, now);
-        osc.frequency.exponentialRampToValueAtTime(75, now + 0.12);
+        osc.frequency.setValueAtTime(420, now);
+        osc.frequency.exponentialRampToValueAtTime(200, now + 0.09);
 
-        gain.gain.setValueAtTime(0.22, now);
-        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+        gain.gain.setValueAtTime(0.38, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.09);
       } else {
         osc.type = 'triangle';
-        osc.frequency.setValueAtTime(90, now);
-        osc.frequency.exponentialRampToValueAtTime(150, now + 0.09);
+        osc.frequency.setValueAtTime(220, now);
+        osc.frequency.exponentialRampToValueAtTime(380, now + 0.07);
 
-        gain.gain.setValueAtTime(0.14, now);
-        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.09);
+        gain.gain.setValueAtTime(0.30, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.07);
       }
 
       osc.connect(gain);
       gain.connect(bus);
       osc.start(now);
-      osc.stop(now + 0.12);
+      osc.stop(now + 0.09);
     } catch (err) {
       console.debug('[SoundEffects] playPressurePlate error:', err);
     }
@@ -270,28 +316,28 @@ export class SoundEffects {
       const gain = ctx.createGain();
 
       if (open) {
-        // Pneumatic sliding hiss
-        osc.type = 'sawtooth';
-        osc.frequency.setValueAtTime(90, now);
-        osc.frequency.exponentialRampToValueAtTime(180, now + 0.22);
+        // Pneumatic sliding resonant whoosh
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(280, now);
+        osc.frequency.exponentialRampToValueAtTime(560, now + 0.18);
 
         gain.gain.setValueAtTime(0.001, now);
-        gain.gain.linearRampToValueAtTime(0.18, now + 0.04);
-        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.22);
+        gain.gain.linearRampToValueAtTime(0.34, now + 0.03);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
       } else {
-        // Heavy steel slam
+        // Heavy steel slam with punchy body
         osc.type = 'triangle';
-        osc.frequency.setValueAtTime(140, now);
-        osc.frequency.exponentialRampToValueAtTime(45, now + 0.28);
+        osc.frequency.setValueAtTime(320, now);
+        osc.frequency.exponentialRampToValueAtTime(140, now + 0.22);
 
-        gain.gain.setValueAtTime(0.32, now);
-        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.28);
+        gain.gain.setValueAtTime(0.42, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.22);
       }
 
       osc.connect(gain);
       gain.connect(bus);
       osc.start(now);
-      osc.stop(now + 0.28);
+      osc.stop(now + 0.22);
     } catch (err) {
       console.debug('[SoundEffects] playDoor error:', err);
     }
@@ -1071,7 +1117,7 @@ export class SoundEffects {
   }
 
   /**
-   * Button Click: Crisp mechanical actuation click
+   * Button Click: Crisp mechanical actuation click engineered for mobile speakers without headphones
    */
   public playUiClick(): void {
     const ab = this.getContextAndBus();
@@ -1083,24 +1129,46 @@ export class SoundEffects {
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
 
-      osc.type = 'triangle';
-      osc.frequency.setValueAtTime(560, now);
-      osc.frequency.exponentialRampToValueAtTime(260, now + 0.025);
+      const snap = ctx.createOscillator();
+      const snapGain = ctx.createGain();
 
-      gain.gain.setValueAtTime(0.12, now);
-      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.025);
+      // Primary crisp mechanical actuation (1400 Hz -> 680 Hz triangle)
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(1400, now);
+      osc.frequency.exponentialRampToValueAtTime(680, now + 0.035);
+
+      gain.gain.setValueAtTime(0.38, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.035);
+
+      // High-frequency tactile ping (2400 Hz -> 1200 Hz sine)
+      snap.type = 'sine';
+      snap.frequency.setValueAtTime(2400, now);
+      snap.frequency.exponentialRampToValueAtTime(1200, now + 0.018);
+
+      snapGain.gain.setValueAtTime(0.22, now);
+      snapGain.gain.exponentialRampToValueAtTime(0.001, now + 0.018);
 
       osc.connect(gain);
       gain.connect(bus);
+
+      snap.connect(snapGain);
+      snapGain.connect(bus);
+
+      this.trackVoice(osc, 0.04);
+      this.trackVoice(snap, 0.02);
+
       osc.start(now);
-      osc.stop(now + 0.025);
+      osc.stop(now + 0.04);
+
+      snap.start(now);
+      snap.stop(now + 0.02);
     } catch (err) {
       console.debug('[SoundEffects] playUiClick error:', err);
     }
   }
 
   /**
-   * UI Select / Toggle: Ascending confirmation tone
+   * UI Select / Toggle: Ascending confirmation tone with high mobile presence
    */
   public playUiSelect(): void {
     const ab = this.getContextAndBus();
@@ -1109,21 +1177,21 @@ export class SoundEffects {
     const now = ctx.currentTime;
 
     try {
-      const notes = [440, 660];
+      const notes = [523.25, 783.99]; // C5 -> G5
       notes.forEach((f, idx) => {
         const osc = ctx.createOscillator();
         const gain = ctx.createGain();
 
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(f, now + idx * 0.03);
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(f, now + idx * 0.04);
 
-        gain.gain.setValueAtTime(0.10, now + idx * 0.03);
-        gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.03 + 0.06);
+        gain.gain.setValueAtTime(0.30, now + idx * 0.04);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.04 + 0.07);
 
         osc.connect(gain);
         gain.connect(bus);
-        osc.start(now + idx * 0.03);
-        osc.stop(now + idx * 0.03 + 0.06);
+        osc.start(now + idx * 0.04);
+        osc.stop(now + idx * 0.04 + 0.07);
       });
     } catch (err) {
       console.debug('[SoundEffects] playUiSelect error:', err);
@@ -1131,7 +1199,7 @@ export class SoundEffects {
   }
 
   /**
-   * Menu Open: Subtle atmospheric dimensional sweep open
+   * Menu Open: Clean atmospheric dimensional sweep open
    */
   public playMenuOpen(): void {
     const ab = this.getContextAndBus();
@@ -1144,24 +1212,24 @@ export class SoundEffects {
       const gain = ctx.createGain();
 
       osc.type = 'sine';
-      osc.frequency.setValueAtTime(220, now);
-      osc.frequency.exponentialRampToValueAtTime(520, now + 0.1);
+      osc.frequency.setValueAtTime(330, now);
+      osc.frequency.exponentialRampToValueAtTime(880, now + 0.12);
 
       gain.gain.setValueAtTime(0.001, now);
-      gain.gain.linearRampToValueAtTime(0.10, now + 0.03);
-      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
+      gain.gain.linearRampToValueAtTime(0.28, now + 0.03);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
 
       osc.connect(gain);
       gain.connect(bus);
       osc.start(now);
-      osc.stop(now + 0.1);
+      osc.stop(now + 0.12);
     } catch (err) {
       console.debug('[SoundEffects] playMenuOpen error:', err);
     }
   }
 
   /**
-   * Menu Close: Subtle atmospheric dimensional sweep close
+   * Menu Close: Clean atmospheric dimensional sweep close
    */
   public playMenuClose(): void {
     const ab = this.getContextAndBus();
@@ -1174,23 +1242,23 @@ export class SoundEffects {
       const gain = ctx.createGain();
 
       osc.type = 'sine';
-      osc.frequency.setValueAtTime(480, now);
-      osc.frequency.exponentialRampToValueAtTime(200, now + 0.08);
+      osc.frequency.setValueAtTime(780, now);
+      osc.frequency.exponentialRampToValueAtTime(290, now + 0.1);
 
-      gain.gain.setValueAtTime(0.10, now);
-      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+      gain.gain.setValueAtTime(0.28, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
 
       osc.connect(gain);
       gain.connect(bus);
       osc.start(now);
-      osc.stop(now + 0.08);
+      osc.stop(now + 0.1);
     } catch (err) {
       console.debug('[SoundEffects] playMenuClose error:', err);
     }
   }
 
   /**
-   * Pause: Muted soft suspension pulse
+   * Pause: Tactile soft suspension pulse
    */
   public playPause(): void {
     const ab = this.getContextAndBus();
@@ -1202,11 +1270,11 @@ export class SoundEffects {
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
 
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(320, now);
-      osc.frequency.exponentialRampToValueAtTime(180, now + 0.12);
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(540, now);
+      osc.frequency.exponentialRampToValueAtTime(270, now + 0.12);
 
-      gain.gain.setValueAtTime(0.12, now);
+      gain.gain.setValueAtTime(0.32, now);
       gain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
 
       osc.connect(gain);
@@ -1219,7 +1287,7 @@ export class SoundEffects {
   }
 
   /**
-   * Resume: Tactile re-engagement click/pulse
+   * Resume: Tactile re-engagement click
    */
   public playResume(): void {
     const ab = this.getContextAndBus();
@@ -1232,10 +1300,10 @@ export class SoundEffects {
       const gain = ctx.createGain();
 
       osc.type = 'triangle';
-      osc.frequency.setValueAtTime(240, now);
-      osc.frequency.exponentialRampToValueAtTime(480, now + 0.08);
+      osc.frequency.setValueAtTime(320, now);
+      osc.frequency.exponentialRampToValueAtTime(640, now + 0.08);
 
-      gain.gain.setValueAtTime(0.12, now);
+      gain.gain.setValueAtTime(0.32, now);
       gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
 
       osc.connect(gain);
