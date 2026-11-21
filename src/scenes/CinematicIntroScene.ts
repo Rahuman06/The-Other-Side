@@ -9,6 +9,8 @@ export class CinematicIntroScene extends Phaser.Scene {
   private sfx!: SoundEffects;
   private isSkipped: boolean = false;
   private isCompleted: boolean = false;
+  private nextScene: string = 'MenuScene';
+  private nextSceneData?: { levelId?: number };
 
   // Visual Display Objects
   private bgGraphics!: Phaser.GameObjects.Graphics;
@@ -53,7 +55,9 @@ export class CinematicIntroScene extends Phaser.Scene {
     super('CinematicIntroScene');
   }
 
-  public init(): void {
+  public init(data?: { nextScene?: string; levelId?: number }): void {
+    this.nextScene = data?.nextScene ?? 'MenuScene';
+    this.nextSceneData = data?.levelId !== undefined ? { levelId: data.levelId } : undefined;
     this.isSkipped = false;
     this.isCompleted = false;
     this.timelineProgress = 0;
@@ -408,36 +412,24 @@ export class CinematicIntroScene extends Phaser.Scene {
   private skipIntro(): void {
     if (this.isSkipped || this.isCompleted) return;
     this.isSkipped = true;
-    this.markIntroShown();
 
     this.cameras.main.fadeOut(250, 0, 0, 0);
     this.time.delayedCall(250, () => {
-      this.scene.start('MenuScene');
+      this.scene.start(this.nextScene, this.nextSceneData);
     });
   }
 
   private completeIntro(): void {
     if (this.isCompleted) return;
     this.isCompleted = true;
-    this.markIntroShown();
 
-    // Gentle hold on final scene, then smooth fade into Main Menu
+    // Gentle hold on final scene, then smooth fade into target scene
     this.time.delayedCall(1200, () => {
       this.cameras.main.fadeOut(350, 0, 0, 0);
       this.time.delayedCall(350, () => {
-        this.scene.start('MenuScene');
+        this.scene.start(this.nextScene, this.nextSceneData);
       });
     });
-  }
-
-  private markIntroShown(): void {
-    try {
-      if (typeof sessionStorage !== 'undefined') {
-        sessionStorage.setItem('the_other_side_intro_shown', 'true');
-      }
-    } catch {
-      // Non-blocking storage fallback
-    }
   }
 
   public shutdown(): void {

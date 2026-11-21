@@ -77,7 +77,7 @@ export class Header {
 
     // Chapter & Level info on Real side
     this.chapterLabelText = scene.add
-      .text(halfW - 30, 20, config.chapter.toUpperCase(), {
+      .text(halfW - 24, 14, config.chapter.toUpperCase(), {
         fontFamily: 'system-ui, -apple-system, sans-serif',
         fontSize: '11px',
         color: PALETTE.real.secondaryHex,
@@ -88,7 +88,7 @@ export class Header {
 
     const lvlStr = `LEVEL ${String(config.levelNumber).padStart(2, '0')} / ${config.totalLevels}  •  ${config.levelName}`;
     this.levelLabelText = scene.add
-      .text(halfW - 30, 38, lvlStr, {
+      .text(halfW - 24, 30, lvlStr, {
         fontFamily: 'system-ui, -apple-system, sans-serif',
         fontSize: '13px',
         fontStyle: 'bold',
@@ -98,9 +98,22 @@ export class Header {
       .setOrigin(1, 0);
     this.container.add(this.levelLabelText);
 
+    // Current Level Objective (cleanly on Real side, below level label)
+    const objectiveStr = config.objective ?? 'REACH BOTH EXITS SIMULTANEOUSLY';
+    this.objectiveText = scene.add
+      .text(halfW - 24, 48, `OBJECTIVE: ${objectiveStr}`, {
+        fontFamily: 'system-ui, -apple-system, sans-serif',
+        fontSize: '10px',
+        fontStyle: 'bold',
+        color: PALETTE.real.secondaryHex,
+        letterSpacing: 1.2,
+      })
+      .setOrigin(1, 0);
+    this.container.add(this.objectiveText);
+
     // Right panel: "SIDE" & "SHADOW WORLD"
     const shadowTitle = scene.add
-      .text(halfW + 30, 16, 'SIDE', {
+      .text(halfW + 24, 16, 'SIDE', {
         fontFamily: 'system-ui, -apple-system, sans-serif',
         fontSize: '20px',
         fontStyle: 'bold',
@@ -111,7 +124,7 @@ export class Header {
     this.container.add(shadowTitle);
 
     const shadowLabel = scene.add
-      .text(halfW + 30, 42, 'SHADOW WORLD', {
+      .text(halfW + 24, 42, 'SHADOW WORLD', {
         fontFamily: 'system-ui, -apple-system, sans-serif',
         fontSize: '11px',
         color: PALETTE.shadow.secondaryHex,
@@ -122,7 +135,7 @@ export class Header {
 
     // Live move counter
     this.movesText = scene.add
-      .text(halfW + 240, 34, `MOVES: ${config.moves ?? 0}`, {
+      .text(halfW + 180, 34, `MOVES: ${config.moves ?? 0}`, {
         fontFamily: 'system-ui, -apple-system, sans-serif',
         fontSize: '13px',
         fontStyle: 'bold',
@@ -131,19 +144,6 @@ export class Header {
       })
       .setOrigin(0, 0.5);
     this.container.add(this.movesText);
-
-    // Current Level Objective
-    const objectiveStr = config.objective ?? 'REACH BOTH EXITS SIMULTANEOUSLY';
-    this.objectiveText = scene.add
-      .text(halfW, 52, `OBJECTIVE: ${objectiveStr}`, {
-        fontFamily: 'system-ui, -apple-system, sans-serif',
-        fontSize: '10px',
-        fontStyle: 'bold',
-        color: '#777777',
-        letterSpacing: 1.2,
-      })
-      .setOrigin(0.5, 0);
-    this.container.add(this.objectiveText);
 
     // Right action buttons: RESTART & PAUSE
     const btnW = 86;

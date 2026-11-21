@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { createGameConfig, getResponsiveDimensions } from './core/config';
+import { createGameConfig } from './core/config';
 import { pokiBridge } from './poki/PokiIntegration';
 
 export function initializeGame(): Phaser.Game {
@@ -13,13 +13,9 @@ if (typeof window !== 'undefined') {
     (window as any).__PHASER_GAME__ = game;
     (window as any).game = game;
 
-    // Dynamically adjust internal canvas aspect ratio on browser resize or device rotation
+    // Refresh Phaser scale manager on browser resize or device rotation
     const checkResize = () => {
       if (!game || !game.scale) return;
-      const { width, height } = getResponsiveDimensions();
-      if (game.scale.width !== width || game.scale.height !== height) {
-        game.scale.setGameSize(width, height);
-      }
       game.scale.refresh();
     };
 

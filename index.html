@@ -85,100 +85,6 @@
       }
 
       /* -------------------------------------------------------------
-         THEMED ROTATION OVERLAY (PORTRAIT GUIDANCE)
-         ------------------------------------------------------------- */
-      .orientation-overlay {
-        position: fixed;
-        inset: 0;
-        background: #000000;
-        z-index: 99999;
-        display: none;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-        text-align: center;
-        padding: 32px 24px;
-        color: #ffffff;
-      }
-
-      /* Show only in portrait on mobile/tablet devices */
-      @media (orientation: portrait) and (max-width: 1024px) {
-        .orientation-overlay {
-          display: flex;
-        }
-      }
-
-      /* Never show on desktop mice */
-      @media (hover: hover) and (pointer: fine) and (min-width: 1025px) {
-        .orientation-overlay {
-          display: none !important;
-        }
-      }
-
-      .rotation-icon-wrapper {
-        width: 80px;
-        height: 80px;
-        margin-bottom: 28px;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        position: relative;
-      }
-
-      .phone-svg {
-        width: 64px;
-        height: 64px;
-        animation: rotatePhone 2.6s cubic-bezier(0.4, 0, 0.2, 1) infinite;
-        transform-origin: center;
-      }
-
-      @keyframes rotatePhone {
-        0% {
-          transform: rotate(0deg);
-        }
-        25% {
-          transform: rotate(0deg);
-        }
-        60% {
-          transform: rotate(-90deg);
-        }
-        85% {
-          transform: rotate(-90deg);
-        }
-        100% {
-          transform: rotate(0deg);
-        }
-      }
-
-      .rotation-title {
-        font-size: 20px;
-        font-weight: 700;
-        letter-spacing: 3px;
-        color: #ffffff;
-        margin-bottom: 12px;
-        text-transform: uppercase;
-      }
-
-      .rotation-subtitle {
-        font-size: 13px;
-        font-weight: 400;
-        letter-spacing: 1.5px;
-        color: #888888;
-        max-width: 280px;
-        line-height: 1.6;
-        text-transform: uppercase;
-      }
-
-      .rotation-tagline {
-        margin-top: 36px;
-        font-size: 11px;
-        letter-spacing: 4px;
-        color: #00e5ff;
-        font-weight: 600;
-        opacity: 0.85;
-      }
-
-      /* -------------------------------------------------------------
          INTEGRATED MOBILE GAMEPLAY CONTROLS
          Bottom-Left: [ LEFT ] [ RIGHT ] (Horizontal)
          Bottom-Right: [ UP ] / [ DOWN ] (Vertical Stack)
@@ -271,24 +177,6 @@
     </style>
   </head>
   <body>
-    <!-- Themed Device Rotation Overlay -->
-    <div id="orientation-overlay" class="orientation-overlay" aria-live="polite">
-      <div class="rotation-icon-wrapper">
-        <svg class="phone-svg" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <!-- Smartphone body -->
-          <rect x="18" y="8" width="28" height="48" rx="5" stroke="#FFFFFF" stroke-width="2.5" />
-          <line x1="28" y1="12" x2="36" y2="12" stroke="#666666" stroke-width="2" stroke-linecap="round" />
-          <circle cx="32" cy="50" r="2" fill="#00E5FF" />
-          <!-- Rotation indicator arc -->
-          <path d="M 50 20 A 18 18 0 0 1 54 36" stroke="#00E5FF" stroke-width="2.5" stroke-linecap="round" />
-          <polygon points="50,36 58,36 54,42" fill="#00E5FF" />
-        </svg>
-      </div>
-      <div class="rotation-title">ROTATE YOUR DEVICE TO PLAY</div>
-      <div class="rotation-subtitle">Two Worlds. One Mind. Designed for Landscape Gameplay.</div>
-      <div class="rotation-tagline">THE OTHER SIDE</div>
-    </div>
-
     <!-- Phaser Canvas Container -->
     <div id="game-container"></div>
 

@@ -206,7 +206,7 @@ export class MenuScene extends Phaser.Scene {
         )
       );
 
-      // 2. Play / New Game Button
+      // 2. Play / New Game Button (opens with cinematic intro)
       this.mainMenuItems.push(
         this.createMenuButton(
           this.mainMenuContainer,
@@ -216,7 +216,13 @@ export class MenuScene extends Phaser.Scene {
           btnW,
           btnH,
           'PLAY  (NEW GAME)',
-          () => this.startLevel(1),
+          () => {
+            this.soundEffects.playUiClick();
+            this.cameras.main.fadeOut(250, 0, 0, 0);
+            this.time.delayedCall(250, () => {
+              this.scene.start('CinematicIntroScene', { nextScene: 'GameScene', levelId: 1 });
+            });
+          },
           false
         )
       );
@@ -294,7 +300,7 @@ export class MenuScene extends Phaser.Scene {
       const startY = 275;
       const spacingY = 48;
 
-      // 1. Play Button (primary)
+      // 1. Play Button (primary - opens with cinematic intro)
       this.mainMenuItems.push(
         this.createMenuButton(
           this.mainMenuContainer,
@@ -304,7 +310,13 @@ export class MenuScene extends Phaser.Scene {
           btnW,
           44,
           'PLAY',
-          () => this.startLevel(1),
+          () => {
+            this.soundEffects.playUiClick();
+            this.cameras.main.fadeOut(250, 0, 0, 0);
+            this.time.delayedCall(250, () => {
+              this.scene.start('CinematicIntroScene', { nextScene: 'GameScene', levelId: 1 });
+            });
+          },
           true
         )
       );

@@ -9,43 +9,25 @@ import { GAME_WIDTH, GAME_HEIGHT } from './constants';
 
 export * from './constants';
 
+/**
+ * Returns canonical high-definition 16:9 landscape dimensions (1280 x 720).
+ * Phaser's Scale.FIT automatically scales this aspect ratio cleanly to any screen/window,
+ * guaranteeing zero text collisions, stable grid dimensions, and perfect look and feel.
+ */
 export function getResponsiveDimensions(): { width: number; height: number } {
-  const baseH = GAME_HEIGHT; // 720
-  if (typeof window === 'undefined') {
-    return { width: GAME_WIDTH, height: baseH };
-  }
-
-  // Use visualViewport if available for true visible screen area in mobile browsers
-  const vv = window.visualViewport;
-  const rawW = vv ? vv.width : (window.innerWidth || GAME_WIDTH);
-  const rawH = vv ? vv.height : (window.innerHeight || baseH);
-
-  // Since THE OTHER SIDE is designed strictly for landscape orientation:
-  // If the device is in portrait (e.g. mobile startup before rotation),
-  // anticipate landscape orientation by using the larger dimension as width and smaller as height.
-  // This guarantees the game canvas is immediately initialized with the full landscape aspect ratio
-  // rather than being clamped to an artificial 4:3 box.
-  const isLandscape = rawW >= rawH;
-  const screenW = isLandscape ? rawW : rawH;
-  const screenH = isLandscape ? rawH : rawW;
-
-  // Clamped between 1.33 (4:3 tablets) and 2.4 (ultra-wide 21:9 phones)
-  const aspect = Math.max(1.33, Math.min(2.4, screenW / Math.max(1, screenH)));
-  const width = Math.round(baseH * aspect);
-  return { width, height: baseH };
+  return { width: GAME_WIDTH, height: GAME_HEIGHT };
 }
 
 export const createGameConfig = (): Phaser.Types.Core.GameConfig => {
-  const { width, height } = getResponsiveDimensions();
   return {
     type: 0, // Phaser.AUTO = 0
     parent: 'game-container',
-    width,
-    height,
+    width: GAME_WIDTH,
+    height: GAME_HEIGHT,
     backgroundColor: '#000000',
     scale: {
       mode: 3, // Phaser.Scale.FIT = 3
-      autoCenter: 0, // Phaser.Scale.NO_CENTER = 0 (Centering is cleanly handled by CSS flexbox on #game-container with margin:0)
+      autoCenter: 0, // Centered by CSS flexbox on #game-container with margin: 0 !important
     },
     render: {
       pixelArt: false,
