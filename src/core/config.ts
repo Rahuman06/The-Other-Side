@@ -18,10 +18,18 @@ export const createGameConfig = (): Phaser.Types.Core.GameConfig => ({
     mode: 3, // Phaser.Scale.FIT = 3
     autoCenter: 1, // Phaser.Scale.CENTER_BOTH = 1
   },
+  render: {
+    pixelArt: false,
+    antialias: true,
+  },
+  // Disable Phaser's duplicate WebAudio manager to prevent hardware buffer contention on mobile
+  audio: {
+    noAudio: true,
+  },
   scene: [BootScene, PreloadScene, MenuScene, GameScene, EndingScene],
   fps: {
     target: 60,
-    forceSetTimeOut: true,
+    forceSetTimeOut: false,
   },
 });
 

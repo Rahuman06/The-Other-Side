@@ -18,8 +18,8 @@ export class AudioContextManager {
 
   private muted: boolean = false;
   private masterVol: number = 1.0;
-  private musicVol: number = 0.75;
-  private sfxVol: number = 0.85;
+  private musicVol: number = 0.65;
+  private sfxVol: number = 0.75;
 
   private isUnlocked: boolean = false;
   private unlockListenersAttached: boolean = false;
@@ -66,13 +66,13 @@ export class AudioContextManager {
 
       this.ctx = new AudioCtx();
 
-      // Master limiter compressor: protects from digital distortion
+      // Transparent master limiter: protects against digital clipping without harsh mobile pumping
       this.compressor = this.ctx.createDynamicsCompressor();
-      this.compressor.threshold.setValueAtTime(-12, this.ctx.currentTime);
-      this.compressor.knee.setValueAtTime(10, this.ctx.currentTime);
-      this.compressor.ratio.setValueAtTime(10, this.ctx.currentTime);
-      this.compressor.attack.setValueAtTime(0.003, this.ctx.currentTime);
-      this.compressor.release.setValueAtTime(0.2, this.ctx.currentTime);
+      this.compressor.threshold.setValueAtTime(-6, this.ctx.currentTime);
+      this.compressor.knee.setValueAtTime(18, this.ctx.currentTime);
+      this.compressor.ratio.setValueAtTime(4, this.ctx.currentTime);
+      this.compressor.attack.setValueAtTime(0.012, this.ctx.currentTime);
+      this.compressor.release.setValueAtTime(0.15, this.ctx.currentTime);
       this.compressor.connect(this.ctx.destination);
 
       // Master gain node

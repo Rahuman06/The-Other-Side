@@ -1,11 +1,10 @@
 import Phaser from 'phaser';
 import { MoveDirection } from '../engine/MovementEngine';
-import { PALETTE } from '../core/constants';
 
 export interface TouchControlsCallbacks {
   onDirection: (dir: MoveDirection) => void;
-  onPause: () => void;
-  onRestart: () => void;
+  onPause?: () => void;
+  onRestart?: () => void;
 }
 
 export class TouchControls {
@@ -28,85 +27,67 @@ export class TouchControls {
 
   private createControls(scene: Phaser.Scene, width: number, height: number): void {
     const btnSize = 52;
+    const gap = 10;
 
-    // Left D-pad cluster on the bottom left (Real World side)
-    const dpadCenterX = 130;
-    const dpadCenterY = height - 95;
-
-    // Cross-shaped D-Pad Directional Buttons
-    this.createButton(
-      scene,
-      dpadCenterX,
-      dpadCenterY - btnSize - 6,
-      btnSize,
-      btnSize,
-      '↑',
-      () => this.callbacks.onDirection('up'),
-      true
-    );
+    // -------------------------------------------------------------------------
+    // 1. BOTTOM-LEFT CLUSTER: [ LEFT ] [ RIGHT ] horizontally beside each other
+    // -------------------------------------------------------------------------
+    const leftClusterY = height - 58;
+    const leftBtnX = 75;
+    const rightBtnX = leftBtnX + btnSize + gap;
 
     this.createButton(
       scene,
-      dpadCenterX - btnSize - 6,
-      dpadCenterY,
+      leftBtnX,
+      leftClusterY,
       btnSize,
       btnSize,
       '←',
-      () => this.callbacks.onDirection('left'),
-      true
+      () => this.callbacks.onDirection('left')
     );
 
     this.createButton(
       scene,
-      dpadCenterX + btnSize + 6,
-      dpadCenterY,
+      rightBtnX,
+      leftClusterY,
       btnSize,
       btnSize,
       '→',
-      () => this.callbacks.onDirection('right'),
-      true
+      () => this.callbacks.onDirection('right')
+    );
+
+    // -------------------------------------------------------------------------
+    // 2. BOTTOM-RIGHT CLUSTER: [ UP ] placed vertically above [ DOWN ]
+    // -------------------------------------------------------------------------
+    const rightClusterX = width - 75;
+    const downBtnY = height - 58;
+    const upBtnY = downBtnY - btnSize - gap;
+
+    this.createButton(
+      scene,
+      rightClusterX,
+      upBtnY,
+      btnSize,
+      btnSize,
+      '↑',
+      () => this.callbacks.onDirection('up')
     );
 
     this.createButton(
       scene,
-      dpadCenterX,
-      dpadCenterY + btnSize + 6,
+      rightClusterX,
+      downBtnY,
       btnSize,
       btnSize,
       '↓',
-      () => this.callbacks.onDirection('down'),
-      true
-    );
-
-    // Right action cluster on the bottom right (Shadow World side)
-    const actionCenterX = width - 110;
-    const actionCenterY = height - 95;
-
-    this.createButton(
-      scene,
-      actionCenterX - 40,
-      actionCenterY,
-      64,
-      44,
-      'RESTART',
-      () => this.callbacks.onRestart(),
-      false
-    );
-
-    this.createButton(
-      scene,
-      actionCenterX + 40,
-      actionCenterY,
-      64,
-      44,
-      'PAUSE',
-      () => this.callbacks.onPause(),
-      false
+      () => this.callbacks.onDirection('down')
     );
 
     // Default to visible if touch is supported or screen width <= 1024
-    const isTouch = typeof window !== 'undefined' && ('ontouchstart' in window || navigator.maxTouchPoints > 0);
-    this.setVisible(isTouch || width <= 1024);
+    const isTouch =
+      typeof window !== 'undefined' &&
+      ('ontouchstart' in window || navigator.maxTouchPoints > 0 || window.innerWidth <= 1024);
+    this.setVisible(isTouch);
   }
 
   private createButton(
@@ -115,81 +96,62 @@ export class TouchControls {
     y: number,
     w: number,
     h: number,
-    symbol: string,
-    action: () => void,
-    isRealWorldSide: boolean
-  ): void {
+    label: string,
+    callback: () => void
+  ): Phaser.GameObjects.Container {
+    const btn = scene.add.container(x, y);
+
     const bg = scene.add.graphics();
-    const borderCol = isRealWorldSide ? PALETTE.real.walls : PALETTE.shadow.walls;
-    const fillCol = isRealWorldSide ? 0xeeeeee : 0x222222;
-    const activeFillCol = isRealWorldSide ? 0xcccccc : 0x444444;
-    const textCol = isRealWorldSide ? PALETTE.real.text : PALETTE.shadow.text;
-
-    const renderNormal = () => {
+    const drawBg = (color: number, strokeColor: number, alpha: number = 0.88) => {
       bg.clear();
-      bg.fillStyle(fillCol, 0.85);
-      bg.fillRoundedRect(x - w / 2, y - h / 2, w, h, 6);
-      bg.lineStyle(1.5, borderCol, 0.9);
-      bg.strokeRoundedRect(x - w / 2, y - h / 2, w, h, 6);
+      bg.fillStyle(color, alpha);
+      bg.fillRoundedRect(-w / 2, -h / 2, w, h, 10);
+      bg.lineStyle(1.5, strokeColor, 0.85);
+      bg.strokeRoundedRect(-w / 2, -h / 2, w, h, 10);
     };
 
-    const renderPressed = () => {
-      bg.clear();
-      bg.fillStyle(activeFillCol, 0.95);
-      bg.fillRoundedRect(x - w / 2, y - h / 2, w, h, 6);
-      bg.lineStyle(2, borderCol, 1);
-      bg.strokeRoundedRect(x - w / 2, y - h / 2, w, h, 6);
-    };
-
-    renderNormal();
-    this.container.add(bg);
+    drawBg(0x0c0c0c, 0xffffff);
+    btn.add(bg);
 
     const txt = scene.add
-      .text(x, y, symbol, {
+      .text(0, 0, label, {
         fontFamily: 'system-ui, -apple-system, sans-serif',
-        fontSize: symbol.length > 2 ? '11px' : '20px',
+        fontSize: '24px',
         fontStyle: 'bold',
-        color: textCol,
+        color: '#FFFFFF',
       })
       .setOrigin(0.5);
-    this.container.add(txt);
+    btn.add(txt);
 
+    // Interactive hit zone
     const hit = scene.add
-      .zone(x, y, w, h)
+      .zone(0, 0, w, h)
       .setOrigin(0.5)
       .setInteractive({ useHandCursor: true });
-
-    let isDown = false;
+    btn.add(hit);
 
     hit.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
-      isDown = true;
-      renderPressed();
-      action();
-      pointer.event.preventDefault?.();
+      pointer.event?.stopPropagation?.();
+      drawBg(0x00e5ff, 0x00e5ff, 1.0);
+      txt.setColor('#000000');
+      btn.setScale(0.92);
+      callback();
     });
 
     hit.on('pointerup', () => {
-      if (isDown) {
-        isDown = false;
-        renderNormal();
-      }
+      drawBg(0x0c0c0c, 0xffffff);
+      txt.setColor('#FFFFFF');
+      btn.setScale(1.0);
     });
 
     hit.on('pointerout', () => {
-      if (isDown) {
-        isDown = false;
-        renderNormal();
-      }
+      drawBg(0x0c0c0c, 0xffffff);
+      txt.setColor('#FFFFFF');
+      btn.setScale(1.0);
     });
 
-    hit.on('pointercancel', () => {
-      if (isDown) {
-        isDown = false;
-        renderNormal();
-      }
-    });
-
-    this.container.add(hit);
+    this.container.add(btn);
+    return btn;
   }
 
   public setVisible(visible: boolean): void {
@@ -197,7 +159,7 @@ export class TouchControls {
     this.container.setVisible(visible);
   }
 
-  public get visible(): boolean {
+  public getVisible(): boolean {
     return this.isVisible;
   }
 }

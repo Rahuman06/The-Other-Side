@@ -225,7 +225,7 @@ export class AtmosphericMusic {
     this.delayNode.delayTime.setValueAtTime(0.42, ctx.currentTime);
 
     this.delayFeedback = ctx.createGain();
-    this.delayFeedback.gain.setValueAtTime(0.32, ctx.currentTime);
+    this.delayFeedback.gain.setValueAtTime(0.18, ctx.currentTime);
 
     this.delayNode.connect(this.delayFeedback);
     this.delayFeedback.connect(this.delayNode);
@@ -235,22 +235,22 @@ export class AtmosphericMusic {
 
     // Sub-bus gains: Real World harmonic pad vs Shadow World subterranean drone
     this.droneGain = ctx.createGain();
-    this.droneGain.gain.setValueAtTime(0.12, ctx.currentTime);
+    this.droneGain.gain.setValueAtTime(0.08, ctx.currentTime);
     this.droneGain.connect(this.shadowPanner ?? this.filterNode);
     this.activeNodes.add(this.droneGain);
 
     this.padGain = ctx.createGain();
-    this.padGain.gain.setValueAtTime(0.08, ctx.currentTime);
+    this.padGain.gain.setValueAtTime(0.05, ctx.currentTime);
     this.padGain.connect(this.realPanner ?? this.filterNode);
     this.activeNodes.add(this.padGain);
 
     this.pulseGain = ctx.createGain();
-    this.pulseGain.gain.setValueAtTime(0.05, ctx.currentTime);
+    this.pulseGain.gain.setValueAtTime(0.03, ctx.currentTime);
     this.pulseGain.connect(this.filterNode);
     this.activeNodes.add(this.pulseGain);
 
     this.textureGain = ctx.createGain();
-    this.textureGain.gain.setValueAtTime(0.03, ctx.currentTime);
+    this.textureGain.gain.setValueAtTime(0.012, ctx.currentTime);
     this.textureGain.connect(this.shadowPanner ?? bus);
     this.activeNodes.add(this.textureGain);
   }
@@ -454,7 +454,7 @@ export class AtmosphericMusic {
       detuneLfo.start();
 
       gain.gain.setValueAtTime(0.001, ctx.currentTime);
-      gain.gain.linearRampToValueAtTime(1.0 / freqs.length, ctx.currentTime + 1.5);
+      gain.gain.linearRampToValueAtTime(0.55 / freqs.length, ctx.currentTime + 1.5);
 
       osc.connect(gain);
       gain.connect(target);
@@ -475,7 +475,7 @@ export class AtmosphericMusic {
     const data = buffer.getChannelData(0);
 
     for (let i = 0; i < bufSize; i++) {
-      data[i] = (Math.random() * 2 - 1) * 0.15;
+      data[i] = (Math.random() * 2 - 1) * 0.06;
     }
 
     const noise = ctx.createBufferSource();
@@ -485,7 +485,7 @@ export class AtmosphericMusic {
     const bq = ctx.createBiquadFilter();
     bq.type = 'bandpass';
     bq.frequency.setValueAtTime(800, ctx.currentTime);
-    bq.Q.setValueAtTime(4.0, ctx.currentTime);
+    bq.Q.setValueAtTime(1.5, ctx.currentTime);
 
     noise.connect(bq);
     bq.connect(target);

@@ -16,6 +16,9 @@ export type LegacyEffectName =
  */
 export class SoundEffects {
   private audioMgr: AudioContextManager;
+  private lastStepTime: number = 0;
+  private activeVoices: number = 0;
+  private readonly MAX_CONCURRENT_VOICES: number = 6;
 
   constructor(initialMuted: boolean = false) {
     this.audioMgr = AudioContextManager.getInstance();
@@ -62,10 +65,25 @@ export class SoundEffects {
   }
 
   private getContextAndBus(): { ctx: AudioContext; bus: GainNode } | null {
+    if (this.activeVoices >= this.MAX_CONCURRENT_VOICES) {
+      return null;
+    }
     const ctx = this.audioMgr.getContext();
     const bus = this.audioMgr.getSfxBus();
     if (!ctx || !bus || this.audioMgr.isMuted()) return null;
     return { ctx, bus };
+  }
+
+  private trackVoice(osc: AudioScheduledSourceNode, durationSec: number): void {
+    this.activeVoices++;
+    osc.onended = () => {
+      this.activeVoices = Math.max(0, this.activeVoices - 1);
+    };
+    if (typeof window !== 'undefined') {
+      window.setTimeout(() => {
+        this.activeVoices = Math.max(0, this.activeVoices - 1);
+      }, (durationSec + 0.05) * 1000);
+    }
   }
 
   // =========================================================================
@@ -77,6 +95,12 @@ export class SoundEffects {
    * Real World = crisp high-frequency click; Shadow World = deep resonant subterranean thud
    */
   public playStep(isReal: boolean = true): void {
+    const timeNow = Date.now();
+    if (timeNow - this.lastStepTime < 70) {
+      return;
+    }
+    this.lastStepTime = timeNow;
+
     const ab = this.getContextAndBus();
     if (!ab) return;
     const { ctx, bus } = ab;
@@ -107,6 +131,7 @@ export class SoundEffects {
       osc.connect(gain);
       gain.connect(bus);
 
+      this.trackVoice(osc, 0.06);
       osc.start(now);
       osc.stop(now + 0.06);
     } catch (err) {
