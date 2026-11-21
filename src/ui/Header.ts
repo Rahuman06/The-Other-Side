@@ -234,4 +234,8 @@ export class Header {
       this.objectiveText.setText(`OBJECTIVE: ${config.objective}`);
     }
   }
+
+  public destroy(): void {
+    this.container.destroy(true);
+  }
 }

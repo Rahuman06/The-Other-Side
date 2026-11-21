@@ -110,8 +110,8 @@ export class StorageManager {
     const settings: GameSettings = {
       muted: false,
       reducedMotion: !!isSystemReducedMotion,
-      masterVolume: 1.0,
-      musicVolume: 0.75,
+      masterVolume: 0.85,
+      musicVolume: 0.85,
       sfxVolume: 0.85,
     };
 

@@ -36,8 +36,8 @@ export class AudioManager {
     const progress = storage.getProgress();
 
     this.ctxMgr.setMuted(progress.muted);
-    this.ctxMgr.setMasterVolume(progress.masterVolume ?? 1.0);
-    this.ctxMgr.setMusicVolume(progress.musicVolume ?? 0.75);
+    this.ctxMgr.setMasterVolume(progress.masterVolume ?? 0.85);
+    this.ctxMgr.setMusicVolume(progress.musicVolume ?? 0.85);
     this.ctxMgr.setSfxVolume(progress.sfxVolume ?? 0.85);
   }
 

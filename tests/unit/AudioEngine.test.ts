@@ -20,8 +20,8 @@ describe('Phase 4 — Thriller Audio Engine & Web Audio API Suite', () => {
     it('provides a singleton instance with default volumes', () => {
       const ctxMgr = AudioContextManager.getInstance();
       expect(ctxMgr).toBeDefined();
-      expect(ctxMgr.getMasterVolume()).toBe(1.0);
-      expect(ctxMgr.getMusicVolume()).toBe(0.75);
+      expect(ctxMgr.getMasterVolume()).toBe(0.85);
+      expect(ctxMgr.getMusicVolume()).toBe(0.85);
       expect(ctxMgr.getSfxVolume()).toBe(0.85);
       expect(ctxMgr.isMuted()).toBe(false);
     });
@@ -42,8 +42,8 @@ describe('Phase 4 — Thriller Audio Engine & Web Audio API Suite', () => {
       expect(ctxMgr.getSfxVolume()).toBe(0.0);
 
       // Restore
-      ctxMgr.setMasterVolume(1.0);
-      ctxMgr.setMusicVolume(0.75);
+      ctxMgr.setMasterVolume(0.85);
+      ctxMgr.setMusicVolume(0.85);
       ctxMgr.setSfxVolume(0.85);
     });
 

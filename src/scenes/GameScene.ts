@@ -52,6 +52,7 @@ export class GameScene extends Phaser.Scene {
   private shadowOriginY: number = 0;
 
   // Visual Animation & Effects Systems
+  private bgGraphics!: Phaser.GameObjects.Graphics;
   private characterAnimator!: CharacterAnimator;
   private vfxManager!: VisualEffectsManager;
   private puzzleRenderer!: PuzzleObjectRenderer;
@@ -99,20 +100,11 @@ export class GameScene extends Phaser.Scene {
     AudioManager.getInstance().playGameMusic(chapter);
 
     const { width, height } = this.scale;
-    const halfWidth = width / 2;
     const isReduced = this.storage.getProgress().reducedMotion;
 
     // 1. World Backgrounds
-    const bg = this.add.graphics();
-    bg.fillStyle(PALETTE.real.background, 1);
-    bg.fillRect(0, 0, halfWidth, height);
-
-    bg.fillStyle(PALETTE.shadow.background, 1);
-    bg.fillRect(halfWidth, 0, halfWidth, height);
-
-    // Center Divider
-    bg.lineStyle(1, PALETTE.divider, 0.7);
-    bg.lineBetween(halfWidth, 0, halfWidth, height);
+    this.bgGraphics = this.add.graphics();
+    this.renderWorldBackgrounds(width, height);
 
     // 2. Initialize Game Engine Session
     this.initializeSession();
@@ -234,7 +226,10 @@ export class GameScene extends Phaser.Scene {
     KeyboardNavManager.getInstance().setScene(this);
     this.setupInput();
 
-    // 14. Lifecycle Cleanup Handlers
+    // 14. Responsive Viewport Resize Listener
+    this.scale.on('resize', this.onResize, this);
+
+    // 15. Lifecycle Cleanup Handlers
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, this.shutdown, this);
     this.events.once(Phaser.Scenes.Events.DESTROY, this.shutdown, this);
   }
@@ -288,18 +283,39 @@ export class GameScene extends Phaser.Scene {
     }
   }
 
+  private renderWorldBackgrounds(width: number, height: number): void {
+    if (!this.bgGraphics) {
+      this.bgGraphics = this.add.graphics();
+    }
+    const bg = this.bgGraphics;
+    bg.clear();
+    const halfWidth = width / 2;
+
+    bg.fillStyle(PALETTE.real.background, 1);
+    bg.fillRect(0, 0, halfWidth, height);
+
+    bg.fillStyle(PALETTE.shadow.background, 1);
+    bg.fillRect(halfWidth, 0, halfWidth, height);
+
+    // Center Divider
+    bg.lineStyle(1, PALETTE.divider, 0.7);
+    bg.lineBetween(halfWidth, 0, halfWidth, height);
+  }
+
   private calculateGridLayout(width: number, height: number): void {
     const cols = this.levelDef.width;
     const rows = this.levelDef.height;
 
-    const topPadding = 80;
-    const bottomPadding = 90;
+    // Header occupies ~68px, comfortable bottom padding for touch controls
+    const topPadding = 72;
+    const bottomPadding = 76;
     const playAreaH = height - topPadding - bottomPadding;
-    const maxWorldW = width / 2 - 40;
+    const maxWorldW = width / 2 - 28;
 
     const maxCellW = Math.floor(maxWorldW / cols);
     const maxCellH = Math.floor(playAreaH / rows);
-    this.cellSize = Math.min(64, Math.max(24, Math.min(maxCellW, maxCellH)));
+    // Dynamically expand cell size to use available screen area without arbitrary 64px cap
+    this.cellSize = Math.max(24, Math.min(maxCellW, maxCellH));
 
     const totalGridW = cols * this.cellSize;
     const totalGridH = rows * this.cellSize;
@@ -309,6 +325,48 @@ export class GameScene extends Phaser.Scene {
 
     this.shadowOriginX = Math.floor((3 * width) / 4 - totalGridW / 2);
     this.shadowOriginY = this.realOriginY;
+  }
+
+  private onResize(gameSize: Phaser.Structs.Size): void {
+    const width = gameSize.width;
+    const height = gameSize.height;
+
+    this.renderWorldBackgrounds(width, height);
+    this.calculateGridLayout(width, height);
+
+    if (this.puzzleRenderer) {
+      this.puzzleRenderer.setCellSize(this.cellSize);
+    }
+    if (this.characterAnimator) {
+      this.characterAnimator.setCellSize(this.cellSize);
+      if (this.session) {
+        const rCoords = this.getScreenCoordinates(this.session.player.position, true);
+        const sCoords = this.getScreenCoordinates(this.session.shadow.position, false);
+        this.characterAnimator.setPosition(true, rCoords.x, rCoords.y);
+        this.characterAnimator.setPosition(false, sCoords.x, sCoords.y);
+      }
+    }
+
+    this.renderStaticGrids();
+
+    if (this.header) {
+      this.header.destroy();
+      this.header = new Header(
+        this,
+        width,
+        {
+          chapter: this.levelDef.chapter,
+          levelNumber: this.levelDef.id,
+          totalLevels: ALL_LEVELS.length,
+          levelName: this.levelDef.name,
+          moves: this.movesCount,
+        },
+        {
+          onPause: () => this.togglePause(),
+          onRestart: () => this.restartLevel(),
+        }
+      );
+    }
   }
 
   private getScreenCoordinates(gridPos: GridPoint, isReal: boolean): { x: number; y: number } {
@@ -929,6 +987,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   public shutdown(): void {
+    this.scale.off('resize', this.onResize, this);
     pokiBridge.gameplayStop();
     AudioManager.getInstance().stopAllMusic();
     MobileControlsOverlay.getInstance().setVisible(false);

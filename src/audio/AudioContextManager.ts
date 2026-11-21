@@ -17,9 +17,9 @@ export class AudioContextManager {
   private compressor: DynamicsCompressorNode | null = null;
 
   private muted: boolean = false;
-  private masterVol: number = 1.0;
-  private musicVol: number = 0.65;
-  private sfxVol: number = 0.75;
+  private masterVol: number = 0.85;
+  private musicVol: number = 0.85;
+  private sfxVol: number = 0.85;
 
   private isUnlocked: boolean = false;
   private unlockListenersAttached: boolean = false;
