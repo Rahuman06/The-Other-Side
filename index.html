@@ -11,8 +11,6 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="theme-color" content="#000000" />
     <title>THE OTHER SIDE — Two worlds. One mind.</title>
-    <!-- Poki SDK v2 -->
-    <script src="https://game-cdn.poki.com/scripts/v2/poki-sdk.js"></script>
     <style>
       :root {
         --mobile-btn-size: 56px;
@@ -58,6 +56,17 @@
         font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       }
 
+      #backdrop-canvas {
+        position: fixed;
+        inset: 0;
+        width: 100vw;
+        height: 100vh;
+        height: 100dvh;
+        display: block;
+        z-index: 0;
+        pointer-events: none;
+      }
+
       #game-container {
         width: 100vw;
         height: 100vh;
@@ -69,9 +78,10 @@
         overflow: hidden;
         margin: 0;
         padding: 0;
+        z-index: 1;
       }
 
-      canvas {
+      #game-container canvas {
         display: block;
         margin: 0 !important;
         margin-left: 0 !important;
@@ -81,7 +91,7 @@
         max-width: 100vw;
         max-height: 100vh;
         max-height: 100dvh;
-        box-shadow: 0 0 40px rgba(255, 255, 255, 0.05);
+        box-shadow: none !important;
       }
 
       /* -------------------------------------------------------------
@@ -140,19 +150,31 @@
         touch-action: none;
       }
 
+      /* Left Cluster: On Real World white background */
+      .mobile-cluster-left .mobile-btn {
+        background: rgba(18, 18, 18, 0.92);
+        border: 1.5px solid rgba(0, 0, 0, 0.25);
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+        color: #ffffff;
+      }
+
+      /* Right Cluster: On Shadow World dark background */
+      .mobile-cluster-right .mobile-btn {
+        background: rgba(18, 18, 18, 0.92);
+        border: 1.5px solid rgba(255, 255, 255, 0.45);
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.65);
+        color: #ffffff;
+      }
+
       .mobile-btn {
         width: var(--mobile-btn-size);
         height: var(--mobile-btn-size);
-        background: rgba(12, 12, 12, 0.88);
-        border: 1.5px solid rgba(255, 255, 255, 0.7);
         border-radius: 12px;
-        color: #ffffff;
         display: flex;
         justify-content: center;
         align-items: center;
         cursor: pointer;
         outline: none;
-        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.65);
         backdrop-filter: blur(8px);
         -webkit-backdrop-filter: blur(8px);
         transition: transform 0.08s ease, background 0.08s ease, border-color 0.08s ease;
@@ -177,6 +199,9 @@
     </style>
   </head>
   <body>
+    <!-- Animated Dual-World Responsive Ambient Backdrop -->
+    <canvas id="backdrop-canvas"></canvas>
+
     <!-- Phaser Canvas Container -->
     <div id="game-container"></div>
 

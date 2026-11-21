@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { createGameConfig } from './core/config';
 import { pokiBridge } from './poki/PokiIntegration';
+import { BackdropRenderer } from './rendering/BackdropRenderer';
 
 export function initializeGame(): Phaser.Game {
   return new Phaser.Game(createGameConfig());
@@ -8,6 +9,9 @@ export function initializeGame(): Phaser.Game {
 
 if (typeof window !== 'undefined') {
   window.addEventListener('DOMContentLoaded', async () => {
+    // Start ambient dual-world backdrop filling mobile/display edges
+    BackdropRenderer.init();
+
     await pokiBridge.init();
     const game = initializeGame();
     (window as any).__PHASER_GAME__ = game;

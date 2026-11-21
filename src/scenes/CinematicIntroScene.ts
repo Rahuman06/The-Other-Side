@@ -4,6 +4,7 @@ import { AudioManager } from '../audio/AudioManager';
 import { SoundEffects } from '../audio/SoundEffects';
 import { StorageManager } from '../storage/StorageManager';
 import { CharacterAnimator } from '../rendering/CharacterAnimator';
+import { BackdropRenderer } from '../rendering/BackdropRenderer';
 
 export class CinematicIntroScene extends Phaser.Scene {
   private sfx!: SoundEffects;
@@ -70,6 +71,7 @@ export class CinematicIntroScene extends Phaser.Scene {
     this.titleAlpha = 0;
     this.subtitleAlpha = 0;
     this.particles = [];
+    BackdropRenderer.setThemeState({ leftBrightness: 0, rightBrightness: 0, dividerAlpha: 0 });
 
     const storage = new StorageManager();
     this.isReducedMotion = storage.getProgress().reducedMotion;
@@ -280,6 +282,13 @@ export class CinematicIntroScene extends Phaser.Scene {
     this.bgGraphics.clear();
     const halfW = width / 2;
 
+    // Sync ambient backdrop with cinematic illumination
+    BackdropRenderer.setThemeState({
+      leftBrightness: this.leftWorldBrightness,
+      rightBrightness: this.rightWorldBrightness,
+      dividerAlpha: this.dividerAlpha,
+    });
+
     // Left World: Lerp from black (0x000000) to pure white (0xFFFFFF)
     const leftVal = Math.round(this.leftWorldBrightness * 255);
     const leftColor = (leftVal << 16) | (leftVal << 8) | leftVal;
@@ -412,6 +421,7 @@ export class CinematicIntroScene extends Phaser.Scene {
   private skipIntro(): void {
     if (this.isSkipped || this.isCompleted) return;
     this.isSkipped = true;
+    BackdropRenderer.resetThemeState();
 
     this.cameras.main.fadeOut(250, 0, 0, 0);
     this.time.delayedCall(250, () => {
@@ -422,6 +432,7 @@ export class CinematicIntroScene extends Phaser.Scene {
   private completeIntro(): void {
     if (this.isCompleted) return;
     this.isCompleted = true;
+    BackdropRenderer.resetThemeState();
 
     // Gentle hold on final scene, then smooth fade into target scene
     this.time.delayedCall(1200, () => {
@@ -433,6 +444,7 @@ export class CinematicIntroScene extends Phaser.Scene {
   }
 
   public shutdown(): void {
+    BackdropRenderer.resetThemeState();
     this.scale.off('resize', this.onResize, this);
     this.singleCharG?.destroy();
     this.realCharG?.destroy();

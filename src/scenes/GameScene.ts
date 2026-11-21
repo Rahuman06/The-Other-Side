@@ -801,17 +801,8 @@ export class GameScene extends Phaser.Scene {
     const best = updated.bestMoves[this.levelId] ?? this.movesCount;
     const isFinalLevel = this.levelId >= ALL_LEVELS.length;
 
-    // Commercial break on chapter end (levels 4, 8, 12, 16, 20)
-    if (this.levelId % 4 === 0) {
-      pokiBridge.commercialBreak(
-        () => this.soundEffects.setMuted(true),
-        () => this.soundEffects.setMuted(this.storage.getProgress().muted)
-      ).finally(() => {
-        this.winModal.show(this.movesCount, best, isFinalLevel);
-      });
-    } else {
-      this.winModal.show(this.movesCount, best, isFinalLevel);
-    }
+    // Show completion modal seamlessly without disruptive ad breaks
+    this.winModal.show(this.movesCount, best, isFinalLevel);
   }
 
   private getChapterName(levelId: number): ChapterName {
