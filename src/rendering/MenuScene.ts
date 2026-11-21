@@ -127,7 +127,13 @@ export class MenuScene extends Phaser.Scene {
       window.addEventListener('keydown', this.menuKeyDownListener);
     }
 
+    const onResize = () => {
+      this.scene.restart({ openLevelSelect: this.levelSelectContainer?.visible });
+    };
+    this.scale.on('resize', onResize, this);
+
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      this.scale.off('resize', onResize, this);
       if (this.menuKeyDownListener && typeof window !== 'undefined') {
         window.removeEventListener('keydown', this.menuKeyDownListener);
         this.menuKeyDownListener = null;

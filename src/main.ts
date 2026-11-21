@@ -14,18 +14,34 @@ if (typeof window !== 'undefined') {
     (window as any).game = game;
 
     // Dynamically adjust internal canvas aspect ratio on browser resize or device rotation
-    let resizeTimer: number | null = null;
-    const handleViewportChange = () => {
-      if (resizeTimer) window.clearTimeout(resizeTimer);
-      resizeTimer = window.setTimeout(() => {
-        const { width, height } = getResponsiveDimensions();
-        if (game.scale && (game.scale.width !== width || game.scale.height !== height)) {
-          game.scale.resize(width, height);
-        }
-      }, 80);
+    const checkResize = () => {
+      if (!game || !game.scale) return;
+      const { width, height } = getResponsiveDimensions();
+      if (game.scale.width !== width || game.scale.height !== height) {
+        game.scale.resize(width, height);
+      }
     };
 
-    window.addEventListener('resize', handleViewportChange, { passive: true });
-    window.addEventListener('orientationchange', handleViewportChange, { passive: true });
+    let resizeTimer: number | null = null;
+    const triggerResponsiveUpdate = () => {
+      checkResize();
+      if (resizeTimer) window.clearTimeout(resizeTimer);
+      // Schedule follow-ups to catch delayed mobile layout reflows (e.g. Android Chrome address bar and orientation animation)
+      resizeTimer = window.setTimeout(checkResize, 150);
+      window.setTimeout(checkResize, 400);
+    };
+
+    window.addEventListener('resize', triggerResponsiveUpdate, { passive: true });
+    window.addEventListener('orientationchange', triggerResponsiveUpdate, { passive: true });
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', triggerResponsiveUpdate, { passive: true });
+    }
+
+    // Modern layout observer for container bounds
+    const container = document.getElementById('game-container');
+    if (container && typeof ResizeObserver !== 'undefined') {
+      const ro = new ResizeObserver(() => checkResize());
+      ro.observe(container);
+    }
   });
 }

@@ -1121,4 +1121,8 @@ export class ObjectGuideModal {
   public isVisible(): boolean {
     return this.container.visible;
   }
+
+  public setPosition(x: number, y: number): void {
+    this.container.setPosition(x, y);
+  }
 }

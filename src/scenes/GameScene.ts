@@ -367,6 +367,11 @@ export class GameScene extends Phaser.Scene {
         }
       );
     }
+
+    if (this.pauseModal) this.pauseModal.setPosition(width / 2, height / 2);
+    if (this.winModal) this.winModal.setPosition(width / 2, height / 2);
+    if (this.settingsModal) this.settingsModal.setPosition(width / 2, height / 2);
+    if (this.objectGuideModal) this.objectGuideModal.setPosition(width / 2, height / 2);
   }
 
   private getScreenCoordinates(gridPos: GridPoint, isReal: boolean): { x: number; y: number } {
