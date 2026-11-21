@@ -91,8 +91,8 @@ export class SoundEffects {
   // =========================================================================
 
   /**
-   * Character Footstep: Tactile, highly audible footstep engineered for mobile speakers without headphones
-   * Real World = crisp high-mid stone/tile tap (920 Hz -> 450 Hz); Shadow World = punchy metallic resonance (640 Hz -> 280 Hz)
+   * Character Footstep: Classic tactile footstep amplified for mobile speakers without headphones
+   * Real World = crisp stone footstep (260 Hz -> 150 Hz triangle); Shadow World = subterranean thud (160 Hz -> 75 Hz triangle)
    */
   public playStep(isReal: boolean = true): void {
     const timeNow = Date.now();
@@ -107,60 +107,33 @@ export class SoundEffects {
     const now = ctx.currentTime;
 
     try {
-      // 1. Primary tactile step oscillator (tuned into peak 300Hz-1200Hz phone speaker projection)
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
 
-      // 2. High-frequency acoustic transient for distinct tap definition
-      const snapOsc = ctx.createOscillator();
-      const snapGain = ctx.createGain();
-
       if (isReal) {
-        // Crisp stone footstep: 920 Hz -> 420 Hz with tactile 1600 Hz contact click
+        // Classic stone footstep (260 Hz -> 150 Hz triangle), amplified for mobile speakers
         osc.type = 'triangle';
-        osc.frequency.setValueAtTime(920, now);
-        osc.frequency.exponentialRampToValueAtTime(420, now + 0.045);
+        osc.frequency.setValueAtTime(260, now);
+        osc.frequency.exponentialRampToValueAtTime(150, now + 0.048);
 
-        gain.gain.setValueAtTime(0.42, now);
-        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.045);
-
-        snapOsc.type = 'sine';
-        snapOsc.frequency.setValueAtTime(1600, now);
-        snapOsc.frequency.exponentialRampToValueAtTime(750, now + 0.018);
-
-        snapGain.gain.setValueAtTime(0.25, now);
-        snapGain.gain.exponentialRampToValueAtTime(0.001, now + 0.018);
+        gain.gain.setValueAtTime(0.58, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.048);
       } else {
-        // Shadow subterranean step: 640 Hz -> 260 Hz with metallic 1100 Hz ring
+        // Classic shadow subterranean thud (160 Hz -> 75 Hz triangle), amplified for mobile speakers
         osc.type = 'triangle';
-        osc.frequency.setValueAtTime(640, now);
-        osc.frequency.exponentialRampToValueAtTime(260, now + 0.055);
+        osc.frequency.setValueAtTime(160, now);
+        osc.frequency.exponentialRampToValueAtTime(75, now + 0.06);
 
-        gain.gain.setValueAtTime(0.45, now);
-        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.055);
-
-        snapOsc.type = 'triangle';
-        snapOsc.frequency.setValueAtTime(1100, now);
-        snapOsc.frequency.exponentialRampToValueAtTime(480, now + 0.022);
-
-        snapGain.gain.setValueAtTime(0.22, now);
-        snapGain.gain.exponentialRampToValueAtTime(0.001, now + 0.022);
+        gain.gain.setValueAtTime(0.62, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.06);
       }
 
       osc.connect(gain);
       gain.connect(bus);
 
-      snapOsc.connect(snapGain);
-      snapGain.connect(bus);
-
-      this.trackVoice(osc, 0.06);
-      this.trackVoice(snapOsc, 0.03);
-
+      this.trackVoice(osc, 0.07);
       osc.start(now);
-      osc.stop(now + 0.06);
-
-      snapOsc.start(now);
-      snapOsc.stop(now + 0.03);
+      osc.stop(now + 0.07);
     } catch (err) {
       console.debug('[SoundEffects] playStep error:', err);
     }
