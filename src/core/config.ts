@@ -1,6 +1,7 @@
 import type Phaser from 'phaser';
 import { BootScene } from '../scenes/BootScene';
 import { PreloadScene } from '../scenes/PreloadScene';
+import { CinematicIntroScene } from '../scenes/CinematicIntroScene';
 import { MenuScene } from '../rendering/MenuScene';
 import { GameScene } from '../scenes/GameScene';
 import { EndingScene } from '../scenes/EndingScene';
@@ -57,7 +58,7 @@ export const createGameConfig = (): Phaser.Types.Core.GameConfig => {
     audio: {
       noAudio: true,
     },
-    scene: [BootScene, PreloadScene, MenuScene, GameScene, EndingScene],
+    scene: [BootScene, PreloadScene, CinematicIntroScene, MenuScene, GameScene, EndingScene],
     fps: {
       target: 60,
       forceSetTimeOut: false,

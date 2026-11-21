@@ -18,8 +18,9 @@ if (typeof window !== 'undefined') {
       if (!game || !game.scale) return;
       const { width, height } = getResponsiveDimensions();
       if (game.scale.width !== width || game.scale.height !== height) {
-        game.scale.resize(width, height);
+        game.scale.setGameSize(width, height);
       }
+      game.scale.refresh();
     };
 
     let resizeTimer: number | null = null;

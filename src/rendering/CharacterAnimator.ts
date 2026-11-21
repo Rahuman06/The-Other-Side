@@ -127,17 +127,26 @@ export class CharacterAnimator {
    * - Slim torso
    * - Visible articulated arms & legs with natural stride
    */
-  private renderStickman(
+  public static renderProceduralStickman(
     g: Phaser.GameObjects.Graphics,
     isReal: boolean,
-    walkPhase: number,
-    facing: MoveDirection
+    cellSize: number,
+    walkPhase: number = 0,
+    facing: MoveDirection = 'down',
+    customColor?: number,
+    customEyeColor?: number,
+    idleTime: number = 0,
+    isReducedMotion: boolean = false
   ): void {
     g.clear();
 
-    const color = isReal ? PALETTE.real.character : PALETTE.shadow.character;
-    const eyeColor = isReal ? 0xffffff : 0x000000;
-    const s = this.cellSize;
+    const color = customColor !== undefined
+      ? customColor
+      : (isReal ? PALETTE.real.character : PALETTE.shadow.character);
+    const eyeColor = customEyeColor !== undefined
+      ? customEyeColor
+      : (isReal ? 0xffffff : 0x000000);
+    const s = cellSize;
 
     // Dimensions
     const headRadius = s * 0.16;
@@ -212,7 +221,7 @@ export class CharacterAnimator {
     g.fillCircle(ax2, ay2, capR);
 
     // 5. Head with subtle natural breathing bob
-    const headBob = this.isReducedMotion ? 0 : Math.sin(this.idleTime * 2.5) * (s * 0.015);
+    const headBob = isReducedMotion ? 0 : Math.sin(idleTime * 2.5) * (s * 0.015);
     const headX = headBob;
     g.fillStyle(color, 1);
     g.fillCircle(headX, headY, headRadius);
@@ -224,6 +233,25 @@ export class CharacterAnimator {
 
     g.fillStyle(eyeColor, 1);
     g.fillCircle(headX + eyeOffsetX, headY + eyeOffsetY, eyeR);
+  }
+
+  private renderStickman(
+    g: Phaser.GameObjects.Graphics,
+    isReal: boolean,
+    walkPhase: number,
+    facing: MoveDirection
+  ): void {
+    CharacterAnimator.renderProceduralStickman(
+      g,
+      isReal,
+      this.cellSize,
+      walkPhase,
+      facing,
+      undefined,
+      undefined,
+      this.idleTime,
+      this.isReducedMotion
+    );
   }
 
   /**

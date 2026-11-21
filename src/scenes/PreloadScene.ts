@@ -185,9 +185,17 @@ export class PreloadScene extends Phaser.Scene {
       }
     }
 
+    const introShown =
+      typeof sessionStorage !== 'undefined' &&
+      sessionStorage.getItem('the_other_side_intro_shown') === 'true';
+
     this.cameras.main.fadeOut(250, 0, 0, 0);
     this.time.delayedCall(250, () => {
-      this.scene.start('MenuScene');
+      if (!introShown) {
+        this.scene.start('CinematicIntroScene');
+      } else {
+        this.scene.start('MenuScene');
+      }
     });
   }
 

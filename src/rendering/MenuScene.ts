@@ -187,9 +187,9 @@ export class MenuScene extends Phaser.Scene {
     this.mainMenuItems = [];
 
     if (hasProgress) {
-      const btnH = 40;
-      const startY = 275;
-      const spacingY = 48;
+      const btnH = 38;
+      const startY = 255;
+      const spacingY = 45;
 
       // 1. Continue Button (primary)
       this.mainMenuItems.push(
@@ -199,7 +199,7 @@ export class MenuScene extends Phaser.Scene {
           halfW,
           startY,
           btnW,
-          44,
+          42,
           `CONTINUE  (LVL ${progress.unlockedLevel})`,
           () => this.startLevel(progress.unlockedLevel),
           true
@@ -268,10 +268,31 @@ export class MenuScene extends Phaser.Scene {
           false
         )
       );
+
+      // 6. Prologue Cinematic Intro Replay Button
+      this.mainMenuItems.push(
+        this.createMenuButton(
+          this.mainMenuContainer,
+          'menu-intro',
+          halfW,
+          startY + spacingY * 5,
+          btnW,
+          btnH,
+          'PROLOGUE  (INTRO)',
+          () => {
+            this.soundEffects.playUiClick();
+            this.cameras.main.fadeOut(250, 0, 0, 0);
+            this.time.delayedCall(250, () => {
+              this.scene.start('CinematicIntroScene');
+            });
+          },
+          false
+        )
+      );
     } else {
-      const btnH = 42;
-      const startY = 295;
-      const spacingY = 54;
+      const btnH = 40;
+      const startY = 275;
+      const spacingY = 48;
 
       // 1. Play Button (primary)
       this.mainMenuItems.push(
@@ -281,7 +302,7 @@ export class MenuScene extends Phaser.Scene {
           halfW,
           startY,
           btnW,
-          46,
+          44,
           'PLAY',
           () => this.startLevel(1),
           true
@@ -332,6 +353,27 @@ export class MenuScene extends Phaser.Scene {
           btnH,
           'SETTINGS',
           () => this.openSettingsModal(),
+          false
+        )
+      );
+
+      // 5. Prologue Cinematic Intro Replay Button
+      this.mainMenuItems.push(
+        this.createMenuButton(
+          this.mainMenuContainer,
+          'menu-intro',
+          halfW,
+          startY + spacingY * 4,
+          btnW,
+          btnH,
+          'PROLOGUE  (INTRO)',
+          () => {
+            this.soundEffects.playUiClick();
+            this.cameras.main.fadeOut(250, 0, 0, 0);
+            this.time.delayedCall(250, () => {
+              this.scene.start('CinematicIntroScene');
+            });
+          },
           false
         )
       );
