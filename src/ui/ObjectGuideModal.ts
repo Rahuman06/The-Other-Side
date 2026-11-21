@@ -2,6 +2,7 @@ import type Phaser from 'phaser';
 import { PALETTE } from '../core/constants';
 import { KeyboardNavManager, FocusableItem } from './KeyboardNavManager';
 import { AudioManager } from '../audio/AudioManager';
+import { BackdropRenderer } from '../rendering/BackdropRenderer';
 
 export interface GuideObjectEntry {
   readonly id: string;
@@ -1106,6 +1107,7 @@ export class ObjectGuideModal {
   }
 
   public show(): void {
+    BackdropRenderer.setDimmed(true);
     this.container.setVisible(true);
     KeyboardNavManager.getInstance().pushContext({
       id: 'object-guide-modal',
@@ -1120,6 +1122,7 @@ export class ObjectGuideModal {
   }
 
   public hide(): void {
+    BackdropRenderer.setDimmed(false);
     this.container.setVisible(false);
     KeyboardNavManager.getInstance().popContext('object-guide-modal');
   }

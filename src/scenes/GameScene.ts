@@ -548,21 +548,6 @@ export class GameScene extends Phaser.Scene {
     let pointerStartY = 0;
     let pointerDown = false;
 
-    // Keyboard shortcut for Settings [ S ]
-    this.input.keyboard?.on('keydown-S', () => {
-      if (this.settingsModal.isVisible()) {
-        this.settingsModal.hide();
-        if (this.session.turnEngine.state === 'PAUSED' && !this.pauseModal.isVisible()) {
-          this.session.turnEngine.resume();
-        }
-      } else {
-        if (this.session.turnEngine.state === 'PLAYING') {
-          this.session.turnEngine.pause();
-        }
-        this.settingsModal.show();
-      }
-    });
-
     // Keyboard shortcut for ESC: close topmost modal or toggle pause
     this.input.keyboard?.on('keydown-ESC', () => {
       if (this.objectGuideModal.isVisible()) {

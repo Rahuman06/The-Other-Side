@@ -145,10 +145,10 @@ export class Header {
       .setOrigin(0, 0.5);
     this.container.add(this.movesText);
 
-    // Right action buttons: RESTART & PAUSE
-    const btnW = 86;
-    const btnH = 32;
-    const btnY = 18;
+    // Right action buttons: RESTART & PAUSE (Prominent, accessible touch targets)
+    const btnW = 96;
+    const btnH = 38;
+    const btnY = 15;
 
     // Restart button
     const restartBtnX = width - 40 - btnW * 2 - 12;
@@ -186,17 +186,17 @@ export class Header {
     onClick: () => void
   ): { border: Phaser.GameObjects.Graphics; label: Phaser.GameObjects.Text } {
     const g = scene.add.graphics();
-    g.lineStyle(1, PALETTE.shadow.walls, 0.7);
-    g.strokeRoundedRect(x, y, w, h, 4);
+    g.lineStyle(1.5, PALETTE.shadow.walls, 0.7);
+    g.strokeRoundedRect(x, y, w, h, 6);
     this.container.add(g);
 
     const label = scene.add
       .text(x + w / 2, y + h / 2, text, {
         fontFamily: 'system-ui, -apple-system, sans-serif',
-        fontSize: '12px',
+        fontSize: '13px',
         fontStyle: 'bold',
         color: PALETTE.shadow.text,
-        letterSpacing: 1,
+        letterSpacing: 1.2,
       })
       .setOrigin(0.5);
     this.container.add(label);

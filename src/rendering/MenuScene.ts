@@ -181,15 +181,15 @@ export class MenuScene extends Phaser.Scene {
       .setOrigin(0.5);
     this.mainMenuContainer.add(subtitle);
 
-    // Menu Buttons
-    const btnW = 280;
+    // Menu Buttons (Large, comfortable mobile accessible touch targets)
+    const btnW = 320;
     const hasProgress = progress.completedLevels.length > 0;
     this.mainMenuItems = [];
 
     if (hasProgress) {
-      const btnH = 38;
-      const startY = 255;
-      const spacingY = 45;
+      const btnH = 42;
+      const startY = 250;
+      const spacingY = 48;
 
       // 1. Continue Button (primary)
       this.mainMenuItems.push(
@@ -199,7 +199,7 @@ export class MenuScene extends Phaser.Scene {
           halfW,
           startY,
           btnW,
-          42,
+          46,
           `CONTINUE  (LVL ${progress.unlockedLevel})`,
           () => this.startLevel(progress.unlockedLevel),
           true
@@ -431,7 +431,7 @@ export class MenuScene extends Phaser.Scene {
     const txt = this.add
       .text(x, y, text, {
         fontFamily: 'system-ui, -apple-system, sans-serif',
-        fontSize: '13px',
+        fontSize: '14px',
         fontStyle: 'bold',
         color: isPrimary ? '#FFFFFF' : '#CCCCCC',
         letterSpacing: 1.5,

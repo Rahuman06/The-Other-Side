@@ -45,6 +45,8 @@ export class BackdropRenderer {
   private particles: Particle[] = [];
   private isReducedMotion: boolean = false;
   private lastTime: number = 0;
+  private isDimmed: boolean = false;
+  private currentDimAlpha: number = 0;
 
   private constructor() {}
 
@@ -53,6 +55,11 @@ export class BackdropRenderer {
       BackdropRenderer.instance = new BackdropRenderer();
     }
     return BackdropRenderer.instance;
+  }
+
+  public static setDimmed(dimmed: boolean): void {
+    const instance = BackdropRenderer.getInstance();
+    instance.isDimmed = dimmed;
   }
 
   public static init(): BackdropRenderer {
@@ -173,6 +180,10 @@ export class BackdropRenderer {
 
     const { leftBrightness, rightBrightness, dividerAlpha } = this.themeState;
 
+    // Smooth dimming transition for modals
+    const targetDim = this.isDimmed ? 0.75 : 0.0;
+    this.currentDimAlpha += (targetDim - this.currentDimAlpha) * Math.min(1, dt * 0.01);
+
     // 1. Draw Left World (Real World)
     const leftVal = Math.round(255 * leftBrightness);
     ctx.fillStyle = `rgb(${leftVal}, ${leftVal}, ${leftVal})`;
@@ -267,6 +278,12 @@ export class BackdropRenderer {
           ctx.fill();
         }
       }
+    }
+
+    // 6. Modal Dimming Overlay (matches in-game modal backdrop)
+    if (this.currentDimAlpha > 0.005) {
+      ctx.fillStyle = `rgba(0, 0, 0, ${this.currentDimAlpha.toFixed(3)})`;
+      ctx.fillRect(0, 0, w, h);
     }
   }
 

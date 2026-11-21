@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { KeyboardNavManager, FocusableItem } from './KeyboardNavManager';
 import { AudioManager } from '../audio/AudioManager';
+import { BackdropRenderer } from '../rendering/BackdropRenderer';
 
 export interface WinModalCallbacks {
   onNextLevel: () => void;
@@ -28,8 +29,8 @@ export class WinModal {
     this.container.setDepth(100);
     this.container.setVisible(false);
 
-    const modalW = 420;
-    const modalH = 340;
+    const modalW = 460;
+    const modalH = 410;
 
     // Dimmed background
     const backdrop = scene.add.graphics();
@@ -51,9 +52,9 @@ export class WinModal {
 
     // Title
     this.titleText = scene.add
-      .text(0, -120, 'LEVEL COMPLETED', {
+      .text(0, -155, 'LEVEL COMPLETED', {
         fontFamily: 'system-ui, -apple-system, sans-serif',
-        fontSize: '22px',
+        fontSize: '24px',
         fontStyle: 'bold',
         color: '#FFFFFF',
         letterSpacing: 2.5,
@@ -64,14 +65,14 @@ export class WinModal {
     // Divider
     const div = scene.add.graphics();
     div.lineStyle(1, 0x333333, 0.8);
-    div.lineBetween(-modalW / 2 + 25, -90, modalW / 2 - 25, -90);
+    div.lineBetween(-modalW / 2 + 25, -125, modalW / 2 - 25, -125);
     this.container.add(div);
 
     // Moves stats
     this.movesText = scene.add
-      .text(0, -65, 'MOVES: 0', {
+      .text(0, -95, 'MOVES: 0', {
         fontFamily: 'system-ui, -apple-system, sans-serif',
-        fontSize: '16px',
+        fontSize: '17px',
         fontStyle: 'bold',
         color: '#FFFFFF',
         letterSpacing: 1.5,
@@ -80,20 +81,20 @@ export class WinModal {
     this.container.add(this.movesText);
 
     this.bestMovesText = scene.add
-      .text(0, -42, 'BEST: 0', {
+      .text(0, -70, 'BEST: 0', {
         fontFamily: 'system-ui, -apple-system, sans-serif',
-        fontSize: '13px',
+        fontSize: '14px',
         color: '#888888',
         letterSpacing: 1,
       })
       .setOrigin(0.5);
     this.container.add(this.bestMovesText);
 
-    // Button stack
-    const btnW = 280;
-    const btnH = 34;
-    const startY = 0;
-    const gapY = 42;
+    // Button stack (Large, prominent mobile accessible touch targets)
+    const btnW = 340;
+    const btnH = 46;
+    const startY = -25;
+    const gapY = 54;
 
     // 1. Next Level Button (Primary)
     const { label: nextTxt } = this.createButton(
@@ -154,8 +155,8 @@ export class WinModal {
       'win-close',
       modalW / 2 - 35,
       -modalH / 2 + 25,
-      40,
-      30,
+      44,
+      34,
       '✕',
       () => callbacks.onLevelSelect(),
       false
@@ -239,6 +240,7 @@ export class WinModal {
   }
 
   public show(moves: number, bestMoves: number, isLastLevel: boolean = false): void {
+    BackdropRenderer.setDimmed(true);
     this.movesText.setText(`MOVES: ${moves}`);
     this.bestMovesText.setText(`BEST: ${bestMoves}`);
     this.nextBtnText.setText(isLastLevel ? 'ENDING SCENE ★' : 'NEXT LEVEL');
@@ -255,6 +257,7 @@ export class WinModal {
   }
 
   public hide(): void {
+    BackdropRenderer.setDimmed(false);
     this.container.setVisible(false);
     KeyboardNavManager.getInstance().popContext('win-modal');
   }

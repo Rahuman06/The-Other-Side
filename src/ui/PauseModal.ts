@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { KeyboardNavManager, FocusableItem } from './KeyboardNavManager';
 import { AudioManager } from '../audio/AudioManager';
+import { BackdropRenderer } from '../rendering/BackdropRenderer';
 
 export interface PauseModalCallbacks {
   onResume: () => void;
@@ -25,8 +26,8 @@ export class PauseModal {
     this.container.setDepth(100);
     this.container.setVisible(false);
 
-    const modalW = 420;
-    const modalH = 340;
+    const modalW = 460;
+    const modalH = 440;
 
     // Background overlay backdrop
     const backdrop = scene.add.graphics();
@@ -48,7 +49,7 @@ export class PauseModal {
 
     // Title
     const title = scene.add
-      .text(0, -125, 'PAUSED', {
+      .text(0, -165, 'PAUSED', {
         fontFamily: 'system-ui, -apple-system, sans-serif',
         fontSize: '24px',
         fontStyle: 'bold',
@@ -61,14 +62,14 @@ export class PauseModal {
     // Divider line
     const div = scene.add.graphics();
     div.lineStyle(1, 0x333333, 0.8);
-    div.lineBetween(-modalW / 2 + 25, -95, modalW / 2 - 25, -95);
+    div.lineBetween(-modalW / 2 + 25, -135, modalW / 2 - 25, -135);
     this.container.add(div);
 
-    // Menu Buttons
-    const btnW = 280;
-    const btnH = 34;
-    const startY = -60;
-    const gapY = 44;
+    // Menu Buttons (Large, comfortable mobile accessible touch targets)
+    const btnW = 340;
+    const btnH = 44;
+    const startY = -90;
+    const gapY = 54;
 
     // 1. Resume Button (Primary)
     this.createButton(scene, 'pause-resume', 0, startY, btnW, btnH, 'RESUME  [ P / ESC ]', () => callbacks.onResume(), true);
@@ -79,8 +80,8 @@ export class PauseModal {
     // 3. Object Guide Button
     this.createButton(scene, 'pause-guide', 0, startY + gapY * 2, btnW, btnH, 'OBJECT GUIDE', () => callbacks.onObjectGuide?.(), false);
 
-    // 4. Settings Button
-    this.createButton(scene, 'pause-settings', 0, startY + gapY * 3, btnW, btnH, 'SETTINGS  [ S ]', () => callbacks.onSettings?.(), false);
+    // 4. Settings Button (S removed as shortcut so S controls Down movement)
+    this.createButton(scene, 'pause-settings', 0, startY + gapY * 3, btnW, btnH, 'SETTINGS', () => callbacks.onSettings?.(), false);
 
     // 5. Main Menu Button
     this.createButton(scene, 'pause-main-menu', 0, startY + gapY * 4, btnW, btnH, 'MAIN MENU  [ M ]', () => callbacks.onMainMenu(), false);
@@ -91,8 +92,8 @@ export class PauseModal {
       'pause-close',
       modalW / 2 - 35,
       -modalH / 2 + 25,
-      40,
-      30,
+      44,
+      34,
       '✕',
       () => callbacks.onResume(),
       false
@@ -174,6 +175,7 @@ export class PauseModal {
   }
 
   public show(): void {
+    BackdropRenderer.setDimmed(true);
     this.container.setVisible(true);
     KeyboardNavManager.getInstance().pushContext({
       id: 'pause-modal',
@@ -185,6 +187,7 @@ export class PauseModal {
   }
 
   public hide(): void {
+    BackdropRenderer.setDimmed(false);
     this.container.setVisible(false);
     KeyboardNavManager.getInstance().popContext('pause-modal');
   }

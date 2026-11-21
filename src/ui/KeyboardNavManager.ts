@@ -198,7 +198,7 @@ export class KeyboardNavManager {
       return false;
     }
 
-    // 4. ARROW KEYS
+    // 4. ARROW KEYS & WASD NAVIGATION
     if (active.gridCols && active.gridCols > 1) {
       // 2D Grid navigation
       const cols = active.gridCols;
@@ -206,6 +206,7 @@ export class KeyboardNavManager {
 
       switch (lowerKey) {
         case 'arrowright':
+        case 'd':
           e.preventDefault();
           if (current?.onRight) {
             current.onRight();
@@ -216,6 +217,7 @@ export class KeyboardNavManager {
           return true;
 
         case 'arrowleft':
+        case 'a':
           e.preventDefault();
           if (current?.onLeft) {
             current.onLeft();
@@ -226,6 +228,7 @@ export class KeyboardNavManager {
           return true;
 
         case 'arrowdown':
+        case 's':
           e.preventDefault();
           if (idx + cols < count) {
             active.selectedIndex = idx + cols;
@@ -237,6 +240,7 @@ export class KeyboardNavManager {
           return true;
 
         case 'arrowup':
+        case 'w':
           e.preventDefault();
           if (idx - cols >= 0) {
             active.selectedIndex = idx - cols;
@@ -252,18 +256,21 @@ export class KeyboardNavManager {
       // 1D Linear list navigation
       switch (lowerKey) {
         case 'arrowdown':
+        case 's':
           e.preventDefault();
           active.selectedIndex = (active.selectedIndex + 1) % count;
           this.renderFocus();
           return true;
 
         case 'arrowup':
+        case 'w':
           e.preventDefault();
           active.selectedIndex = (active.selectedIndex - 1 + count) % count;
           this.renderFocus();
           return true;
 
         case 'arrowright':
+        case 'd':
           if (current?.onRight) {
             e.preventDefault();
             current.onRight();
@@ -273,6 +280,7 @@ export class KeyboardNavManager {
           break;
 
         case 'arrowleft':
+        case 'a':
           if (current?.onLeft) {
             e.preventDefault();
             current.onLeft();

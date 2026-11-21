@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { StorageManager } from '../storage/StorageManager';
 import { AudioManager } from '../audio/AudioManager';
 import { KeyboardNavManager, FocusableItem } from './KeyboardNavManager';
+import { BackdropRenderer } from '../rendering/BackdropRenderer';
 
 export class SettingsModal {
   private container: Phaser.GameObjects.Container;
@@ -275,6 +276,7 @@ export class SettingsModal {
   }
 
   public show(): void {
+    BackdropRenderer.setDimmed(true);
     this.container.setVisible(true);
     KeyboardNavManager.getInstance().pushContext({
       id: 'settings-modal',
@@ -289,6 +291,7 @@ export class SettingsModal {
   }
 
   public hide(): void {
+    BackdropRenderer.setDimmed(false);
     this.container.setVisible(false);
     KeyboardNavManager.getInstance().popContext('settings-modal');
   }

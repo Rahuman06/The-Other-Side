@@ -94,13 +94,13 @@ export class MobileControlsOverlay {
     this.rootEl.innerHTML = `
       <div class="mobile-cluster-left" id="mobile-cluster-left" role="group" aria-label="Horizontal Directional Controls">
         <button class="mobile-btn dpad-btn btn-left dpad-left" id="btn-mobile-left" data-dir="left" aria-label="Move Left">
-          <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <svg viewBox="0 0 24 24" width="34" height="34" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
             <line x1="19" y1="12" x2="5" y2="12"></line>
             <polyline points="12 19 5 12 12 5"></polyline>
           </svg>
         </button>
         <button class="mobile-btn dpad-btn btn-right dpad-right" id="btn-mobile-right" data-dir="right" aria-label="Move Right">
-          <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <svg viewBox="0 0 24 24" width="34" height="34" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
             <line x1="5" y1="12" x2="19" y2="12"></line>
             <polyline points="12 5 19 12 12 19"></polyline>
           </svg>
@@ -109,13 +109,13 @@ export class MobileControlsOverlay {
 
       <div class="mobile-cluster-right" id="mobile-cluster-right" role="group" aria-label="Vertical Directional Controls">
         <button class="mobile-btn dpad-btn btn-up dpad-up" id="btn-mobile-up" data-dir="up" aria-label="Move Up">
-          <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <svg viewBox="0 0 24 24" width="34" height="34" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
             <line x1="12" y1="19" x2="12" y2="5"></line>
             <polyline points="5 12 12 5 19 12"></polyline>
           </svg>
         </button>
         <button class="mobile-btn dpad-btn btn-down dpad-down" id="btn-mobile-down" data-dir="down" aria-label="Move Down">
-          <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <svg viewBox="0 0 24 24" width="34" height="34" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
             <line x1="12" y1="5" x2="12" y2="19"></line>
             <polyline points="19 12 12 19 5 12"></polyline>
           </svg>
