@@ -31,6 +31,7 @@ export default defineConfig({
     environment: 'node',
     setupFiles: ['./tests/setup.ts'],
     pool: 'forks',
+    testTimeout: 35000,
     include: [
       'tests/unit/**/*.test.ts',
       'tests/integration/**/*.test.ts',

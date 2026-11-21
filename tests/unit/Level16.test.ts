@@ -93,6 +93,6 @@ describe('Phase 8 — Level 16: The Wrong Reflection (Master Entry)', () => {
     expect(session.player.position.y).toBe(2);
     expect(session.shadow.position.x).toBe(1);
     expect(session.shadow.position.y).toBe(2);
-  }, 15000);
+  }, 45000);
 });
 

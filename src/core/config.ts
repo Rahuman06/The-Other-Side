@@ -34,7 +34,7 @@ export const createGameConfig = (): Phaser.Types.Core.GameConfig => {
       antialias: true,
       powerPreference: 'high-performance',
       desynchronized: true,
-      transparent: false,
+      transparent: true,
     },
     // Disable Phaser's duplicate WebAudio manager to prevent hardware buffer contention on mobile
     audio: {

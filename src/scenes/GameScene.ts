@@ -25,6 +25,7 @@ import { VisualEffectsManager } from '../rendering/VisualEffectsManager';
 import { PuzzleObjectRenderer } from '../rendering/PuzzleObjectRenderer';
 import { KeyboardNavManager } from '../ui/KeyboardNavManager';
 import { MobileControlsOverlay } from '../ui/MobileControlsOverlay';
+import { BackdropRenderer } from '../rendering/BackdropRenderer';
 
 export class GameScene extends Phaser.Scene {
   private levelId: number = 1;
@@ -95,6 +96,7 @@ export class GameScene extends Phaser.Scene {
 
   public create(): void {
     pokiBridge.gameplayStart();
+    BackdropRenderer.setMode('game');
 
     const chapter = this.getChapterName(this.levelId);
     AudioManager.getInstance().playGameMusic(chapter);
@@ -968,6 +970,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   public shutdown(): void {
+    BackdropRenderer.setMode('menu');
     this.scale.off('resize', this.onResize, this);
     pokiBridge.gameplayStop();
     AudioManager.getInstance().stopAllMusic();

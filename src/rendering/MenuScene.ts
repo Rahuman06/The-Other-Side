@@ -63,20 +63,26 @@ export class MenuScene extends Phaser.Scene {
   public create(data?: { openLevelSelect?: boolean }): void {
     pokiBridge.gameplayStop();
     AudioManager.getInstance().playMenuMusic();
+    BackdropRenderer.setMode('menu');
 
     const { width, height } = this.scale;
     const halfW = width / 2;
 
-    // 1. Split monochrome background
-    const bg = this.add.graphics();
-    bg.fillStyle(PALETTE.real.background, 1);
-    bg.fillRect(0, 0, halfW, height);
-    bg.fillStyle(PALETTE.shadow.background, 1);
-    bg.fillRect(halfW, 0, halfW, height);
+    // 1. Clean ambient background layer
+    // When BackdropRenderer is active in index.html, it seamlessly drives the full-viewport
+    // 5-layer living animated atmosphere across the entire screen.
+    // In standalone/headless environments without #backdrop-canvas, we provide a clean fallback.
+    const hasBackdrop = typeof document !== 'undefined' && !!document.getElementById('backdrop-canvas');
+    if (!hasBackdrop) {
+      const bg = this.add.graphics();
+      bg.fillStyle(PALETTE.real.background, 1);
+      bg.fillRect(0, 0, halfW, height);
+      bg.fillStyle(PALETTE.shadow.background, 1);
+      bg.fillRect(halfW, 0, halfW, height);
 
-    // Center divider
-    bg.lineStyle(1, PALETTE.divider, 0.7);
-    bg.lineBetween(halfW, 0, halfW, height);
+      bg.lineStyle(1, PALETTE.divider, 0.7);
+      bg.lineBetween(halfW, 0, halfW, height);
+    }
 
     // Dynamic Ambient Mirroring Graphics (depth 1)
     this.ambientGraphics = this.add.graphics().setDepth(1);
@@ -1102,6 +1108,7 @@ export class MenuScene extends Phaser.Scene {
   }
 
   private startLevel(levelId: number): void {
+    BackdropRenderer.setMode('game');
     AudioManager.getInstance().stopAllMusic();
     this.scene.start('GameScene', { levelId });
   }
@@ -1115,12 +1122,22 @@ export class MenuScene extends Phaser.Scene {
 
     this.ambientGraphics.clear();
 
-    // 1. Divider line subtle energy breathing
-    const pulseAlpha = 0.45 + 0.35 * Math.sin(time * 0.002);
-    this.ambientGraphics.lineStyle(1.5, 0x555555, pulseAlpha);
+    // 1. Central energy boundary breathing glow
+    const pulseAlpha = 0.35 + 0.25 * Math.sin(time * 0.0018);
+    this.ambientGraphics.lineStyle(2, 0x00e5ff, pulseAlpha);
     this.ambientGraphics.lineBetween(halfW, 0, halfW, height);
 
-    // 2. Mirrored particles
+    this.ambientGraphics.lineStyle(1, 0x333333, 0.7);
+    this.ambientGraphics.lineBetween(halfW, 0, halfW, height);
+
+    // 2. Gliding energy bead on center threshold
+    const pulseY = ((time * 0.15) % (height + 120)) - 60;
+    this.ambientGraphics.fillStyle(0x00e5ff, 0.85);
+    this.ambientGraphics.fillCircle(halfW, pulseY, 3);
+    this.ambientGraphics.fillStyle(0xffffff, 1.0);
+    this.ambientGraphics.fillCircle(halfW, pulseY, 1.5);
+
+    // 3. Ambient atmospheric particles
     for (const p of this.ambientParticles) {
       p.xOffset += p.vx * dt;
       p.y += p.vy * dt;
@@ -1140,12 +1157,12 @@ export class MenuScene extends Phaser.Scene {
         p.y = 0;
       }
 
-      // Left particle: Dark particle on light background
-      this.ambientGraphics.fillStyle(PALETTE.real.character, p.baseAlpha * 0.4);
+      // Left particle: Soft pale slate particle on light background
+      this.ambientGraphics.fillStyle(0x94a3b8, p.baseAlpha * 0.35);
       this.ambientGraphics.fillCircle(halfW - p.xOffset, p.y, p.radius);
 
-      // Right particle: White particle on dark background (mirrored position)
-      this.ambientGraphics.fillStyle(PALETTE.shadow.character, p.baseAlpha * 0.85);
+      // Right particle: Luminous cyan spark on dark background
+      this.ambientGraphics.fillStyle(0x00e5ff, p.baseAlpha * 0.75);
       this.ambientGraphics.fillCircle(halfW + p.xOffset, p.y, p.radius);
     }
   }
