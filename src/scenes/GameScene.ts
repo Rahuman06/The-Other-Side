@@ -781,6 +781,7 @@ export class GameScene extends Phaser.Scene {
     const shadowCoords = this.getScreenCoordinates(this.session.shadow.position, false);
 
     this.characterAnimator.triggerRespawn(realCoords, shadowCoords);
+    this.renderStaticGrids();
   }
 
   private onLevelComplete(): void {

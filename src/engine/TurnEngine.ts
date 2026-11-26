@@ -130,22 +130,14 @@ export class TurnEngine {
     // Checkpoint visit tracking
     const player = this.movementEngine.getPlayer();
     const shadow = this.movementEngine.getShadow();
+    let justActivatedCpId: string | null = null;
 
     for (const cp of this.checkpoints) {
       const playerJustActivated = cp.checkPlayerVisit(result.playerNewPosition);
       const shadowJustActivated = cp.checkShadowVisit(result.shadowNewPosition);
 
       if (playerJustActivated || shadowJustActivated) {
-        // Paired checkpoint activated! Capture checkpoint snapshot
-        this.lastCheckpointSnapshot = CheckpointSnapshot.capture(
-          cp.id,
-          player,
-          shadow,
-          this.puzzleManager,
-          this.surpriseManager,
-          this.inversionEngine
-        );
-        this.events.onCheckpointActivated?.(cp.id);
+        justActivatedCpId = cp.id;
       }
     }
 
@@ -247,6 +239,19 @@ export class TurnEngine {
         this.executeDeathSequence();
         return result;
       }
+    }
+
+    // Step 9h: Capture checkpoint snapshot if activated this turn
+    if (justActivatedCpId) {
+      this.lastCheckpointSnapshot = CheckpointSnapshot.capture(
+        justActivatedCpId,
+        player,
+        shadow,
+        this.puzzleManager,
+        this.surpriseManager,
+        this.inversionEngine
+      );
+      this.events.onCheckpointActivated?.(justActivatedCpId);
     }
 
     // Step 9b: Check Exit Completion

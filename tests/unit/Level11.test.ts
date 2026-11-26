@@ -42,7 +42,7 @@ describe('Phase 7 — Level 11: No Way Back', () => {
     expect(session.player.position).toEqual(new GridPoint(3, 2)); // Blocked!
   });
 
-  it('triggers cross-world delayed collapse when Real steps onto checkpoint', () => {
+  it('triggers cross-world delayed collapse when Real steps onto upper bridge', () => {
     const session = LevelFactory.build(level11Config);
     expect(session.surpriseManager).toBeDefined();
 
@@ -54,17 +54,68 @@ describe('Phase 7 — Level 11: No Way Back', () => {
     session.turnEngine.handleInput('right');
     session.turnEngine.endAnimation();
 
+    // Stepping on checkpoint does NOT prematurely arm cross-collapse
+    expect(session.surpriseManager.getEventState('se-11-cross-collapse')).toBe('PENDING');
+    expect(session.shadowGrid.isWalkable({ x: 4, y: 3 })).toBe(true);
+
+    // 3. up -> Real enters (3,1) [upper bridge], Shadow enters (4,1)
+    session.turnEngine.handleInput('up');
+    session.turnEngine.endAnimation();
+
     // Cross-collapse event armed with delay 1
     expect(session.surpriseManager.getEventState('se-11-cross-collapse')).toBe('ARMED');
     expect(session.shadowGrid.isWalkable({ x: 4, y: 3 })).toBe(true);
 
-    // 3. up -> Real enters (3,1), Shadow enters (4,1)
-    session.turnEngine.handleInput('up');
+    // 4. right -> Real enters (4,1), Shadow enters (3,1)
+    session.turnEngine.handleInput('right');
     session.turnEngine.endAnimation();
 
     // Delayed cross-world collapse triggered! Shadow's lower corridor (4,3) is now an impassable abyss
     expect(session.surpriseManager.getEventState('se-11-cross-collapse')).toBe('COMPLETED');
     expect(session.shadowGrid.isWalkable({ x: 4, y: 3 })).toBe(false);
+  });
+
+  it('guarantees checkpoint retry solvability after dying in lower corridor', () => {
+    const session = LevelFactory.build(level11Config);
+
+    // Reach checkpoint
+    session.turnEngine.handleInput('right'); session.turnEngine.endAnimation();
+    session.turnEngine.handleInput('right'); session.turnEngine.endAnimation();
+    expect(session.checkpoints[0]?.isActivated).toBe(true);
+
+    // Traverse upper bridge into row 3
+    session.turnEngine.handleInput('up'); session.turnEngine.endAnimation();
+    session.turnEngine.handleInput('right'); session.turnEngine.endAnimation();
+    session.turnEngine.handleInput('down'); session.turnEngine.endAnimation();
+    session.turnEngine.handleInput('down'); session.turnEngine.endAnimation();
+
+    // Die in row 3
+    session.turnEngine.executeDeathSequence();
+    expect(session.player.position).toEqual(new GridPoint(3, 2));
+    expect(session.shadow.position).toEqual(new GridPoint(4, 2));
+
+    // Replay remaining solution steps from checkpoint
+    const remainingSteps = [
+      'up',
+      'right',
+      'down',
+      'down',
+      'left',
+      'right',
+      'right',
+      'right',
+      'up',
+    ] as const;
+
+    for (const step of remainingSteps) {
+      const res = session.turnEngine.handleInput(step);
+      session.turnEngine.endAnimation();
+      expect(res?.hazardTriggered).toBe(false);
+    }
+
+    expect(session.turnEngine.state).toBe('COMPLETED');
+    expect(session.player.position).toEqual(new GridPoint(6, 2));
+    expect(session.shadow.position).toEqual(new GridPoint(1, 2));
   });
 
   it('is solved by BFS solver and validates replay trace', () => {

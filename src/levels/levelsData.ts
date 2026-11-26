@@ -716,7 +716,7 @@ export const ALL_LEVELS: readonly LevelDefinition[] = [
         name: 'Sympathetic Vault Collapse',
         triggerType: 'STEP_ON',
         triggerWorld: 'real',
-        triggerPosition: { x: 3, y: 2 },
+        triggerPosition: { x: 3, y: 1 },
         targetWorld: 'shadow',
         targetType: 'COLLAPSE_FLOOR',
         targetPosition: { x: 4, y: 3 },
