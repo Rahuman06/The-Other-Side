@@ -19,6 +19,7 @@ export class SoundEffects {
   private lastStepTime: number = 0;
   private activeVoices: number = 0;
   private readonly MAX_CONCURRENT_VOICES: number = 6;
+  private cinematicNodes: Array<{ osc: OscillatorNode; gain: GainNode }> = [];
 
   constructor(initialMuted: boolean = false) {
     this.audioMgr = AudioContextManager.getInstance();
@@ -1409,7 +1410,41 @@ export class SoundEffects {
   }
 
   /**
-   * Cinematic Scene 1: Subtle atmospheric opening ambience
+   * Registers an oscillator+gain pair belonging to the intro cinematic so it can be
+   * cleanly faded out if the player skips the intro or switches scenes.
+   */
+  private registerCinematicNode(osc: OscillatorNode, gain: GainNode): void {
+    const entry = { osc, gain };
+    this.cinematicNodes.push(entry);
+    osc.onended = () => {
+      const idx = this.cinematicNodes.indexOf(entry);
+      if (idx !== -1) this.cinematicNodes.splice(idx, 1);
+    };
+  }
+
+  /**
+   * Smoothly stops and disconnects all currently active cinematic intro oscillators.
+   */
+  public stopCinematicCues(): void {
+    const ctx = this.audioMgr.getContext();
+    const nodes = this.cinematicNodes.splice(0, this.cinematicNodes.length);
+    if (!ctx || nodes.length === 0) return;
+
+    const now = ctx.currentTime;
+    for (const { osc, gain } of nodes) {
+      try {
+        gain.gain.cancelScheduledValues(now);
+        gain.gain.setValueAtTime(Math.max(0.0001, gain.gain.value), now);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.12);
+        osc.stop(now + 0.14);
+      } catch {
+        // Ignore already-stopped nodes
+      }
+    }
+  }
+
+  /**
+   * Cinematic Scene 1: Subtle atmospheric opening ambience ("ONE SOUL.")
    */
   public playCinematicAmbience(): void {
     const ab = this.getContextAndBus();
@@ -1427,13 +1462,14 @@ export class SoundEffects {
         osc.frequency.setValueAtTime(f, now);
 
         gain.gain.setValueAtTime(0.0001, now);
-        gain.gain.linearRampToValueAtTime(0.12 / (idx + 1), now + 1.2);
-        gain.gain.exponentialRampToValueAtTime(0.001, now + 3.2);
+        gain.gain.linearRampToValueAtTime(0.11 / (idx + 1), now + 1.1);
+        gain.gain.exponentialRampToValueAtTime(0.0008, now + 3.2);
 
         osc.connect(gain);
         gain.connect(bus);
+        this.registerCinematicNode(osc, gain);
         osc.start(now);
-        osc.stop(now + 3.2);
+        osc.stop(now + 3.25);
       });
     } catch (err) {
       console.debug('[SoundEffects] playCinematicAmbience error:', err);
@@ -1441,7 +1477,7 @@ export class SoundEffects {
   }
 
   /**
-   * Cinematic Scene 2: Rising separation sound
+   * Cinematic Scene 2: Subtle disturbance & rising separation swell ("TWO REALITIES.")
    */
   public playCinematicSeparation(): void {
     const ab = this.getContextAndBus();
@@ -1455,23 +1491,24 @@ export class SoundEffects {
 
       osc.type = 'sine';
       osc.frequency.setValueAtTime(110, now);
-      osc.frequency.exponentialRampToValueAtTime(330, now + 1.4);
+      osc.frequency.exponentialRampToValueAtTime(293.66, now + 1.5);
 
-      gain.gain.setValueAtTime(0.001, now);
-      gain.gain.linearRampToValueAtTime(0.18, now + 0.9);
-      gain.gain.exponentialRampToValueAtTime(0.001, now + 1.6);
+      gain.gain.setValueAtTime(0.0005, now);
+      gain.gain.linearRampToValueAtTime(0.14, now + 0.85);
+      gain.gain.exponentialRampToValueAtTime(0.0008, now + 1.7);
 
       osc.connect(gain);
       gain.connect(bus);
+      this.registerCinematicNode(osc, gain);
       osc.start(now);
-      osc.stop(now + 1.6);
+      osc.stop(now + 1.75);
     } catch (err) {
       console.debug('[SoundEffects] playCinematicSeparation error:', err);
     }
   }
 
   /**
-   * Cinematic Scene 3: Split transition sound
+   * Cinematic Scene 2/3: Clean split transition sound
    */
   public playCinematicSplit(): void {
     const ab = this.getContextAndBus();
@@ -1480,22 +1517,22 @@ export class SoundEffects {
     const now = ctx.currentTime;
 
     try {
-      // Tactile dual-tone snap
-      [180, 540].forEach((f, idx) => {
+      [180, 440].forEach((f, idx) => {
         const osc = ctx.createOscillator();
         const gain = ctx.createGain();
 
         osc.type = idx === 0 ? 'triangle' : 'sine';
         osc.frequency.setValueAtTime(f, now);
-        osc.frequency.exponentialRampToValueAtTime(f * 0.4, now + 0.22);
+        osc.frequency.exponentialRampToValueAtTime(f * 0.5, now + 0.35);
 
-        gain.gain.setValueAtTime(0.24, now);
-        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.28);
+        gain.gain.setValueAtTime(0.18, now);
+        gain.gain.exponentialRampToValueAtTime(0.0008, now + 0.42);
 
         osc.connect(gain);
         gain.connect(bus);
+        this.registerCinematicNode(osc, gain);
         osc.start(now);
-        osc.stop(now + 0.28);
+        osc.stop(now + 0.45);
       });
     } catch (err) {
       console.debug('[SoundEffects] playCinematicSplit error:', err);
@@ -1503,7 +1540,73 @@ export class SoundEffects {
   }
 
   /**
-   * Cinematic Scene 4: Restrained cinematic impact & title bloom
+   * Cinematic Scene 3: Entering both realities ("TWO LIVES.")
+   */
+  public playCinematicWorldEntry(): void {
+    const ab = this.getContextAndBus();
+    if (!ab) return;
+    const { ctx, bus } = ab;
+    const now = ctx.currentTime;
+
+    try {
+      // Warm deep shadow root + airy high real fifth
+      [146.83, 440.0].forEach((f, idx) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(f, now + idx * 0.08);
+
+        gain.gain.setValueAtTime(0.0001, now + idx * 0.08);
+        gain.gain.linearRampToValueAtTime(idx === 0 ? 0.12 : 0.08, now + idx * 0.08 + 0.5);
+        gain.gain.exponentialRampToValueAtTime(0.0008, now + idx * 0.08 + 2.1);
+
+        osc.connect(gain);
+        gain.connect(bus);
+        this.registerCinematicNode(osc, gain);
+        osc.start(now + idx * 0.08);
+        osc.stop(now + idx * 0.08 + 2.15);
+      });
+    } catch (err) {
+      console.debug('[SoundEffects] playCinematicWorldEntry error:', err);
+    }
+  }
+
+  /**
+   * Cinematic Scene 4: Cyan connection pulse across the boundary ("ONE MIND.")
+   */
+  public playCinematicConnectionPulse(): void {
+    const ab = this.getContextAndBus();
+    if (!ab) return;
+    const { ctx, bus } = ab;
+    const now = ctx.currentTime;
+
+    try {
+      // Pure harmonic unison-to-fifth resonance symbolizing shared consciousness
+      [220.0, 329.63, 659.25].forEach((f, idx) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(f, now + idx * 0.06);
+
+        gain.gain.setValueAtTime(0.0001, now + idx * 0.06);
+        gain.gain.linearRampToValueAtTime(0.11 / (idx + 1), now + idx * 0.06 + 0.25);
+        gain.gain.exponentialRampToValueAtTime(0.0008, now + idx * 0.06 + 2.2);
+
+        osc.connect(gain);
+        gain.connect(bus);
+        this.registerCinematicNode(osc, gain);
+        osc.start(now + idx * 0.06);
+        osc.stop(now + idx * 0.06 + 2.25);
+      });
+    } catch (err) {
+      console.debug('[SoundEffects] playCinematicConnectionPulse error:', err);
+    }
+  }
+
+  /**
+   * Cinematic Scene 5: Restrained harmonic bloom & title reveal ("THE OTHER SIDE")
    */
   public playCinematicImpact(): void {
     const ab = this.getContextAndBus();
@@ -1512,23 +1615,24 @@ export class SoundEffects {
     const now = ctx.currentTime;
 
     try {
-      // Harmonic chord bloom: A3, E4, A4, C#5 (220, 329.6, 440, 554.37)
+      // Harmonic chord bloom: A3, E4, A4, C#5
       const bloom = [220.0, 329.63, 440.0, 554.37];
       bloom.forEach((f, idx) => {
         const osc = ctx.createOscillator();
         const gain = ctx.createGain();
 
         osc.type = 'sine';
-        osc.frequency.setValueAtTime(f, now + idx * 0.04);
+        osc.frequency.setValueAtTime(f, now + idx * 0.045);
 
-        gain.gain.setValueAtTime(0.0001, now + idx * 0.04);
-        gain.gain.linearRampToValueAtTime(0.18 / (idx + 1), now + idx * 0.04 + 0.08);
-        gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.04 + 1.8);
+        gain.gain.setValueAtTime(0.0001, now + idx * 0.045);
+        gain.gain.linearRampToValueAtTime(0.14 / (idx + 1), now + idx * 0.045 + 0.12);
+        gain.gain.exponentialRampToValueAtTime(0.0008, now + idx * 0.045 + 2.0);
 
         osc.connect(gain);
         gain.connect(bus);
-        osc.start(now + idx * 0.04);
-        osc.stop(now + idx * 0.04 + 1.8);
+        this.registerCinematicNode(osc, gain);
+        osc.start(now + idx * 0.045);
+        osc.stop(now + idx * 0.045 + 2.05);
       });
     } catch (err) {
       console.debug('[SoundEffects] playCinematicImpact error:', err);

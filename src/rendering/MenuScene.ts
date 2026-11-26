@@ -46,12 +46,14 @@ export class MenuScene extends Phaser.Scene {
     radius: number;
     baseAlpha: number;
   }> = [];
+  private isTransitioning: boolean = false;
 
   constructor() {
     super('MenuScene');
   }
 
   public init(data?: { levelManager?: LevelManager; soundEffects?: SoundEffects; openLevelSelect?: boolean }): void {
+    this.isTransitioning = false;
     this.storage = new StorageManager();
     const audio = AudioManager.getInstance();
     audio.init(this.storage);
@@ -70,6 +72,7 @@ export class MenuScene extends Phaser.Scene {
     pokiBridge.gameplayStop();
     AudioManager.getInstance().playMenuMusic();
     BackdropRenderer.setMode('menu');
+    this.cameras.main.fadeIn(280, 0, 0, 0);
 
     const { width, height } = this.scale;
     const halfW = width / 2;
@@ -167,6 +170,20 @@ export class MenuScene extends Phaser.Scene {
     });
   }
 
+  /**
+   * Guards against duplicate intro initialization when double-clicking Play / Prologue.
+   */
+  private launchIntro(nextScene?: string, levelId?: number): void {
+    if (this.isTransitioning) return;
+    this.isTransitioning = true;
+    this.soundEffects.playUiClick();
+    this.cameras.main.fadeOut(250, 0, 0, 0);
+    this.time.delayedCall(250, () => {
+      const payload = nextScene !== undefined ? { nextScene, levelId } : undefined;
+      this.scene.start('CinematicIntroScene', payload);
+    });
+  }
+
   private createMainMenu(width: number, height: number): void {
     const halfW = width / 2;
     const progress = this.storage.getProgress();
@@ -241,13 +258,7 @@ export class MenuScene extends Phaser.Scene {
           btnW,
           btnH,
           'PLAY  (NEW GAME)',
-          () => {
-            this.soundEffects.playUiClick();
-            this.cameras.main.fadeOut(250, 0, 0, 0);
-            this.time.delayedCall(250, () => {
-              this.scene.start('CinematicIntroScene', { nextScene: 'GameScene', levelId: 1 });
-            });
-          },
+          () => this.launchIntro('GameScene', 1),
           false
         )
       );
@@ -313,13 +324,7 @@ export class MenuScene extends Phaser.Scene {
           btnW,
           btnH,
           'PROLOGUE  (INTRO)',
-          () => {
-            this.soundEffects.playUiClick();
-            this.cameras.main.fadeOut(250, 0, 0, 0);
-            this.time.delayedCall(250, () => {
-              this.scene.start('CinematicIntroScene');
-            });
-          },
+          () => this.launchIntro(),
           false
         )
       );
@@ -338,13 +343,7 @@ export class MenuScene extends Phaser.Scene {
           btnW,
           44,
           'PLAY',
-          () => {
-            this.soundEffects.playUiClick();
-            this.cameras.main.fadeOut(250, 0, 0, 0);
-            this.time.delayedCall(250, () => {
-              this.scene.start('CinematicIntroScene', { nextScene: 'GameScene', levelId: 1 });
-            });
-          },
+          () => this.launchIntro('GameScene', 1),
           true
         )
       );
@@ -410,13 +409,7 @@ export class MenuScene extends Phaser.Scene {
           btnW,
           btnH,
           'PROLOGUE  (INTRO)',
-          () => {
-            this.soundEffects.playUiClick();
-            this.cameras.main.fadeOut(250, 0, 0, 0);
-            this.time.delayedCall(250, () => {
-              this.scene.start('CinematicIntroScene');
-            });
-          },
+          () => this.launchIntro(),
           false
         )
       );
