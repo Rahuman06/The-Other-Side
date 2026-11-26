@@ -67,6 +67,7 @@ export class GameScene extends Phaser.Scene {
   private knownDetonatedBombs: Set<string> = new Set();
   private previousPlayerAtExit: boolean = false;
   private previousShadowAtExit: boolean = false;
+  private hasTriggeredOutro: boolean = false;
 
   // Previous puzzle mechanism states for audio event synthesis
   private prevSwitchStates: Map<string, boolean> = new Map();
@@ -87,6 +88,7 @@ export class GameScene extends Phaser.Scene {
     this.knownDetonatedBombs.clear();
     this.previousPlayerAtExit = false;
     this.previousShadowAtExit = false;
+    this.hasTriggeredOutro = false;
 
     this.storage = new StorageManager();
     const audio = AudioManager.getInstance();
@@ -801,11 +803,43 @@ export class GameScene extends Phaser.Scene {
     const best = updated.bestMoves[this.levelId] ?? this.movesCount;
     const isFinalLevel = this.levelId >= ALL_LEVELS.length;
 
-    // Show completion modal seamlessly without disruptive ad breaks
+    // Freeze input & HUD immediately on completion
     this.header.setHeaderInteractive(false);
     this.inputController.setEnabled(false);
     MobileControlsOverlay.getInstance().setVisible(false);
-    this.winModal.show(this.movesCount, best, isFinalLevel);
+
+    // Genuine Level 20 completion triggers the Final Outro Cinematic directly (once only)
+    if (isFinalLevel) {
+      this.triggerLevel20Outro();
+      return;
+    }
+
+    // Levels 1-19: show completion modal seamlessly without disruptive ad breaks
+    this.winModal.show(this.movesCount, best, false);
+  }
+
+  /**
+   * Single-shot guarded transition to EndingScene after genuine Level 20 completion.
+   */
+  private triggerLevel20Outro(): void {
+    if (this.hasTriggeredOutro) return;
+    if (this.levelId < ALL_LEVELS.length) return;
+    if (this.session?.turnEngine.state !== 'COMPLETED') return;
+
+    this.hasTriggeredOutro = true;
+
+    // Quiet beat as both characters settle at exits, then smooth dissolve into EndingScene
+    this.time.delayedCall(650, () => {
+      if (!this.scene.isActive('GameScene')) return;
+      this.cameras.main.fadeOut(450, 0, 0, 0);
+      this.time.delayedCall(450, () => {
+        this.scene.start('EndingScene', {
+          storage: this.storage,
+          soundEffects: this.soundEffects,
+          fromLevel20Completion: true,
+        });
+      });
+    });
   }
 
   private getChapterName(levelId: number): ChapterName {
@@ -942,10 +976,7 @@ export class GameScene extends Phaser.Scene {
     this.winModal.hide();
     if (this.levelId >= ALL_LEVELS.length) {
       pokiBridge.gameplayStop();
-      this.scene.start('EndingScene', {
-        storage: this.storage,
-        soundEffects: this.soundEffects,
-      });
+      this.triggerLevel20Outro();
       return;
     }
 

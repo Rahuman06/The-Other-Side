@@ -1638,4 +1638,196 @@ export class SoundEffects {
       console.debug('[SoundEffects] playCinematicImpact error:', err);
     }
   }
+
+  /**
+   * Outro Scene 1: Quiet atmospheric stillness after final completion
+   */
+  public playOutroScene1Quiet(): void {
+    const ab = this.getContextAndBus();
+    if (!ab) return;
+    const { ctx, bus } = ab;
+    const now = ctx.currentTime;
+
+    try {
+      [110.0, 164.81, 220.0].forEach((f, idx) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(f, now);
+
+        gain.gain.setValueAtTime(0.0001, now);
+        gain.gain.linearRampToValueAtTime(0.09 / (idx + 1), now + 1.0);
+        gain.gain.exponentialRampToValueAtTime(0.0008, now + 3.4);
+
+        osc.connect(gain);
+        gain.connect(bus);
+        this.registerCinematicNode(osc, gain);
+        osc.start(now);
+        osc.stop(now + 3.45);
+      });
+    } catch (err) {
+      console.debug('[SoundEffects] playOutroScene1Quiet error:', err);
+    }
+  }
+
+  /**
+   * Outro Scene 2: Subtle harmonic look across the central boundary
+   */
+  public playOutroScene2Look(): void {
+    const ab = this.getContextAndBus();
+    if (!ab) return;
+    const { ctx, bus } = ab;
+    const now = ctx.currentTime;
+
+    try {
+      [261.63, 392.0].forEach((f, idx) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(f, now + idx * 0.14);
+
+        gain.gain.setValueAtTime(0.0001, now + idx * 0.14);
+        gain.gain.linearRampToValueAtTime(0.075, now + idx * 0.14 + 0.35);
+        gain.gain.exponentialRampToValueAtTime(0.0008, now + idx * 0.14 + 2.2);
+
+        osc.connect(gain);
+        gain.connect(bus);
+        this.registerCinematicNode(osc, gain);
+        osc.start(now + idx * 0.14);
+        osc.stop(now + idx * 0.14 + 2.25);
+      });
+    } catch (err) {
+      console.debug('[SoundEffects] playOutroScene2Look error:', err);
+    }
+  }
+
+  /**
+   * Outro Scene 3: Gentle cyan energy pulse along dividing line
+   */
+  public playOutroScene3Connection(): void {
+    const ab = this.getContextAndBus();
+    if (!ab) return;
+    const { ctx, bus } = ab;
+    const now = ctx.currentTime;
+
+    try {
+      [220.0, 329.63, 523.25].forEach((f, idx) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(f, now + idx * 0.08);
+
+        gain.gain.setValueAtTime(0.0001, now + idx * 0.08);
+        gain.gain.linearRampToValueAtTime(0.095 / (idx + 1), now + idx * 0.08 + 0.45);
+        gain.gain.exponentialRampToValueAtTime(0.0008, now + idx * 0.08 + 2.6);
+
+        osc.connect(gain);
+        gain.connect(bus);
+        this.registerCinematicNode(osc, gain);
+        osc.start(now + idx * 0.08);
+        osc.stop(now + idx * 0.08 + 2.65);
+      });
+    } catch (err) {
+      console.debug('[SoundEffects] playOutroScene3Connection error:', err);
+    }
+  }
+
+  /**
+   * Outro Scene 4: Emotional harmonic swell when hands reach & meet
+   */
+  public playOutroScene4Reunion(): void {
+    const ab = this.getContextAndBus();
+    if (!ab) return;
+    const { ctx, bus } = ab;
+    const now = ctx.currentTime;
+
+    try {
+      [196.0, 293.66, 392.0, 587.33].forEach((f, idx) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(f, now + idx * 0.1);
+
+        gain.gain.setValueAtTime(0.0001, now + idx * 0.1);
+        gain.gain.linearRampToValueAtTime(0.11 / (idx + 1), now + idx * 0.1 + 0.7);
+        gain.gain.exponentialRampToValueAtTime(0.0008, now + idx * 0.1 + 3.2);
+
+        osc.connect(gain);
+        gain.connect(bus);
+        this.registerCinematicNode(osc, gain);
+        osc.start(now + idx * 0.1);
+        osc.stop(now + idx * 0.1 + 3.25);
+      });
+    } catch (err) {
+      console.debug('[SoundEffects] playOutroScene4Reunion error:', err);
+    }
+  }
+
+  /**
+   * Outro Scene 5: Radiant unison octave shimmer ("NEVER TWO DIFFERENT SOULS.")
+   */
+  public playOutroScene5Unity(): void {
+    const ab = this.getContextAndBus();
+    if (!ab) return;
+    const { ctx, bus } = ab;
+    const now = ctx.currentTime;
+
+    try {
+      [220.0, 440.0, 659.25].forEach((f, idx) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(f, now + idx * 0.05);
+
+        gain.gain.setValueAtTime(0.0001, now + idx * 0.05);
+        gain.gain.linearRampToValueAtTime(0.1 / (idx + 1), now + idx * 0.05 + 0.35);
+        gain.gain.exponentialRampToValueAtTime(0.0008, now + idx * 0.05 + 2.8);
+
+        osc.connect(gain);
+        gain.connect(bus);
+        this.registerCinematicNode(osc, gain);
+        osc.start(now + idx * 0.05);
+        osc.stop(now + idx * 0.05 + 2.85);
+      });
+    } catch (err) {
+      console.debug('[SoundEffects] playOutroScene5Unity error:', err);
+    }
+  }
+
+  /**
+   * Outro Scene 6: Soft resolved final title chime
+   */
+  public playOutroScene6Reveal(): void {
+    const ab = this.getContextAndBus();
+    if (!ab) return;
+    const { ctx, bus } = ab;
+    const now = ctx.currentTime;
+
+    try {
+      [164.81, 246.94, 329.63, 493.88, 659.25].forEach((f, idx) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(f, now + idx * 0.07);
+
+        gain.gain.setValueAtTime(0.0001, now + idx * 0.07);
+        gain.gain.linearRampToValueAtTime(0.095 / (idx + 1), now + idx * 0.07 + 0.4);
+        gain.gain.exponentialRampToValueAtTime(0.0008, now + idx * 0.07 + 3.6);
+
+        osc.connect(gain);
+        gain.connect(bus);
+        this.registerCinematicNode(osc, gain);
+        osc.start(now + idx * 0.07);
+        osc.stop(now + idx * 0.07 + 3.65);
+      });
+    } catch (err) {
+      console.debug('[SoundEffects] playOutroScene6Reveal error:', err);
+    }
+  }
 }

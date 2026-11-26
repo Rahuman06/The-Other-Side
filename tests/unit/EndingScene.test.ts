@@ -25,10 +25,17 @@ describe('Phase 8 — Final Story Experience & Ending Scene Logic', () => {
     expect(progress.completedLevels).toHaveLength(20);
   });
 
-  it('supports sound effects ending theme trigger without throwing', () => {
+  it('supports sound effects ending theme and outro scene cues without throwing', () => {
     const sound = new SoundEffects(true); // muted for test
     expect(() => sound.play('ending')).not.toThrow();
     expect(() => sound.playEndingTheme()).not.toThrow();
+    expect(() => sound.playOutroScene1Quiet()).not.toThrow();
+    expect(() => sound.playOutroScene2Look()).not.toThrow();
+    expect(() => sound.playOutroScene3Connection()).not.toThrow();
+    expect(() => sound.playOutroScene4Reunion()).not.toThrow();
+    expect(() => sound.playOutroScene5Unity()).not.toThrow();
+    expect(() => sound.playOutroScene6Reveal()).not.toThrow();
+    expect(() => sound.stopCinematicCues()).not.toThrow();
   });
 
   it('supports campaign reset and replay starting from level 1', () => {

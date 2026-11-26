@@ -136,7 +136,9 @@ export class CharacterAnimator {
     customColor?: number,
     customEyeColor?: number,
     idleTime: number = 0,
-    isReducedMotion: boolean = false
+    isReducedMotion: boolean = false,
+    reachArm: 'none' | 'left' | 'right' = 'none',
+    reachProgress: number = 0
   ): void {
     g.clear();
 
@@ -195,17 +197,25 @@ export class CharacterAnimator {
     g.strokePath();
 
     // 3. Arms
+    const rp = Math.max(0, Math.min(1, reachProgress));
+    const leftArmTarget = -Math.PI * 0.44;
+    const rightArmTarget = Math.PI * 0.44;
+    const effArmAngle1 = reachArm === 'left' && rp > 0 ? armAngle1 + (leftArmTarget - armAngle1) * rp : armAngle1;
+    const effArmAngle2 = reachArm === 'right' && rp > 0 ? armAngle2 + (rightArmTarget - armAngle2) * rp : armAngle2;
+    const effArmLen1 = reachArm === 'left' && rp > 0 ? armLen * (1 + rp * 0.35) : armLen;
+    const effArmLen2 = reachArm === 'right' && rp > 0 ? armLen * (1 + rp * 0.35) : armLen;
+
     // Left Arm
-    const ax1 = Math.sin(armAngle1) * armLen;
-    const ay1 = shoulderY + Math.cos(armAngle1) * armLen;
+    const ax1 = Math.sin(effArmAngle1) * effArmLen1;
+    const ay1 = shoulderY + Math.cos(effArmAngle1) * effArmLen1;
     g.beginPath();
     g.moveTo(0, shoulderY);
     g.lineTo(ax1, ay1);
     g.strokePath();
 
     // Right Arm
-    const ax2 = Math.sin(armAngle2) * armLen;
-    const ay2 = shoulderY + Math.cos(armAngle2) * armLen;
+    const ax2 = Math.sin(effArmAngle2) * effArmLen2;
+    const ay2 = shoulderY + Math.cos(effArmAngle2) * effArmLen2;
     g.beginPath();
     g.moveTo(0, shoulderY);
     g.lineTo(ax2, ay2);
