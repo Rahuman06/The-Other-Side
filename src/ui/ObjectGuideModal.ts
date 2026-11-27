@@ -687,6 +687,7 @@ export const ALL_GUIDE_OBJECTS: readonly GuideObjectEntry[] = [
 export class ObjectGuideModal {
   private container: Phaser.GameObjects.Container;
   private contentContainer: Phaser.GameObjects.Container;
+  private categoryTabsContainer?: Phaser.GameObjects.Container;
   private pageIndicatorText: Phaser.GameObjects.Text;
   private currentPage: number = 0;
   private readonly itemsPerPage: number = 2;
@@ -853,20 +854,36 @@ export class ObjectGuideModal {
   }
 
   private createCategoryTabs(scene: Phaser.Scene, modalW: number, y: number): void {
+    if (!this.categoryTabsContainer) {
+      this.categoryTabsContainer = scene.add.container(0, 0);
+      this.container.add(this.categoryTabsContainer);
+    } else {
+      this.categoryTabsContainer.removeAll(true);
+    }
+
     const categories = ['ALL', 'CHARACTERS', 'HAZARDS', 'MECHANISMS', 'DIMENSIONAL', 'ENVIRONMENT'];
     const tabW = 95;
     const startX = -((categories.length * tabW) / 2) + tabW / 2;
 
     categories.forEach((cat, idx) => {
       const x = startX + idx * tabW;
+      const isSelected = this.activeCategory === cat;
       const g = scene.add.graphics();
+      const drawTab = (hover: boolean) => {
+        g.clear();
+        g.fillStyle(isSelected ? 0x102830 : hover ? 0x1e1e1e : 0x111111, 0.95);
+        g.fillRoundedRect(x - (tabW - 6) / 2, y - 14, tabW - 6, 28, 4);
+        g.lineStyle(isSelected ? 1.5 : 1, isSelected ? 0x00e5ff : hover ? 0x888888 : 0x333333, 0.9);
+        g.strokeRoundedRect(x - (tabW - 6) / 2, y - 14, tabW - 6, 28, 4);
+      };
+      drawTab(false);
 
       const txt = scene.add
         .text(x, y, cat, {
           fontFamily: 'system-ui, -apple-system, sans-serif',
           fontSize: '9.5px',
           fontStyle: 'bold',
-          color: this.activeCategory === cat ? '#00E5FF' : '#777777',
+          color: isSelected ? '#00E5FF' : '#888888',
           letterSpacing: 0.8,
         })
         .setOrigin(0.5);
@@ -875,6 +892,18 @@ export class ObjectGuideModal {
         .zone(x, y, tabW - 6, 48)
         .setOrigin(0.5)
         .setInteractive({ useHandCursor: true });
+
+      hit.on('pointerover', () => {
+        if (!isSelected) {
+          drawTab(true);
+          txt.setColor('#FFFFFF');
+        }
+      });
+
+      hit.on('pointerout', () => {
+        drawTab(false);
+        txt.setColor(isSelected ? '#00E5FF' : '#888888');
+      });
 
       hit.on('pointerdown', (_pointer: Phaser.Input.Pointer, _lx: number, _ly: number, event: Phaser.Types.Input.EventData) => {
         if (event && event.stopPropagation) event.stopPropagation();
@@ -885,9 +914,9 @@ export class ObjectGuideModal {
         this.renderPage(scene, modalW);
       });
 
-      this.container.add(g);
-      this.container.add(txt);
-      this.container.add(hit);
+      this.categoryTabsContainer!.add(g);
+      this.categoryTabsContainer!.add(txt);
+      this.categoryTabsContainer!.add(hit);
     });
   }
 

@@ -145,6 +145,14 @@ export class PokiIntegration {
    * Midroll commercial break at natural level transitions.
    * Pauses audio and gameplay during the ad, then resumes cleanly.
    */
+  public setEnableAdsInDev(enabled: boolean): void {
+    this.enableAdsInDev = enabled;
+  }
+
+  public isAdActive(): boolean {
+    return this.isAdPlaying;
+  }
+
   public async commercialBreak(
     onPause?: () => void,
     onResume?: () => void
@@ -164,15 +172,25 @@ export class PokiIntegration {
     this.isAdPlaying = true;
     this.gameplayStop();
 
+    let pausedByAdStart = false;
+    const ensurePaused = () => {
+      if (!pausedByAdStart) {
+        pausedByAdStart = true;
+        onPause?.();
+      }
+    };
+
     try {
       await window.PokiSDK.commercialBreak(() => {
-        onPause?.();
+        ensurePaused();
       });
     } catch (err) {
       console.debug('[PokiIntegration] commercialBreak error or dismissed:', err);
     } finally {
       this.isAdPlaying = false;
-      onResume?.();
+      if (pausedByAdStart) {
+        onResume?.();
+      }
     }
   }
 
@@ -219,3 +237,6 @@ export class PokiIntegration {
 
 // Global exported singleton
 export const pokiBridge = PokiIntegration.getInstance();
+if (typeof window !== 'undefined') {
+  (window as unknown as { __POKI_BRIDGE__?: PokiIntegration }).__POKI_BRIDGE__ = pokiBridge;
+}

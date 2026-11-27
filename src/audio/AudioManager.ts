@@ -14,6 +14,8 @@ export class AudioManager {
   public readonly sfx: SoundEffects;
   private readonly ctxMgr: AudioContextManager;
   private storage: StorageManager | null = null;
+  private suspendedByAd = false;
+  private mutedBeforeAd = false;
 
   private constructor() {
     this.ctxMgr = AudioContextManager.getInstance();
@@ -99,5 +101,27 @@ export class AudioManager {
 
   public stopAllMusic(): void {
     this.music.stop();
+  }
+
+  public suspendForAd(): void {
+    if (this.suspendedByAd) return;
+    this.suspendedByAd = true;
+    this.mutedBeforeAd = this.ctxMgr.isMuted();
+    this.ctxMgr.setMuted(true);
+    const ctx = this.ctxMgr.getContext();
+    if (ctx && ctx.state === 'running') {
+      void ctx.suspend().catch(() => {});
+    }
+  }
+
+  public resumeFromAd(): void {
+    if (!this.suspendedByAd) return;
+    this.suspendedByAd = false;
+    const savedMuted = this.storage ? this.storage.getProgress().muted : this.mutedBeforeAd;
+    this.ctxMgr.setMuted(savedMuted);
+    const ctx = this.ctxMgr.getContext();
+    if (ctx && ctx.state === 'suspended') {
+      void ctx.resume().catch(() => {});
+    }
   }
 }

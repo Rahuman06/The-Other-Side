@@ -44,12 +44,19 @@ export class StorageManager {
     if (customStorage) {
       this.storageInstance = customStorage;
       this.hasLocalStorage = this.checkLocalStorageSupport(customStorage);
-    } else if (typeof window !== 'undefined' && window.localStorage) {
-      this.storageInstance = window.localStorage;
-      this.hasLocalStorage = this.checkLocalStorageSupport(this.storageInstance);
     } else {
-      this.storageInstance = null;
-      this.hasLocalStorage = false;
+      try {
+        if (typeof window !== 'undefined' && window.localStorage) {
+          this.storageInstance = window.localStorage;
+          this.hasLocalStorage = this.checkLocalStorageSupport(this.storageInstance);
+        } else {
+          this.storageInstance = null;
+          this.hasLocalStorage = false;
+        }
+      } catch {
+        this.storageInstance = null;
+        this.hasLocalStorage = false;
+      }
     }
   }
 

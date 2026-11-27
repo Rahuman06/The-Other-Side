@@ -7,6 +7,7 @@ import { pokiBridge } from '../poki/PokiIntegration';
 import { ALL_LEVELS } from '../levels/levelsData';
 import { PALETTE } from '../core/constants';
 import { ObjectGuideModal } from '../ui/ObjectGuideModal';
+import { SettingsModal } from '../ui/SettingsModal';
 import { KeyboardNavManager, FocusableItem } from '../ui/KeyboardNavManager';
 import { MobileControlsOverlay } from '../ui/MobileControlsOverlay';
 import { BackdropRenderer } from './BackdropRenderer';
@@ -19,21 +20,19 @@ export class MenuScene extends Phaser.Scene {
   // View containers
   private mainMenuContainer!: Phaser.GameObjects.Container;
   private levelSelectContainer!: Phaser.GameObjects.Container;
-  private settingsModal!: Phaser.GameObjects.Container;
+  private settingsModal!: SettingsModal;
   private confirmResetModal!: Phaser.GameObjects.Container;
   private objectGuideModal!: ObjectGuideModal;
 
   // Keyboard Navigation Items
   private mainMenuItems: FocusableItem[] = [];
   private levelSelectItems: FocusableItem[] = [];
-  private settingsItems: FocusableItem[] = [];
   private confirmResetItems: FocusableItem[] = [];
   private menuKeyDownListener: ((e: KeyboardEvent) => void) | null = null;
 
   // Modal Hit Zone Isolation Tracking
   private mainMenuHitZones: Phaser.GameObjects.Zone[] = [];
   private levelSelectHitZones: Phaser.GameObjects.Zone[] = [];
-  private settingsHitZones: Phaser.GameObjects.Zone[] = [];
   private confirmResetHitZones: Phaser.GameObjects.Zone[] = [];
 
   // Background Mirroring VFX
@@ -112,7 +111,6 @@ export class MenuScene extends Phaser.Scene {
     // 2. Initialize View Containers & Hit Zone Registries
     this.mainMenuHitZones = [];
     this.levelSelectHitZones = [];
-    this.settingsHitZones = [];
     this.confirmResetHitZones = [];
 
     this.mainMenuContainer = this.add.container(0, 0);
@@ -122,14 +120,30 @@ export class MenuScene extends Phaser.Scene {
     // 3. Build Views
     this.createMainMenu(width, height);
     this.createLevelSelectionGrid(width, height);
-    this.createSettingsModal(width, height);
+    this.settingsModal = new SettingsModal(
+      this,
+      width,
+      height,
+      this.storage,
+      () => this.closeSettingsModal(),
+      {
+        showObjectGuideButton: true,
+        onOpenObjectGuide: () => {
+          this.settingsModal.hide();
+          this.setZoneListInteractive(this.mainMenuHitZones, false);
+          this.setZoneListInteractive(this.levelSelectHitZones, false);
+          this.soundEffects.playMenuOpen();
+          this.objectGuideModal.show();
+        },
+        showResetProgressButton: true,
+        onResetProgress: () => this.openConfirmResetModal(),
+      }
+    );
     this.createConfirmResetModal(width, height);
 
     this.objectGuideModal = new ObjectGuideModal(this, width, height, () => {
       this.soundEffects.playMenuClose();
-      if (this.settingsModal.visible) {
-        this.setZoneListInteractive(this.settingsHitZones, true);
-      } else if (this.levelSelectContainer.visible) {
+      if (this.levelSelectContainer.visible) {
         this.setZoneListInteractive(this.levelSelectHitZones, true);
       } else {
         this.setZoneListInteractive(this.mainMenuHitZones, true);
@@ -291,7 +305,6 @@ export class MenuScene extends Phaser.Scene {
           () => {
             this.setZoneListInteractive(this.mainMenuHitZones, false);
             this.setZoneListInteractive(this.levelSelectHitZones, false);
-            this.setZoneListInteractive(this.settingsHitZones, false);
             this.soundEffects.playMenuOpen();
             this.objectGuideModal.show();
           },
@@ -376,7 +389,6 @@ export class MenuScene extends Phaser.Scene {
           () => {
             this.setZoneListInteractive(this.mainMenuHitZones, false);
             this.setZoneListInteractive(this.levelSelectHitZones, false);
-            this.setZoneListInteractive(this.settingsHitZones, false);
             this.soundEffects.playMenuOpen();
             this.objectGuideModal.show();
           },
@@ -413,6 +425,31 @@ export class MenuScene extends Phaser.Scene {
           false
         )
       );
+    }
+
+    // Subtle incognito / restricted storage notice (non-blocking, crisp pill across dual-world split)
+    if (!this.storage.isStorageAvailable) {
+      const noticeText = 'TEMPORARY SESSION: BROWSER STORAGE RESTRICTED (PROGRESS NOT SAVED)';
+      const badgeW = 472;
+      const badgeH = 22;
+      const badgeY = height - 60;
+      const badgeBg = this.add.graphics();
+      badgeBg.fillStyle(0x0c141c, 0.88);
+      badgeBg.fillRoundedRect(halfW - badgeW / 2, badgeY - badgeH / 2, badgeW, badgeH, 11);
+      badgeBg.lineStyle(1, 0x3b6878, 0.75);
+      badgeBg.strokeRoundedRect(halfW - badgeW / 2, badgeY - badgeH / 2, badgeW, badgeH, 11);
+      this.mainMenuContainer.add(badgeBg);
+
+      const storageNotice = this.add
+        .text(halfW, badgeY, noticeText, {
+          fontFamily: 'system-ui, -apple-system, sans-serif',
+          fontSize: '9.5px',
+          fontStyle: 'bold',
+          color: '#A5D8E8',
+          letterSpacing: 0.9,
+        })
+        .setOrigin(0.5);
+      this.mainMenuContainer.add(storageNotice);
     }
 
     // Controls hint footer
@@ -514,8 +551,6 @@ export class MenuScene extends Phaser.Scene {
       this.mainMenuHitZones.push(hit);
     } else if (container === this.levelSelectContainer) {
       this.levelSelectHitZones.push(hit);
-    } else if (container === this.settingsModal) {
-      this.settingsHitZones.push(hit);
     } else if (container === this.confirmResetModal) {
       this.confirmResetHitZones.push(hit);
     }
@@ -554,7 +589,10 @@ export class MenuScene extends Phaser.Scene {
     this.levelSelectContainer.setVisible(false);
     this.setZoneListInteractive(this.mainMenuHitZones, true);
     this.mainMenuContainer.setVisible(true);
-    KeyboardNavManager.getInstance().pushContext({
+    const nav = KeyboardNavManager.getInstance();
+    nav.popContext('level-select');
+    nav.popContext('main-menu');
+    nav.pushContext({
       id: 'main-menu',
       items: this.mainMenuItems,
       selectedIndex: 0,
@@ -786,27 +824,17 @@ export class MenuScene extends Phaser.Scene {
   }
 
   private openSettingsModal(): void {
-    BackdropRenderer.setDimmed(true);
     this.soundEffects.playMenuOpen();
     this.setZoneListInteractive(this.mainMenuHitZones, false);
     this.setZoneListInteractive(this.levelSelectHitZones, false);
-    this.setZoneListInteractive(this.settingsHitZones, true);
-    this.settingsModal.setVisible(true);
-    KeyboardNavManager.getInstance().pushContext({
-      id: 'menu-settings',
-      items: this.settingsItems,
-      selectedIndex: 0,
-      onEscape: () => this.closeSettingsModal(),
-      trapFocus: true,
-    });
+    this.settingsModal.show();
   }
 
   private closeSettingsModal(): void {
-    BackdropRenderer.setDimmed(false);
     this.soundEffects.playMenuClose();
-    this.setZoneListInteractive(this.settingsHitZones, false);
-    this.settingsModal.setVisible(false);
-    KeyboardNavManager.getInstance().popContext('menu-settings');
+    if (this.settingsModal.isVisible()) {
+      this.settingsModal.hide();
+    }
     if (this.levelSelectContainer.visible) {
       this.setZoneListInteractive(this.levelSelectHitZones, true);
     } else {
@@ -815,9 +843,9 @@ export class MenuScene extends Phaser.Scene {
   }
 
   private openConfirmResetModal(): void {
-    BackdropRenderer.setDimmed(true);
     this.soundEffects.playMenuOpen();
-    this.setZoneListInteractive(this.settingsHitZones, false);
+    this.settingsModal.hide();
+    BackdropRenderer.setDimmed(true);
     this.setZoneListInteractive(this.confirmResetHitZones, true);
     this.confirmResetModal.setVisible(true);
     KeyboardNavManager.getInstance().pushContext({
@@ -829,296 +857,15 @@ export class MenuScene extends Phaser.Scene {
     });
   }
 
-  private closeConfirmResetModal(): void {
-    BackdropRenderer.setDimmed(false);
+  private closeConfirmResetModal(reopenSettings: boolean = true): void {
     this.soundEffects.playMenuClose();
     this.setZoneListInteractive(this.confirmResetHitZones, false);
     this.confirmResetModal.setVisible(false);
     KeyboardNavManager.getInstance().popContext('menu-confirm-reset');
-    this.setZoneListInteractive(this.settingsHitZones, true);
-  }
-
-  private createSettingsModal(width: number, height: number): void {
-    this.settingsModal = this.add.container(width / 2, height / 2);
-    this.settingsModal.setDepth(150);
-    this.settingsModal.setVisible(false);
-
-    const modalW = 460;
-    const modalH = 430;
-    this.settingsItems = [];
-
-    // Backdrop
-    const backdrop = this.add.graphics();
-    backdrop.fillStyle(0x000000, 0.75);
-    backdrop.fillRect(-width / 2, -height / 2, width, height);
-    backdrop.setInteractive(
-      new Phaser.Geom.Rectangle(-width / 2, -height / 2, width, height),
-      Phaser.Geom.Rectangle.Contains
-    );
-    backdrop.on('pointerdown', (_pointer: Phaser.Input.Pointer, _lx: number, _ly: number, event: Phaser.Types.Input.EventData) => {
-      if (event && event.stopPropagation) event.stopPropagation();
-    });
-    backdrop.on('pointerup', (_pointer: Phaser.Input.Pointer, _lx: number, _ly: number, event: Phaser.Types.Input.EventData) => {
-      if (event && event.stopPropagation) event.stopPropagation();
-    });
-    this.settingsModal.add(backdrop);
-
-    // Box
-    const box = this.add.graphics();
-    box.fillStyle(0x080808, 0.98);
-    box.fillRoundedRect(-modalW / 2, -modalH / 2, modalW, modalH, 8);
-    box.lineStyle(1.5, 0xffffff, 0.9);
-    box.strokeRoundedRect(-modalW / 2, -modalH / 2, modalW, modalH, 8);
-    this.settingsModal.add(box);
-
-    // Title
-    const title = this.add
-      .text(0, -180, 'SETTINGS', {
-        fontFamily: 'system-ui, -apple-system, sans-serif',
-        fontSize: '22px',
-        fontStyle: 'bold',
-        color: '#FFFFFF',
-        letterSpacing: 2,
-      })
-      .setOrigin(0.5);
-    this.settingsModal.add(title);
-
-    const audio = AudioManager.getInstance();
-
-    // 1. Audio Mute Toggle
-    let isMuted = this.storage.getProgress().muted;
-    const soundText = this.add
-      .text(0, -135, `AUDIO: ${isMuted ? 'MUTED' : 'ENABLED'}`, {
-        fontFamily: 'system-ui, -apple-system, sans-serif',
-        fontSize: '14px',
-        fontStyle: 'bold',
-        color: '#FFFFFF',
-        letterSpacing: 1.5,
-      })
-      .setOrigin(0.5);
-    this.settingsModal.add(soundText);
-
-    this.settingsItems.push(
-      this.createMenuButton(
-        this.settingsModal,
-        'settings-mute',
-        0,
-        -105,
-        260,
-        30,
-        'TOGGLE MUTE',
-        () => {
-          isMuted = !isMuted;
-          audio.setMuted(isMuted);
-          soundText.setText(`AUDIO: ${isMuted ? 'MUTED' : 'ENABLED'}`);
-        },
-        false
-      )
-    );
-
-    // 2. Master Volume
-    let masterVal = Math.round(audio.getMasterVolume() * 100);
-    const masterText = this.add
-      .text(0, -65, `MASTER VOLUME: ${masterVal}%`, {
-        fontFamily: 'system-ui, -apple-system, sans-serif',
-        fontSize: '13px',
-        color: '#CCCCCC',
-        letterSpacing: 1,
-      })
-      .setOrigin(0.5);
-    this.settingsModal.add(masterText);
-
-    this.settingsItems.push(
-      this.createMenuButton(
-        this.settingsModal,
-        'settings-master-dec',
-        -80,
-        -35,
-        70,
-        26,
-        '- 10%',
-        () => {
-          masterVal = Math.max(0, masterVal - 10);
-          audio.setMasterVolume(masterVal / 100);
-          masterText.setText(`MASTER VOLUME: ${masterVal}%`);
-        },
-        false
-      )
-    );
-
-    this.settingsItems.push(
-      this.createMenuButton(
-        this.settingsModal,
-        'settings-master-inc',
-        80,
-        -35,
-        70,
-        26,
-        '+ 10%',
-        () => {
-          masterVal = Math.min(100, masterVal + 10);
-          audio.setMasterVolume(masterVal / 100);
-          masterText.setText(`MASTER VOLUME: ${masterVal}%`);
-        },
-        false
-      )
-    );
-
-    // 3. Music Volume & SFX Volume Rows
-    let musicVal = Math.round(audio.getMusicVolume() * 100);
-    const musicText = this.add
-      .text(-100, 5, `MUSIC: ${musicVal}%`, {
-        fontFamily: 'system-ui, -apple-system, sans-serif',
-        fontSize: '12px',
-        color: '#AAAAAA',
-      })
-      .setOrigin(0.5);
-    this.settingsModal.add(musicText);
-
-    this.settingsItems.push(
-      this.createMenuButton(
-        this.settingsModal,
-        'settings-music-dec',
-        -145,
-        30,
-        50,
-        24,
-        '-',
-        () => {
-          musicVal = Math.max(0, musicVal - 10);
-          audio.setMusicVolume(musicVal / 100);
-          musicText.setText(`MUSIC: ${musicVal}%`);
-        },
-        false
-      )
-    );
-
-    this.settingsItems.push(
-      this.createMenuButton(
-        this.settingsModal,
-        'settings-music-inc',
-        -55,
-        30,
-        50,
-        24,
-        '+',
-        () => {
-          musicVal = Math.min(100, musicVal + 10);
-          audio.setMusicVolume(musicVal / 100);
-          musicText.setText(`MUSIC: ${musicVal}%`);
-        },
-        false
-      )
-    );
-
-    let sfxVal = Math.round(audio.getSfxVolume() * 100);
-    const sfxText = this.add
-      .text(100, 5, `SFX: ${sfxVal}%`, {
-        fontFamily: 'system-ui, -apple-system, sans-serif',
-        fontSize: '12px',
-        color: '#AAAAAA',
-      })
-      .setOrigin(0.5);
-    this.settingsModal.add(sfxText);
-
-    this.settingsItems.push(
-      this.createMenuButton(
-        this.settingsModal,
-        'settings-sfx-dec',
-        55,
-        30,
-        50,
-        24,
-        '-',
-        () => {
-          sfxVal = Math.max(0, sfxVal - 10);
-          audio.setSfxVolume(sfxVal / 100);
-          sfxText.setText(`SFX: ${sfxVal}%`);
-        },
-        false
-      )
-    );
-
-    this.settingsItems.push(
-      this.createMenuButton(
-        this.settingsModal,
-        'settings-sfx-inc',
-        145,
-        30,
-        50,
-        24,
-        '+',
-        () => {
-          sfxVal = Math.min(100, sfxVal + 10);
-          audio.setSfxVolume(sfxVal / 100);
-          sfxText.setText(`SFX: ${sfxVal}%`);
-        },
-        false
-      )
-    );
-
-    // 4. Reduced Motion Toggle
-    let isReduced = this.storage.getProgress().reducedMotion;
-    const motionText = this.add
-      .text(0, 75, `MOTION: ${isReduced ? 'REDUCED' : 'NORMAL'}`, {
-        fontFamily: 'system-ui, -apple-system, sans-serif',
-        fontSize: '13px',
-        fontStyle: 'bold',
-        color: '#FFFFFF',
-        letterSpacing: 1.5,
-      })
-      .setOrigin(0.5);
-    this.settingsModal.add(motionText);
-
-    this.settingsItems.push(
-      this.createMenuButton(
-        this.settingsModal,
-        'settings-motion',
-        0,
-        105,
-        260,
-        30,
-        'TOGGLE REDUCED MOTION',
-        () => {
-          isReduced = !isReduced;
-          this.storage.setReducedMotion(isReduced);
-          motionText.setText(`MOTION: ${isReduced ? 'REDUCED' : 'NORMAL'}`);
-        },
-        false
-      )
-    );
-
-    // 5. Reset Game Progress Button
-    this.settingsItems.push(
-      this.createMenuButton(
-        this.settingsModal,
-        'settings-reset',
-        0,
-        150,
-        260,
-        30,
-        'RESET PROGRESS',
-        () => {
-          this.openConfirmResetModal();
-        },
-        false
-      )
-    );
-
-    // Close button
-    this.settingsItems.push(
-      this.createMenuButton(
-        this.settingsModal,
-        'settings-close',
-        modalW / 2 - 35,
-        -modalH / 2 + 25,
-        40,
-        30,
-        '✕',
-        () => this.closeSettingsModal(),
-        false
-      )
-    );
+    BackdropRenderer.setDimmed(false);
+    if (reopenSettings) {
+      this.settingsModal.show();
+    }
   }
 
   private createConfirmResetModal(width: number, height: number): void {
@@ -1191,7 +938,7 @@ export class MenuScene extends Phaser.Scene {
         'CONFIRM',
         () => {
           this.storage.startNewGame(true);
-          this.closeConfirmResetModal();
+          this.closeConfirmResetModal(false);
           this.closeSettingsModal();
           // Refresh scene
           this.scene.restart();

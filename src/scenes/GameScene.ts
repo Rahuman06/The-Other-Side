@@ -68,6 +68,8 @@ export class GameScene extends Phaser.Scene {
   private previousPlayerAtExit: boolean = false;
   private previousShadowAtExit: boolean = false;
   private hasTriggeredOutro: boolean = false;
+  private isResumingFromPause: boolean = false;
+  private reopenPauseAfterChildModal: boolean = false;
 
   // Previous puzzle mechanism states for audio event synthesis
   private prevSwitchStates: Map<string, boolean> = new Map();
@@ -89,6 +91,8 @@ export class GameScene extends Phaser.Scene {
     this.previousPlayerAtExit = false;
     this.previousShadowAtExit = false;
     this.hasTriggeredOutro = false;
+    this.isResumingFromPause = false;
+    this.reopenPauseAfterChildModal = false;
 
     this.storage = new StorageManager();
     const audio = AudioManager.getInstance();
@@ -172,8 +176,15 @@ export class GameScene extends Phaser.Scene {
       ('ontouchstart' in window || navigator.maxTouchPoints > 0 || window.innerWidth <= 1024);
     mobileControls.setVisible(isMobile);
 
-    // 12. Modals
-    this.objectGuideModal = new ObjectGuideModal(this, width, height, () => {
+    const closeChildModalToContext = () => {
+      if (this.reopenPauseAfterChildModal) {
+        this.reopenPauseAfterChildModal = false;
+        this.pauseModal.show();
+        this.header.setHeaderInteractive(false);
+        this.inputController.setEnabled(false);
+        mobileControls.setVisible(false);
+        return;
+      }
       if (this.session.turnEngine.state === 'PAUSED' && !this.pauseModal.isVisible()) {
         this.session.turnEngine.resume();
       }
@@ -182,38 +193,39 @@ export class GameScene extends Phaser.Scene {
         this.inputController.setEnabled(true);
       }
       mobileControls.setVisible(isMobile && this.session.turnEngine.state === 'PLAYING' && !this.isAnyModalOpen());
-    });
+    };
 
-    this.settingsModal = new SettingsModal(this, width, height, this.storage, () => {
-      if (this.session.turnEngine.state === 'PAUSED' && !this.pauseModal.isVisible()) {
-        this.session.turnEngine.resume();
-      }
-      if (!this.isAnyModalOpen()) {
-        this.header.setHeaderInteractive(true);
-        this.inputController.setEnabled(true);
-      }
-      mobileControls.setVisible(isMobile && this.session.turnEngine.state === 'PLAYING' && !this.isAnyModalOpen());
-    });
+    // 12. Modals
+    this.objectGuideModal = new ObjectGuideModal(this, width, height, closeChildModalToContext);
+
+    this.settingsModal = new SettingsModal(this, width, height, this.storage, closeChildModalToContext);
 
     this.pauseModal = new PauseModal(this, width, height, {
-      onResume: () => this.togglePause(),
+      onResume: () => {
+        void this.togglePause();
+      },
       onRestart: () => {
         this.pauseModal.hide();
         this.restartLevel();
       },
       onObjectGuide: () => {
+        this.reopenPauseAfterChildModal = this.pauseModal.isVisible();
+        this.pauseModal.hide();
         this.header.setHeaderInteractive(false);
         this.inputController.setEnabled(false);
         mobileControls.setVisible(false);
         this.objectGuideModal.show();
       },
       onSettings: () => {
+        this.reopenPauseAfterChildModal = this.pauseModal.isVisible();
+        this.pauseModal.hide();
         this.header.setHeaderInteractive(false);
         this.inputController.setEnabled(false);
         mobileControls.setVisible(false);
         this.settingsModal.show();
       },
       onMainMenu: () => {
+        this.pauseModal.hide();
         mobileControls.setVisible(false);
         pokiBridge.gameplayStop();
         this.scene.start('MenuScene', { openLevelSelect: true });
@@ -221,8 +233,12 @@ export class GameScene extends Phaser.Scene {
     });
 
     this.winModal = new WinModal(this, width, height, {
-      onNextLevel: () => this.goToNextLevel(),
+      onNextLevel: () => {
+        this.winModal.hide();
+        this.goToNextLevel();
+      },
       onLevelSelect: () => {
+        this.winModal.hide();
         mobileControls.setVisible(false);
         pokiBridge.gameplayStop();
         this.scene.start('MenuScene', { openLevelSelect: true });
@@ -232,6 +248,7 @@ export class GameScene extends Phaser.Scene {
         this.restartLevel();
       },
       onMainMenu: () => {
+        this.winModal.hide();
         mobileControls.setVisible(false);
         pokiBridge.gameplayStop();
         this.scene.start('MenuScene', { openLevelSelect: true });
@@ -564,21 +581,12 @@ export class GameScene extends Phaser.Scene {
     let pointerStartY = 0;
     let pointerDown = false;
 
-    // Keyboard shortcut for ESC: close topmost modal or toggle pause
+    // Keyboard shortcut for ESC: only handle when no KeyboardNavManager modal trap owns ESC
     this.input.keyboard?.on('keydown-ESC', () => {
-      if (this.objectGuideModal.isVisible()) {
-        this.objectGuideModal.hide();
-        if (this.session.turnEngine.state === 'PAUSED' && !this.pauseModal.isVisible()) {
-          this.session.turnEngine.resume();
-        }
-      } else if (this.settingsModal.isVisible()) {
-        this.settingsModal.hide();
-        if (this.session.turnEngine.state === 'PAUSED' && !this.pauseModal.isVisible()) {
-          this.session.turnEngine.resume();
-        }
-      } else {
-        this.togglePause();
-      }
+      if (this.isResumingFromPause || pokiBridge.isAdActive()) return;
+      if (KeyboardNavManager.getInstance().isInputTrapped()) return;
+      if (this.isAnyModalOpen()) return;
+      void this.togglePause();
     });
 
     this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
@@ -990,14 +998,16 @@ export class GameScene extends Phaser.Scene {
     this.scene.restart({ levelId: this.levelId });
   }
 
-  public togglePause(): void {
+  public async togglePause(): Promise<void> {
     if (this.session.turnEngine.state === 'COMPLETED') return;
+    if (this.isResumingFromPause || pokiBridge.isAdActive()) return;
 
     const isMobile =
       typeof window !== 'undefined' &&
       ('ontouchstart' in window || navigator.maxTouchPoints > 0 || window.innerWidth <= 1024);
 
     if (this.session.turnEngine.state === 'PLAYING') {
+      if (this.isAnyModalOpen()) return;
       this.session.turnEngine.pause();
       this.header.setHeaderInteractive(false);
       this.inputController.setEnabled(false);
@@ -1006,8 +1016,26 @@ export class GameScene extends Phaser.Scene {
       this.header.setPauseText('RESUME');
       pokiBridge.gameplayStop();
     } else {
-      this.session.turnEngine.resume();
+      if (this.objectGuideModal.isVisible() || this.settingsModal.isVisible() || this.winModal.isVisible()) {
+        return;
+      }
+      this.isResumingFromPause = true;
       this.pauseModal.hide();
+      this.header.setHeaderInteractive(false);
+      this.inputController.setEnabled(false);
+      MobileControlsOverlay.getInstance().setVisible(false);
+
+      const audio = AudioManager.getInstance();
+      await pokiBridge.commercialBreak(
+        () => audio.suspendForAd(),
+        () => audio.resumeFromAd()
+      );
+      audio.resumeFromAd();
+
+      this.isResumingFromPause = false;
+      if (!this.scene?.isActive('GameScene')) return;
+
+      this.session.turnEngine.resume();
       this.header.setHeaderInteractive(true);
       this.inputController.setEnabled(true);
       MobileControlsOverlay.getInstance().setVisible(isMobile);

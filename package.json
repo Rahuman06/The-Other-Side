@@ -6,7 +6,9 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
+    "build:poki": "tsc && vite build --mode poki",
     "preview": "vite preview",
+    "preview:poki": "vite preview --outDir dist-poki",
     "typecheck": "tsc --noEmit",
     "test": "node -e \"const fs=require('fs'); if (!fs.existsSync('.tmp')) fs.mkdirSync('.tmp');\" && vitest run",
     "test:watch": "vitest",

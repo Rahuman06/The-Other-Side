@@ -1,5 +1,6 @@
 import { MoveDirection } from '../engine/MovementEngine';
 import { KeyboardNavManager } from '../ui/KeyboardNavManager';
+import { pokiBridge } from '../poki/PokiIntegration';
 
 export interface InputTarget {
   onDirection: (direction: MoveDirection) => void;
@@ -33,6 +34,11 @@ export class InputController {
     this.windowRef = win;
 
     this.keyDownHandler = (e: KeyboardEvent) => {
+      if (pokiBridge.isAdActive()) {
+        e.preventDefault?.();
+        return;
+      }
+
       // First allow KeyboardNavManager to handle menu/modal navigation
       const navManager = KeyboardNavManager.getInstance();
       if (navManager.handleKeyDown(e)) {
@@ -76,6 +82,7 @@ export class InputController {
 
   public handleKeyDown(e: { key: string; repeat?: boolean; preventDefault?: () => void }): boolean {
     if (!this.isEnabled) return false;
+    if (pokiBridge.isAdActive()) return false;
 
     // Isolate input: Do not process gameplay controls when a modal or menu has focus
     if (KeyboardNavManager.getInstance().isInputTrapped()) {
