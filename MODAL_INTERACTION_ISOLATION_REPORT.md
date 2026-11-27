@@ -1,109 +1,42 @@
-# MODAL INTERACTION ISOLATION REPORT
-## THE OTHER SIDE — TWO WORLDS. ONE MIND.
+# MODAL INTERACTION ISOLATION REPORT — THE OTHER SIDE
 
-**System Evaluated:** Interaction Isolation Architecture (Phaser Containers, Event Propagation, DOM Overlays, Keyboard Focus)  
-**Priority:** Critical Bug Fix (Elimination of Click-Throughs Behind Active Tabs/Popups)  
-**Verification Date:** November 21, 2026  
-**Status:** **PASSED (100% ISOLATION ACHIEVED)**
+**Status:** PASSED  
+**Date:** 2026-11-27  
+**Commit:** `a136680`
 
----
+## What Was Inspected
+- `src/ui/KeyboardNavManager.ts` (focus stack and `isInputTrapped()` lockouts)
+- `src/ui/PauseModal.ts`, `src/ui/WinModal.ts`, `src/ui/SettingsModal.ts`, `src/ui/ObjectGuideModal.ts`, `src/ui/Header.ts`, `src/systems/InputController.ts`, `src/rendering/MenuScene.ts`, `src/scenes/GameScene.ts`
 
-## 1. Defect Analysis & Root Causes
+## What Was Tested
+- Clicking outside Settings Modal backdrop onto underlying Main Menu button regions
+- Switching `PauseModal` -> `SettingsModal` -> `Escape` -> `PauseModal` -> `RESUME`
+- Repeated tab clicks inside `ObjectGuideModal` (`categoryTabsContainer` zone/object count check)
+- Mobile DOM controls (`#mobile-controls-root`) visibility across Playing, Pause, Settings, Object Guide, and Win states
+- `InputController` movement/shortcut lockout during trapped modal focus and Poki ad breaks
 
-### 1.1 Previous Vulnerabilities Identified
-1. **Phaser Object Input Leakage:**
-   - In `MenuScene.ts`, `settingsModal` and `confirmResetModal` previously used non-interactive graphics backdrops. Any mouse click or touch on the dark area outside the small modal box passed straight through to `mainMenuContainer` buttons located underneath.
-   - When `levelSelectContainer` opened, `mainMenuContainer` was set `visible = false`, but its child interactive hit zones retained active pointer listeners, allowing clicks to trigger hidden main menu buttons.
-2. **HUD & Canvas Gameplay Input Leakage:**
-   - In `GameScene.ts`, when `PauseModal`, `SettingsModal`, `ObjectGuideModal`, or `WinModal` appeared, the in-game `Header` ("RESTART", "PAUSE") remained interactive at depth 30.
-   - Pointer drag/swipe events on the game canvas could initiate character movement while a modal was visible if the touch began near canvas edges.
-3. **DOM Mobile Controls Leakage:**
-   - On mobile devices, `#mobile-controls-root` elements (`.mobile-btn`) possess `pointer-events: auto` and a high z-index (`z-index: 1000`), sitting above the Phaser canvas. When in-game modals popped up, touching the bottom screen corners triggered directional movement underneath the modal.
-4. **Keyboard Navigation Leaks:**
-   - Global keystrokes (e.g. WASD, Arrow keys, R for Restart) could process game state changes while a modal was open unless input trapping was explicitly enforced.
+## What Was Discovered
+1. `ObjectGuideModal.createCategoryTabs()` appended new tab zones to `this.container` without removing old ones (`18` -> `36` -> `54`...), causing leaked listeners and duplicate graphics.
+2. Opening `SettingsModal` or `ObjectGuideModal` from `PauseModal` left `PauseModal` visible at depth 100 underneath.
+3. Repeatedly switching between `MenuScene` Main Menu and Level Select pushed duplicate `'main-menu'` contexts onto `KeyboardNavManager`.
+4. `GameScene`'s Phaser `keydown-ESC` handler lacked guards against double-handling `Escape` already consumed by `KeyboardNavManager` or while resuming through an ad break.
 
----
+## What Was Fixed
+1. `ObjectGuideModal`: moved category tabs into `this.categoryTabsContainer` with `.removeAll(true)` prior to rebuilding (`18` objects flat across unlimited tab clicks).
+2. `GameScene`: added `reopenPauseAfterChildModal` & `isResumingFromPause` guards so only one modal is visible/interactive at a time, and guarded `keydown-ESC` cleanly.
+3. `SettingsModal`: tracks all interactive zones in `hitZones`, disabling on `hide()` and enabling on `show()` alongside full-screen `backdropHit` `stopPropagation`.
+4. `MenuScene`: `showMainMenu()` pops prior `'level-select'` and `'main-menu'` contexts before pushing fresh focus state.
 
-## 2. Technical Implementation & Architectural Solution
+## Files Modified
+- `src/ui/ObjectGuideModal.ts`
+- `src/ui/SettingsModal.ts`
+- `src/rendering/MenuScene.ts`
+- `src/scenes/GameScene.ts`
+- `src/systems/InputController.ts`
 
-### 2.1 Full-Screen Interactive Blocking Backdrops
-Every popup and modal now mounts a dedicated, full-screen interactive blocking backdrop spanning `-width/2` to `+width/2` and `-height/2` to `+height/2`:
-```typescript
-const backdrop = scene.add.graphics();
-backdrop.fillStyle(0x000000, 0.75);
-backdrop.fillRect(-width / 2, -height / 2, width, height);
-backdrop.setInteractive(
-  new Phaser.Geom.Rectangle(-width / 2, -height / 2, width, height),
-  Phaser.Geom.Rectangle.Contains
-);
-backdrop.on('pointerdown', (_pointer, _lx, _ly, event) => {
-  if (event && event.stopPropagation) event.stopPropagation();
-});
-backdrop.on('pointerup', (_pointer, _lx, _ly, event) => {
-  if (event && event.stopPropagation) event.stopPropagation();
-});
-this.container.add(backdrop);
-```
-**Mechanism:** Because this backdrop sits at the base of the modal container (which has depth 100, 150, or 200), Phaser's input manager captures all pointer events. The explicit `event.stopPropagation()` completely halts propagation to any lower-depth game objects.
+## Verification Evidence
+- `tests/browser/release-qa.spec.ts`: Verified `mainMenuHitZones` disabled while Settings open, background click at `(80, 80)` does not close Settings or trigger underlying Main Menu, `categoryTabsContainer.list.length === 18` after 3x6 tab cycles, and Pause <-> Settings layering hides/restores `PauseModal` cleanly. **PASSED**
+- `tests/unit/ModalIsolationAndButtons.test.ts`: **PASSED** (3/3)
 
-### 2.2 Dynamic Hit Zone Registry Management (`MenuScene.ts`)
-To eliminate all risk of ghost clicks or multi-touch leakage across nested menu views, `MenuScene` now maintains deterministic hit zone registries:
-- `mainMenuHitZones: Phaser.GameObjects.Zone[]`
-- `levelSelectHitZones: Phaser.GameObjects.Zone[]`
-- `settingsHitZones: Phaser.GameObjects.Zone[]`
-- `confirmResetHitZones: Phaser.GameObjects.Zone[]`
-
-Managed by:
-```typescript
-private setZoneListInteractive(zones: Phaser.GameObjects.Zone[], interactive: boolean): void {
-  for (const zone of zones) {
-    if (zone && zone.active) {
-      if (interactive) {
-        zone.setInteractive({ useHandCursor: true });
-      } else {
-        zone.disableInteractive();
-      }
-    }
-  }
-}
-```
-**State Transitions:**
-- **Open Settings:** Disables `mainMenuHitZones` & `levelSelectHitZones`; enables `settingsHitZones`.
-- **Open Reset Confirm:** Disables `settingsHitZones`; enables `confirmResetHitZones`.
-- **Close Reset Confirm:** Disables `confirmResetHitZones`; re-enables `settingsHitZones`.
-- **Close Settings:** Disables `settingsHitZones`; restores active base view (`mainMenuHitZones` or `levelSelectHitZones`).
-- **Open Level Select:** Disables `mainMenuHitZones`; enables `levelSelectHitZones`.
-- **Close Level Select:** Disables `levelSelectHitZones`; enables `mainMenuHitZones`.
-
-### 2.3 Comprehensive Gameplay Inactivation (`GameScene.ts`)
-When any modal (`PauseModal`, `SettingsModal`, `ObjectGuideModal`, `WinModal`) is displayed:
-1. `this.header.setHeaderInteractive(false)`: Disables RESTART and PAUSE button hit zones.
-2. `this.inputController.setEnabled(false)`: Clears held keys and suppresses all gameplay keystroke processing.
-3. `MobileControlsOverlay.getInstance().setVisible(false)`: Hides DOM touch clusters (`opacity: 0; pointer-events: none; visibility: hidden;`).
-4. Canvas pointer listeners check `this.isAnyModalOpen()` on `pointerdown`, `pointermove`, and `pointerup`, immediately discarding touches outside modal bounds.
-
-### 2.4 Keyboard Trapping (`KeyboardNavManager.ts`)
-Modals push contexts with `trapFocus: true`. `InputController.ts` inspects `KeyboardNavManager.getInstance().isInputTrapped()` on every key event. While trapped, game navigation keys (WASD, Arrows, R) are rejected, while modal navigation (Arrows, Tab, Enter, Space, Escape) operates inside the modal.
-
----
-
-## 3. Test Cases & Verification Results
-
-| Test Scenario | Underlying Target | Expected Result | Measured Result | Status |
-| :--- | :--- | :--- | :--- | :--- |
-| **Settings Open in Menu** | "PLAY" button behind modal | No hover state, click ignored | Click completely blocked | **PASSED** |
-| **Settings Open in Menu** | "LEVEL SELECTION" behind modal | No hover state, click ignored | Click completely blocked | **PASSED** |
-| **Reset Confirm Open** | "TOGGLE MUTE" behind confirm box | No response to clicks | Click completely blocked | **PASSED** |
-| **Level Selection Open** | "PLAY" button in hidden menu | No response to clicks | Click completely blocked | **PASSED** |
-| **Pause Modal in Game** | Canvas grid swipe / tap | Zero character movement | Character remains stationary | **PASSED** |
-| **Pause Modal in Game** | Header "RESTART" button | No hover, no level reset | Header buttons non-interactive | **PASSED** |
-| **Win Modal in Game** | Header "PAUSE" button | No hover, no pause trigger | Header buttons non-interactive | **PASSED** |
-| **Object Guide in Game**| DOM Mobile Arrow controls | Arrows hidden, touches ignored | Controls invisible & blocked | **PASSED** |
-| **Modal Dismissal** | Topmost modal closed | Underlying controls restored | Controls seamlessly restored | **PASSED** |
-
----
-
-## 4. Verification Verdict
-
-**FINAL STATUS: PASSED**  
-Complete interaction isolation is verified across all modals, tabs, and popups. Ghost clicks, background clicks, and DOM touch leaks have been 100% eliminated.
+## Remaining Problems
+- None identified.
